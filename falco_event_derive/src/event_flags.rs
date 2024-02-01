@@ -1,0 +1,275 @@
+use proc_macro::TokenStream;
+use quote::quote;
+use std::collections::{BTreeMap, BTreeSet};
+use syn::parse::{Nothing, Parse, ParseStream};
+use syn::punctuated::Punctuated;
+use syn::token::{Brace, Bracket};
+use syn::{braced, bracketed, parse_macro_input, Ident, LitInt, LitStr, Token};
+
+enum NumberOr<T: Parse> {
+    Number(LitInt),
+    Token(T),
+}
+
+impl<T: Parse> Parse for NumberOr<T> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        if input.peek(LitInt) {
+            Ok(Self::Number(input.parse()?))
+        } else {
+            Ok(Self::Token(input.parse()?))
+        }
+    }
+}
+
+struct FlagItem {
+    _braces: Brace,
+    name: NumberOr<LitStr>,
+    _comma: Token![,],
+    value: NumberOr<Ident>,
+}
+
+impl Parse for FlagItem {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let item;
+        Ok(FlagItem {
+            _braces: braced!(item in input),
+            name: item.parse()?,
+            _comma: item.parse()?,
+            value: item.parse()?,
+        })
+    }
+}
+
+type Skips = Option<(Token![!], Punctuated<Ident, Token![,]>)>;
+
+enum FlagsEntry {
+    TypeDecl {
+        _type: Token![type],
+        name: Ident,
+        _colon: Token![:],
+        underlying_type: Ident,
+        skips: Skips,
+    },
+    FlagDecl {
+        _const: Token![const],
+        _struct: Token![struct],
+        _type: Ident,
+        name: Ident,
+        _brackets: Bracket,
+        _in_brackets: Nothing,
+        _eq: Token![=],
+        _braces: Brace,
+        items: Punctuated<FlagItem, Token![,]>,
+    },
+}
+
+impl Parse for FlagsEntry {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        if input.peek(Token![type]) {
+            Ok(FlagsEntry::TypeDecl {
+                _type: input.parse()?,
+                name: input.parse()?,
+                _colon: input.parse()?,
+                underlying_type: input.parse()?,
+                skips: if input.peek(Token![!]) {
+                    Some((input.parse()?, Punctuated::parse_separated_nonempty(input)?))
+                } else {
+                    None
+                },
+            })
+        } else {
+            let nothing;
+            let items;
+            Ok(FlagsEntry::FlagDecl {
+                _const: input.parse()?,
+                _struct: input.parse()?,
+                _type: input.parse()?,
+                name: input.parse()?,
+                _brackets: bracketed!(nothing in input),
+                _in_brackets: nothing.parse()?,
+                _eq: input.parse()?,
+                _braces: braced!(items in input),
+                items: Punctuated::parse_terminated(&items)?,
+            })
+        }
+    }
+}
+
+struct Flags {
+    flags: Punctuated<FlagsEntry, Token![;]>,
+}
+
+impl Parse for Flags {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(Flags {
+            flags: Punctuated::parse_terminated(input)?,
+        })
+    }
+}
+
+fn render_enum(
+    name: &Ident,
+    repr_type: proc_macro2::TokenStream,
+    items: impl Iterator<Item = (Ident, Ident)>,
+    skips: &Skips,
+) -> proc_macro2::TokenStream {
+    let mut skipped = BTreeSet::new();
+    if let Some((_, skips)) = skips {
+        for skip in skips {
+            skipped.insert(skip.to_string());
+        }
+    }
+
+    let items = items.filter_map(|(name, value)| {
+        if skipped.contains(&value.to_string()) {
+            None
+        } else {
+            Some(quote!(#name = crate::ffi::#value as #repr_type))
+        }
+    });
+    quote!(
+        #[repr(#repr_type)]
+        #[allow(non_camel_case_types)]
+        #[derive(FromPrimitive, Copy, Clone, Debug)]
+        pub enum #name {
+            #(#items,)*
+        }
+
+        impl crate::event_derive::ToBytes for #name {
+            fn binary_size(&self) -> usize {
+                std::mem::size_of::<#repr_type>()
+            }
+
+            fn write<W: std::io::Write>(&self, writer: W) -> std::io::Result<()> {
+                (*self as #repr_type).write(writer)
+            }
+
+            fn default_repr() -> impl crate::event_derive::ToBytes {
+                0 as #repr_type
+            }
+        }
+
+        impl crate::event_derive::FromBytes<'_> for #name {
+            fn from_bytes(buf: &mut &[u8]) -> crate::event_derive::FromBytesResult<Self>
+            where
+                Self: Sized,
+            {
+                use num_traits::FromPrimitive;
+                let repr = #repr_type::from_bytes(buf)?;
+                let val = Self::from_usize(repr as usize).ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid enum value"))?;
+                Ok(val)
+            }
+        }
+    )
+}
+
+fn render_bitflags(
+    name: &Ident,
+    repr_type: proc_macro2::TokenStream,
+    items: impl Iterator<Item = (Ident, Ident)>,
+) -> proc_macro2::TokenStream {
+    let items = items.map(|(name, value)| quote!(const #name = crate::ffi::#value as #repr_type));
+    quote!(
+        bitflags::bitflags! {
+            #[allow(non_camel_case_types)]
+            #[derive(Debug)]
+            pub struct #name: #repr_type {
+                #(#items;)*
+                const _ = !0;
+            }
+        }
+
+        impl crate::event_derive::ToBytes for #name {
+            fn binary_size(&self) -> usize {
+                std::mem::size_of::<#repr_type>()
+            }
+
+            fn write<W: std::io::Write>(&self, writer: W) -> std::io::Result<()> {
+                (self.bits() as #repr_type).write(writer)
+            }
+
+            fn default_repr() -> impl crate::event_derive::ToBytes {
+                0 as #repr_type
+            }
+        }
+
+        impl crate::event_derive::FromBytes<'_> for #name {
+            fn from_bytes(buf: &mut &[u8]) -> crate::event_derive::FromBytesResult<Self>
+            where
+                Self: Sized,
+            {
+                let repr = #repr_type::from_bytes(buf)?;
+                let val = Self::from_bits_retain(repr);
+                Ok(val)
+            }
+        }
+    )
+}
+
+fn render_flags_type(
+    name: &Ident,
+    underlying_type: &Ident,
+    items: &Punctuated<FlagItem, Token![,]>,
+    skips: &Skips,
+) -> proc_macro2::TokenStream {
+    let final_name = Ident::new(&format!("{}_{}", underlying_type, name), name.span());
+
+    let items = items.iter().filter_map(|it| {
+        let NumberOr::Token(ref name) = it.name else {
+            return None;
+        };
+        let NumberOr::Token(ref value) = it.value else {
+            return None;
+        };
+
+        let name = Ident::new(&name.value(), name.span());
+
+        Some((name, value.clone()))
+    });
+
+    match underlying_type.to_string().as_str() {
+        "PT_FLAGS32" | "PT_MODE" => render_bitflags(&final_name, quote!(u32), items),
+        "PT_FLAGS16" => render_bitflags(&final_name, quote!(u16), items),
+        "PT_FLAGS8" => render_bitflags(&final_name, quote!(u8), items),
+        "PT_ENUMFLAGS32" => render_enum(&final_name, quote!(u32), items, skips),
+        "PT_ENUMFLAGS16" => render_enum(&final_name, quote!(u16), items, skips),
+        "PT_ENUMFLAGS8" => render_enum(&final_name, quote!(u8), items, skips),
+        _ => panic!("unsupported type {}", underlying_type),
+    }
+}
+
+pub fn event_flags(input: TokenStream) -> TokenStream {
+    let flags = parse_macro_input!(input as Flags);
+
+    let mut flag_items = BTreeMap::new();
+    for item in &flags.flags {
+        if let FlagsEntry::FlagDecl { name, items, .. } = &item {
+            flag_items.insert(name, items);
+        }
+    }
+
+    let mut tokens = Vec::new();
+    for item in &flags.flags {
+        if let FlagsEntry::TypeDecl {
+            name,
+            underlying_type,
+            skips,
+            ..
+        } = item
+        {
+            tokens.push(render_flags_type(
+                name,
+                underlying_type,
+                flag_items.get(name).expect("blah"),
+                skips,
+            ))
+        }
+    }
+
+    quote!(
+        use num_derive::FromPrimitive;
+
+        #(#tokens)*
+    )
+    .into()
+}

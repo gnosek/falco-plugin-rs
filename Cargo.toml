@@ -1,0 +1,3 @@
+[workspace]
+members = ["falco_plugin_api", "falco_plugin", "falco_event_derive", "falco_event"]
+resolver = "2"

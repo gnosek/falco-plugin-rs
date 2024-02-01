@@ -1,0 +1,18 @@
+[package]
+name = "falco_event_derive"
+version = "0.0.0"
+authors = ["Grzegorz Nosek <root@localdomain.pl>"]
+description = "A `cargo generate` template for quick-starting a procedural macro crate"
+keywords = ["template", "proc_macro", "procmacro"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1"
+proc-macro2 = "1.0"
+syn = "2"
+
+[dev-dependencies]
+falco_event = { path = "../falco_event" }

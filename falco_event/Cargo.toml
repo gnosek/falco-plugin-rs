@@ -1,0 +1,35 @@
+[package]
+name = "falco_event"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+byteorder = "1.5.0"
+falco_event_derive = { path = "../falco_event_derive" }
+falco_plugin_api = { path = "../falco_plugin_api" }
+memchr = "2.7.1"
+num-derive = "0.4.1"
+num-traits = "0.2.17"
+thiserror = "1.0.56"
+bitflags = "2.4.2"
+anyhow = "1.0.80"
+
+[dev-dependencies]
+hexdump = "0.1.1"
+
+# cargo install cargo-commander
+# cargo cmd regen_bindings
+[package.metadata.commands.regen_bindings.command]
+cmd = [
+    "wget https://raw.githubusercontent.com/falcosecurity/libs/master/driver/ppm_fillers.h -O api/ppm_fillers.h",
+    "wget https://raw.githubusercontent.com/falcosecurity/libs/master/driver/ppm_events_public.h -O api/ppm_events_public.h",
+    "wget https://raw.githubusercontent.com/falcosecurity/libs/master/driver/event_table.c -O api/event_table.c",
+    "wget https://raw.githubusercontent.com/falcosecurity/libs/master/driver/flags_table.c -O api/flags_table.c",
+    "wget https://raw.githubusercontent.com/falcosecurity/libs/master/driver/dynamic_params_table.c -O api/dynamic_params_table.c",
+    "> api/feature_gates.h",
+    "bindgen api/ppm_events_public.h -- -I. > src/ffi.rs",
+    "./tools/generate_event_table.sh",
+    "./tools/generate_dynamic_param_table.sh"]
+working_dir = "."
