@@ -3,10 +3,9 @@ use std::ffi::{CStr, CString};
 use thiserror::Error;
 
 use falco_event::EventType;
-use falco_plugin_api::ss_plugin_event_input;
 use falco_plugin_api::ss_plugin_extract_field;
 
-use crate::extract::ExtractArgType;
+use crate::extract::{EventInput, ExtractArgType};
 use crate::plugin::base::Plugin;
 use crate::plugin::extract::schema::ExtractFieldInfo;
 use crate::plugin::storage::FieldStorage;
@@ -14,11 +13,22 @@ use crate::plugin::tables::table_reader::TableReader;
 
 pub mod fields;
 pub mod schema;
+#[doc(hidden)]
 pub mod wrappers;
 
+/// The actual argument passed to the extractor function
+///
+/// It is validated based on the [`ExtractFieldInfo`] definition (use [`ExtractFieldInfo::with_arg`]
+/// to specify the expected argument type).
+///
+/// **Note**: this type describes the actual argument in a particular invocation.
+/// For describing the type of arguments the extractor accepts, please see [`ExtractArgType`]`
 pub enum ExtractFieldRequestArg<'a> {
+    /// no argument, the extractor was invoked as plain `field_name`
     None,
+    /// an integer argument, the extractor was invoked as e.g. `field_name[1]`
     Int(u64),
+    /// a string argument, the extractor was invoked as e.g. `field_name[foo]`
     String(&'a CStr),
 }
 
@@ -82,18 +92,75 @@ impl ExtractField for ss_plugin_extract_field {
     }
 }
 
+/// Support for field extraction plugins
 pub trait ExtractPlugin: Plugin + Sized
 where
     Self: 'static,
 {
+    /// The set of event types supported by this plugin
+    ///
+    /// If empty, the plugin will get invoked for all event types, otherwise it will only
+    /// get invoked for event types from this list.
     const EVENT_TYPES: &'static [EventType];
+    /// The set of event sources supported by this plugin
+    ///
+    /// If empty, the plugin will get invoked for events coming from all sources, otherwise it will
+    /// only get invoked for events from sources named in this list.
+    ///
+    /// **Note**: one notable event source is called `syscall`
     const EVENT_SOURCES: &'static [&'static str];
-    type ExtractContext: 'static;
 
+    /// The extraction context
+    ///
+    /// It might be useful if your plugin supports multiple fields, and they all share some common
+    /// preprocessing steps. Instead of redoing the preprocessing for each field, intermediate
+    /// results can be stored in the context for subsequent extractions (from the same event).
+    ///
+    /// If you do not need a context to share between extracting fields of the same event, use `()`
+    /// as the type.
+    type ExtractContext: Default + 'static;
+
+    /// The actual list of extractable fields
+    ///
+    /// The required signature corresponds to a method like:
+    /// ```
+    /// use anyhow::Error;
+    /// use falco_plugin::extract::{EventInput, ExtractFieldRequestArg};
+    /// use falco_plugin::tables::TableReader;
+    ///
+    /// fn extract_sample(
+    ///     &mut self,
+    ///     context: &mut (),
+    ///     arg: ExtractFieldRequestArg,
+    ///     event: &EventInput,
+    ///     tables: &TableReader,
+    /// ) -> Result<R, Error>;
+    ///
+    /// ```
+    /// where `R` is one of the following types or a [`Vec`] of them:
+    /// - [`u32`]
+    /// - [`u64`]
+    /// - [`bool`]
+    /// - [`CString`]
+    ///
+    /// The `context` may be shared between all extractions for a particular event.
+    ///
+    /// `arg` is the actual argument passed along with the field (see [`ExtractFieldRequestArg`])
+    ///
+    /// `event` is the event being processed (see [`EventInput`](`crate::EventInput`))
+    ///
+    /// `tables` is an interface to access tables exposed from Falco core and other plugins (see
+    /// [`tables`](`crate::tables`))
+    ///
+    /// **Note**: while the returned field type is automatically determined based on the return type
+    /// of the function, the argument type defaults to [`ExtractArgType::None`] and must be explicitly specified
+    /// using [`ExtractFieldInfo::with_arg`] if the function expects an argument.
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>];
 
-    fn get_extract_context(&mut self) -> Self::ExtractContext;
-
+    /// Generate the field schema for the Falco plugin framework
+    ///
+    /// The default implementation inspects all fields from [`Self::EXTRACT_FIELDS`] and generates
+    /// a JSON description in the format expected by the framework.
     fn get_fields() -> &'static CStr {
         static FIELD_SCHEMA: std::sync::OnceLock<CString> = std::sync::OnceLock::new();
         if FIELD_SCHEMA.get().is_none() {
@@ -107,14 +174,18 @@ where
         FIELD_SCHEMA.get().unwrap().as_c_str()
     }
 
+    /// Perform the actual field extraction
+    ///
+    /// The default implementation creates an empty context and loops over all extraction
+    /// requests, invoking the relevant function to actually generate the field value.
     fn extract_fields<'a>(
         &'a mut self,
-        event_input: &ss_plugin_event_input,
+        event_input: &EventInput,
         table_reader: TableReader,
         fields: &mut [ss_plugin_extract_field],
         storage: &'a mut FieldStorage,
     ) -> Result<(), anyhow::Error> {
-        let mut context = self.get_extract_context();
+        let mut context = Self::ExtractContext::default();
 
         for req in fields {
             let info = Self::EXTRACT_FIELDS

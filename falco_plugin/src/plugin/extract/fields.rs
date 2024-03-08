@@ -3,7 +3,6 @@ use falco_event::to_bytes::ToBytes;
 use falco_event::type_id::TypeId;
 use falco_plugin_api::ss_plugin_extract_field;
 use std::ffi::{c_void, CString};
-use std::time::Duration;
 
 pub trait Extract {
     const IS_LIST: bool;
@@ -102,15 +101,8 @@ macro_rules! extract_direct {
     };
 }
 
-extract_direct!(u8 => TypeId::U8);
-extract_direct!(i8 => TypeId::I8);
-extract_direct!(u16 => TypeId::U16);
-extract_direct!(i16 => TypeId::I16);
 extract_direct!(u32 => TypeId::U32);
-extract_direct!(i32 => TypeId::I32);
 extract_direct!(u64 => TypeId::U64);
-extract_direct!(i64 => TypeId::I64);
-extract_direct!(Duration => TypeId::RelTime);
 
 impl Extract for CString {
     const IS_LIST: bool = false;

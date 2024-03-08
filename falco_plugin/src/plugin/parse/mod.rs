@@ -5,6 +5,7 @@ use crate::plugin::tables::table::TypedTable;
 use falco_event::EventType;
 use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input};
 
+#[doc(hidden)]
 pub mod wrappers;
 
 pub trait ParsePlugin: Plugin {

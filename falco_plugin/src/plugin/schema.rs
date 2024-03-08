@@ -18,10 +18,15 @@ pub enum ConfigSchemaType {
     Json(&'static CStr),
 }
 
+/// A wrapper to mark a configuration schema as JSON-encoded
+///
+/// Using this type as the configuration type in your plugin automatically generates
+/// the schema describing the configuration format.
 #[derive(Debug)]
 pub struct Json<T: JsonSchema + DeserializeOwned>(T);
 
 impl<T: JsonSchema + DeserializeOwned> Json<T> {
+    /// Extract the parsed configuration object from the JSON wrapper
     pub fn into_inner(self) -> T {
         self.0
     }

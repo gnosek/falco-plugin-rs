@@ -68,7 +68,7 @@ pub struct DynamicField {
 
 // TODO(sdk) consider predefined fields (with a derive)
 // TODO(sdk) maybe use tinyvec (here, for storage and for extractions)
-struct DynamicTable<K: TableKey + Ord + Clone> {
+pub struct DynamicTable<K: TableKey + Ord + Clone> {
     name: CString,
     fields: BTreeMap<CString, Rc<RefCell<DynamicField>>>,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,

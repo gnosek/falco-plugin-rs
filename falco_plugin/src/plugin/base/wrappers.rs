@@ -95,7 +95,7 @@ pub unsafe fn plugin_destroy<P: Plugin>(plugin: *mut falco_plugin_api::ss_plugin
 
 /// # Safety
 ///
-/// `plugin` must be a valid pointer to PluginWrapper<P>
+/// `plugin` must be a valid pointer to `PluginWrapper<P>`
 pub unsafe fn plugin_get_last_error<P: Plugin>(
     plugin: *mut falco_plugin_api::ss_plugin_t,
 ) -> *const c_char {
@@ -106,6 +106,7 @@ pub unsafe fn plugin_get_last_error<P: Plugin>(
     }
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! wrap_ffi {
     (use $mod:path: <$ty:ty>;
@@ -117,12 +118,19 @@ macro_rules! wrap_ffi {
         pub unsafe extern "C" fn $name ( $($param: $param_ty),*) -> $ret {
             use $mod as wrappers;
 
+            // In release builds, catch all panics to maintain the ABI
+            // (unwinding across FFI boundaries is undefined behavior)
             #[cfg(not(debug_assertions))]
             match std::panic::catch_unwind(|| wrappers::$name::<$ty>($($param),*)) {
                 Ok(ret) => ret,
                 Err(_) => std::process::abort(),
             }
 
+            // In debug builds, do not interrupt unwinding. This is technically UB,
+            // but seems to work in practice (famous last words). More importantly,
+            // it allows easier debugging (it seems it's hard to single-step into
+            // the closure passed to catch_unwind as it ends up being called from
+            // a compiler built-in function we cannot single-step through)
             #[cfg(debug_assertions)]
             wrappers::$name::<$ty>($($param),*)
         }

@@ -1,4 +1,5 @@
 pub mod async_handler;
+#[doc(hidden)]
 pub mod wrappers;
 
 use crate::base::Plugin;

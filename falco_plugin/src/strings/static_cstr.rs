@@ -1,3 +1,15 @@
+/// # Create a static C-style string
+///
+/// This macro will be removed once Rust 1.77 is stable, as it's going to support C-style
+/// strings natively, using the `c"string contents"` syntax. Until then, use this macro
+/// like this instead:
+/// ```
+/// use std::ffi::CStr;
+/// use falco_plugin::c;
+/// let foo: &'static CStr = c!("string contents");
+/// ```
+///
+/// and be very careful not to embed NULs in your string.
 #[macro_export]
 macro_rules! c {
     ($s:expr) => {

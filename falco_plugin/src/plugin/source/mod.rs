@@ -11,6 +11,7 @@ use crate::FailureReason;
 
 pub mod event_batch;
 pub mod open_params;
+#[doc(hidden)]
 pub mod wrappers;
 
 pub trait SourcePlugin: Plugin {

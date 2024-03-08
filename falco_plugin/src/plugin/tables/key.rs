@@ -5,6 +5,8 @@ use falco_plugin_api::ss_plugin_state_data;
 
 use crate::plugin::tables::field::FromData;
 
+// TODO(sdk) we need a tag type, just like for FromData
+//           (we cannot easily have a TypedTable<&'any CStr>)
 pub trait ToData {
     const TYPE_ID: TypeId;
 

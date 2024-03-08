@@ -58,6 +58,13 @@ impl FromDataTag for CStr {
     type Actual<'a> = &'a CStr;
 }
 
+/// # Table field descriptor
+///
+/// This struct wraps an opaque pointer from the Falco plugin API, representing a particular
+/// field of a table, while also remembering which data type the field holds.
+///
+/// You probably won't need to construct any values of this type, but you will receive
+/// them from [`tables::TypedTable<K>::get_field`](`crate::tables::TypedTable::get_field`)
 pub struct TypedTableField<V: FromDataTag + ?Sized> {
     pub(crate) field: *mut ss_plugin_table_field_t,
     value_type: PhantomData<V>,

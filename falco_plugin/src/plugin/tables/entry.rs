@@ -50,7 +50,7 @@ impl TableEntryReader {
         }
     }
 
-    pub fn with_writer(
+    pub(crate) fn with_writer(
         self,
         writer_vtable: *const ss_plugin_table_writer_vtable_ext,
     ) -> TableEntry {

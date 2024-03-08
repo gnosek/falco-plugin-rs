@@ -72,7 +72,7 @@ impl DummyPlugin {
         input: &ss_plugin_event_input,
         tables: &TableReader,
     ) -> Result<u64, Error> {
-        let tid = input.event()?.metadata.tid as i64;
+        let tid = input.event()?.metadata.tid;
         let mut reader = tables
             .table_entry(&self.thread_table, &tid)
             .ok_or_else(|| anyhow!("tid not found"))?;
@@ -91,8 +91,6 @@ impl ExtractPlugin for DummyPlugin {
         field("example.msgs", &Self::extract_sample_strs),
         field("example.num", &Self::extract_sample_num),
     ];
-
-    fn get_extract_context(&mut self) -> Self::ExtractContext {}
 }
 
 plugin!(DummyPlugin);

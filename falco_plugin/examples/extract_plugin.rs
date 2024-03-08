@@ -79,8 +79,6 @@ impl ExtractPlugin for DummyPlugin {
         field("example.msgs", &Self::extract_sample_strs),
         field("example.nums", &Self::extract_sample_nums),
     ];
-
-    fn get_extract_context(&mut self) -> Self::ExtractContext {}
 }
 
 plugin!(DummyPlugin);
