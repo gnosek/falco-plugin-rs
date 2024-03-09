@@ -8,6 +8,11 @@ use falco_plugin_api::{
 };
 use std::mem::ManuallyDrop;
 
+/// # A read-only accessor to a table entry
+///
+/// This type corresponds to a particular entry in a table.
+///
+/// See the [`TableInitInput` trait](`crate::base::TableInitInput`) for more details.
 pub struct TableEntryReader {
     pub(crate) table: *mut ss_plugin_table_t,
     pub(crate) entry: *mut ss_plugin_table_entry_t,
@@ -17,21 +22,19 @@ pub struct TableEntryReader {
     pub(crate) entry_value: ss_plugin_state_data,
 }
 
-pub struct TableEntry {
-    reader: ManuallyDrop<TableEntryReader>,
-    writer_vtable: *const ss_plugin_table_writer_vtable_ext,
-
-    // if from_reader, we have to call release_entry on drop,
-    // otherwise destroy_entry
-    from_reader: bool,
-}
-
 impl TableEntryReader {
     //noinspection DuplicatedCode
+    /// # Read the value of a field for a particular table entry
+    ///
+    /// Given a [field descriptor](`crate::tables::TypedTableField`), this method returns
+    /// the value of that field for the entry it describes
     pub fn read_field<'a, V: FromDataTag + ?Sized>(
         &'a mut self,
         field: &'a TypedTableField<V>,
     ) -> Result<V::Actual<'a>, anyhow::Error> {
+        if self.table != field.table {
+            anyhow::bail!("Trying to access a field from another table")
+        }
         unsafe {
             let read_entry_field = self
                 .reader_vtable
@@ -76,7 +79,25 @@ impl Drop for TableEntryReader {
     }
 }
 
+/// # A read-write accessor to a table entry
+///
+/// This type corresponds to a particular entry in a table.
+///
+/// See the [`TableInitInput` trait](`crate::base::TableInitInput`) for more details.
+pub struct TableEntry {
+    reader: ManuallyDrop<TableEntryReader>,
+    writer_vtable: *const ss_plugin_table_writer_vtable_ext,
+
+    // if from_reader, we have to call release_entry on drop,
+    // otherwise destroy_entry
+    from_reader: bool,
+}
+
 impl TableEntry {
+    /// # Read the value of a field for a particular table entry
+    ///
+    /// Given a [field descriptor](`crate::tables::TypedTableField`), this method returns
+    /// the value of that field for the entry it describes.
     pub fn read_field<'a, V: FromDataTag + ?Sized>(
         &'a mut self,
         field: &'a TypedTableField<V>,
@@ -84,11 +105,18 @@ impl TableEntry {
         self.reader.read_field(field)
     }
 
+    /// # Write the value of a field for a particular table entry
+    ///
+    /// Given a [field descriptor](`crate::tables::TypedTableField`), this method sets
+    /// the value of that field for the entry it describes to `value`.
     pub fn write_field<V: FromDataTag + ?Sized>(
         &self,
         field: &TypedTableField<V>,
         value: V::Actual<'_>,
     ) -> Result<(), anyhow::Error> {
+        if self.reader.table != field.table {
+            anyhow::bail!("Trying to access a field from another table")
+        }
         let value = value.to_data();
         let write_entry_field = unsafe {
             self.writer_vtable

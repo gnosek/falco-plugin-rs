@@ -45,6 +45,40 @@ use crate::FailureReason;
 ///
 /// - call the [`read_field`](`crate::tables::TableEntry::read_field`) methods, which lets you
 ///   read the table field (this method takes the field object you stored earlier)
+///
+/// ## Tables, entries and fields
+///
+/// The Falco plugin framework uses concrete objects (opaque pointers behind the scenes) to describe
+/// tables, table entries and fields. This is somewhat different from what you're probably used to
+/// but serves performance optimizations (table lookups happen in a pretty hot path!).
+///
+/// A table can be thought of as a map of structs, like this:
+/// ```
+/// use std::collections::BTreeMap;
+///
+/// struct MyStruct {
+///     field1: u64,
+///     field2: u32,
+/// }
+///
+/// type MyTable = BTreeMap<u64, MyStruct>;
+/// ```
+///
+/// with the important difference that the list of fields can be extended at runtime (you could e.g.
+/// add a new `field3: &CStr` to `MyStruct`).
+///
+/// Using simple syntax, you could access the contents of `MyTable` like this, with the corresponding
+/// types from the Falco plugin SDK marked:
+/// ```ignore
+/// let val = my_table[123].field2;
+/// //        ^^^^^^^^              TypedTable<u64>
+/// //        ^^^^^^^^^^^^^         TableEntry
+/// //                      ^^^^^^  TypedTableField<u32>
+/// ```
+///
+/// In the above example, the table and field objects are constant for the life of the plugin,
+/// while you will create and destroy entry objects whenever you need to access a particular
+/// table key.
 pub trait InitInput {
     /// # List the available tables
     ///

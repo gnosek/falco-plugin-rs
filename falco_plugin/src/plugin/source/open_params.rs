@@ -2,15 +2,25 @@ use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 use std::ffi::{CStr, CString};
 
+/// # Specification of open parameters for a source plugin instance
+///
+/// **Note**: this appears unused as of API version 3.4.0
 #[derive(Debug)]
 pub enum OpenParam<'a> {
+    /// # A single string valid as a sample open parameter
     Item {
+        /// the value itself
         value: &'a str,
+        /// the description
         desc: &'a str,
     },
+    /// # A sequence of strings, each valid as a sample open parameter
     Seq {
+        /// the values itself
         values: &'a [&'a str],
+        /// the description
         desc: &'a str,
+        /// the separator used to join the values together
         separator: char,
     },
 }
@@ -45,6 +55,12 @@ impl Serialize for OpenParam<'_> {
     }
 }
 
+/// # Serialize the open parameter specification
+///
+/// This function can be used in [`SourcePlugin::list_open_params`](`crate::source::SourcePlugin::list_open_params`)
+/// to describe the allowed values for the instance open parameters.
+///
+/// **Note**: this appears unused as of API version 3.4.0
 pub fn serialize_open_params<'a>(
     params: &[OpenParam],
     storage: &'a mut CString,

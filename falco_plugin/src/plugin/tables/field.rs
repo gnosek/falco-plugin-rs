@@ -1,5 +1,5 @@
 use crate::plugin::tables::key::ToData;
-use falco_plugin_api::{ss_plugin_state_data, ss_plugin_table_field_t};
+use falco_plugin_api::{ss_plugin_state_data, ss_plugin_table_field_t, ss_plugin_table_t};
 use std::ffi::CStr;
 use std::marker::PhantomData;
 
@@ -67,13 +67,15 @@ impl FromDataTag for CStr {
 /// them from [`tables::TypedTable<K>::get_field`](`crate::tables::TypedTable::get_field`)
 pub struct TypedTableField<V: FromDataTag + ?Sized> {
     pub(crate) field: *mut ss_plugin_table_field_t,
+    pub(crate) table: *mut ss_plugin_table_t, // used only for validation at call site
     value_type: PhantomData<V>,
 }
 
 impl<V: FromDataTag + ?Sized> TypedTableField<V> {
-    pub(crate) fn new(field: *mut ss_plugin_table_field_t) -> Self {
+    pub(crate) fn new(field: *mut ss_plugin_table_field_t, table: *mut ss_plugin_table_t) -> Self {
         Self {
             field,
+            table,
             value_type: PhantomData,
         }
     }

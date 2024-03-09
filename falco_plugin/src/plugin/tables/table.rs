@@ -19,6 +19,9 @@ use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
 use crate::tables::TypedTableField;
 use crate::FailureReason;
 
+/// # A handle for a specific table
+///
+/// See [`base::TableInitInput`](`crate::base::TableInitInput`) for details.
 pub struct TypedTable<K: TableKey> {
     table: *mut ss_plugin_table_t,
     fields_vtable: *const ss_plugin_table_fields_vtable_ext,
@@ -52,7 +55,11 @@ impl<K: TableKey> TypedTable<K> {
         }
     }
 
-    // fields
+    /// # List the available fields
+    ///
+    /// **Note**: this method is of limited utility in actual plugin code (you know the fields you
+    /// want to access), so it returns the unmodified structure from the plugin API, including
+    /// raw pointers to C-style strings. This may change later.
     pub fn list_fields(
         &self,
         fields_vtable: &ss_plugin_table_fields_vtable_ext,
@@ -68,6 +75,13 @@ impl<K: TableKey> TypedTable<K> {
         }
     }
 
+    /// # Get a table field by name
+    ///
+    /// The field must exist in the table and must be of the type `V`, otherwise an error
+    /// will be returned.
+    ///
+    /// Note that the field objects remembers the table it was retrieved from and accessing
+    /// an entry from a different table will cause an error at runtime.
     pub fn get_field<V: FromDataTag + ?Sized>(
         &self,
         name: &CStr,
@@ -76,7 +90,7 @@ impl<K: TableKey> TypedTable<K> {
         let get_table_field = fields_vtable
             .get_table_field
             .ok_or(FailureReason::Failure)?;
-        let table = unsafe {
+        let field = unsafe {
             get_table_field(
                 self.table,
                 name.as_ptr().cast(),
@@ -85,9 +99,15 @@ impl<K: TableKey> TypedTable<K> {
             .as_mut()
             .ok_or(FailureReason::Failure)?
         };
-        Ok(TypedTableField::<V>::new(table as *mut _))
+        Ok(TypedTableField::<V>::new(field as *mut _, self.table))
     }
 
+    /// # Add a table field
+    ///
+    /// The field will have the specified name and the type is derived from the generic argument.
+    ///
+    /// Note that the field objects remembers the table it was retrieved from and accessing
+    /// an entry from a different table will cause an error at runtime.
     pub fn add_field<V: FromDataTag + ?Sized>(
         &self,
         name: &CStr,
@@ -106,10 +126,12 @@ impl<K: TableKey> TypedTable<K> {
             .as_mut()
         }
         .ok_or(FailureReason::Failure)?;
-        Ok(TypedTableField::<V>::new(table as *mut _))
+        Ok(TypedTableField::<V>::new(table as *mut _, self.table))
     }
 
-    // reads
+    /// # Get the table name
+    ///
+    /// This method returns an error if the name cannot be represented as UTF-8
     pub fn get_name(
         &self,
         reader_vtable: &ss_plugin_table_reader_vtable_ext,
@@ -121,6 +143,9 @@ impl<K: TableKey> TypedTable<K> {
         )?)
     }
 
+    /// # Get the table size
+    ///
+    /// Return the number of entries in the table
     pub fn get_size(
         &self,
         reader_vtable: &ss_plugin_table_reader_vtable_ext,
@@ -129,7 +154,7 @@ impl<K: TableKey> TypedTable<K> {
         Ok(unsafe { get_table_size(self.table) } as usize)
     }
 
-    pub fn get_entry(
+    pub(crate) fn get_entry(
         &self,
         reader_vtable: &ss_plugin_table_reader_vtable_ext,
         key: &K,
@@ -147,6 +172,14 @@ impl<K: TableKey> TypedTable<K> {
         })
     }
 
+    /// # Iterate over all entries in a table with read-only access
+    ///
+    /// The closure is called once for each table entry with a corresponding [`TableEntryReader`]
+    /// object as a parameter.
+    ///
+    /// The iteration stops when either all entries have been processed or the closure returns `false`.
+    ///
+    /// TODO(sdk): this should be wrapped by [`crate::tables::TableReader`]
     pub fn iter_entries<F>(
         &self,
         reader_vtable: &ss_plugin_table_reader_vtable_ext,
@@ -178,6 +211,14 @@ impl<K: TableKey> TypedTable<K> {
         )
     }
 
+    /// # Iterate over all entries in a table with mutable access
+    ///
+    /// The closure is called once for each table entry with a corresponding [`TableEntry`]
+    /// object as a parameter.
+    ///
+    /// The iteration stops when either all entries have been processed or the closure returns `false`.
+    ///
+    /// TODO(sdk): this should be wrapped by [`crate::plugin::parse::EventParseInput`]
     pub fn iter_entries_mut<F>(
         &self,
         reader_vtable: &ss_plugin_table_reader_vtable_ext,

@@ -92,7 +92,7 @@ impl ExtractField for ss_plugin_extract_field {
     }
 }
 
-/// Support for field extraction plugins
+/// # Support for field extraction plugins
 pub trait ExtractPlugin: Plugin + Sized
 where
     Self: 'static,
@@ -128,13 +128,17 @@ where
     /// use falco_plugin::extract::{EventInput, ExtractFieldRequestArg};
     /// use falco_plugin::tables::TableReader;
     ///
+    /// # type R = u32;
+    ///
     /// fn extract_sample(
     ///     &mut self,
     ///     context: &mut (),
     ///     arg: ExtractFieldRequestArg,
     ///     event: &EventInput,
     ///     tables: &TableReader,
-    /// ) -> Result<R, Error>;
+    /// ) -> Result<R, Error> {
+    /// #   Ok(0)
+    /// }
     ///
     /// ```
     /// where `R` is one of the following types or a [`Vec`] of them:

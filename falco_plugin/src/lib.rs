@@ -1,4 +1,5 @@
 #![warn(missing_docs)]
+#![deny(rustdoc::broken_intra_doc_links)]
 //! # Falco plugin SDK
 //!
 //! This crate provides a framework for writing [Falco](https://github.com/falcosecurity/falco)
@@ -112,11 +113,11 @@ pub mod base {
 /// trait, for example:
 ///
 /// ```
-/// use std::ffi::CString;
+/// use std::ffi::{CStr, CString};
 /// use anyhow::Error;
 /// use falco_event::EventType;
-/// use falco_plugin::base::Plugin;
-/// use falco_plugin::{c, extract_plugin, plugin};
+/// use falco_plugin::base::{InitInput, Plugin};
+/// use falco_plugin::{c, extract_plugin, FailureReason, plugin};
 /// use falco_plugin::extract::{
 ///     EventInput,
 ///     ExtractFieldInfo,
@@ -126,7 +127,19 @@ pub mod base {
 /// use falco_plugin::tables::TableReader;
 ///
 /// struct MyExtractPlugin;
-/// impl Plugin for MyExtractPlugin { /* ... */ }
+/// impl Plugin for MyExtractPlugin {
+///     // ...
+/// #    const NAME: &'static CStr = c!("sample-plugin-rs");
+/// #    const PLUGIN_VERSION: &'static CStr = c!("0.0.1");
+/// #    const DESCRIPTION: &'static CStr = c!("A sample Falco plugin that does nothing");
+/// #    const CONTACT: &'static CStr = c!("you@example.com");
+/// #    type ConfigType = ();
+/// #
+/// #    fn new(input: &InitInput, config: Self::ConfigType)
+/// #        -> Result<Self, FailureReason> {
+/// #        Ok(MyExtractPlugin)
+/// #    }
+/// }
 ///
 /// impl MyExtractPlugin { // note this is not the trait implementation
 ///     fn extract_sample(
@@ -148,10 +161,6 @@ pub mod base {
 ///     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
 ///         field("my_extract.sample", &Self::extract_sample),
 ///     ];
-///
-///     fn get_extract_context(&mut self) -> Self::ExtractContext {
-///         ()
-///     }
 /// }
 ///
 /// plugin!(MyExtractPlugin);
@@ -175,6 +184,7 @@ pub mod extract {
 }
 
 pub mod parse {
+    pub use falco_plugin_api::ss_plugin_event_input as EventInput;
     pub use falco_plugin_api::ss_plugin_event_parse_input as ParseInput;
 
     pub use crate::plugin::parse::EventParseInput;
@@ -189,13 +199,12 @@ pub mod async_event {
 }
 
 pub mod source {
-    pub use falco_event::events::PPME_PLUGINEVENT_E as PluginEvent;
-
     pub use crate::plugin::source::event_batch::EventBatch;
-    pub use crate::plugin::source::event_batch::EventBatchStorage;
     pub use crate::plugin::source::open_params::{serialize_open_params, OpenParam};
     pub use crate::plugin::source::{ProgressInfo, SourcePlugin, SourcePluginInstance};
     pub use crate::strings::cstring_writer::CStringWriter;
+    pub use falco_event::events::PPME_PLUGINEVENT_E as PluginEvent;
+    pub use falco_plugin_api::ss_plugin_event_input as EventInput;
 }
 
 pub mod tables {

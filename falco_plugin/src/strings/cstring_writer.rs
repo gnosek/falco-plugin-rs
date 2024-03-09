@@ -3,6 +3,27 @@ use std::ffi::CString;
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 
+/// # A helper that enables writing into CStrings
+///
+/// This type implements [`Write`] and yields a [`CString`] at the end,
+/// which is useful for generating string data to be shared with the Falco
+/// plugin framework.
+///
+/// The [`Write`] implementation returns an error whenever the data to be written
+/// contains a NUL byte.
+///
+/// Example:
+/// ```
+/// use std::ffi::CString;
+/// use falco_plugin::source::CStringWriter;
+/// use std::io::Write;
+/// let mut writer = CStringWriter::default();
+///
+/// write!(writer, "Hello, world, five={}", 5)?;
+///
+/// let output: CString = writer.into_cstring();
+/// # Result::<(), std::io::Error>::Ok(())
+/// ```
 #[derive(Default)]
 pub struct CStringWriter(Vec<u8>);
 
@@ -32,6 +53,10 @@ impl Write for CStringWriter {
 }
 
 impl CStringWriter {
+    /// # Finalize the writer object and return a [`CString`]
+    ///
+    /// This method consumes the CStringWriter and returns a CString
+    /// containing all the written data
     pub fn into_cstring(mut self) -> CString {
         self.0.push(0);
 
@@ -40,6 +65,11 @@ impl CStringWriter {
         unsafe { CString::from_vec_with_nul_unchecked(self.0) }
     }
 
+    /// # Finalize the writer object and store the output in a [`CString`]
+    ///
+    /// This method consumes the CStringWriter, but instead of returning
+    /// a CString, it stores the output in an existing CString (replacing
+    /// any previous content).
     pub fn store(self, target: &mut CString) {
         let mut s = self.into_cstring();
         std::mem::swap(&mut s, target)

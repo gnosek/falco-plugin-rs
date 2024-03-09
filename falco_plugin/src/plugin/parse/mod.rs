@@ -1,29 +1,63 @@
+use falco_event::EventType;
+
+use crate::parse::{EventInput, ParseInput};
 use crate::plugin::base::Plugin;
 use crate::plugin::tables::entry::TableEntry;
 use crate::plugin::tables::key::TableKey;
 use crate::plugin::tables::table::TypedTable;
-use falco_event::EventType;
-use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input};
 
 #[doc(hidden)]
 pub mod wrappers;
 
+/// # Support for event parse plugins
 pub trait ParsePlugin: Plugin {
+    /// # Supported event types
+    ///
+    /// This list contains the event types that this plugin will receive
+    /// for event parsing. Events that are not included in this list
+    /// will not be received by the plugin.
+    ///
+    /// This is a non-functional filter that should not influence the plugin's
+    /// functional behavior. Instead, this is a performance optimization
+    /// with the goal of avoiding unnecessary communication between the
+    /// framework and the plugin for events that are known to be not used for
+    /// event parsing.
+    ///
+    /// If this list is empty, then:
+    /// - the plugin will receive every event type if [`ParsePlugin::EVENT_SOURCES`]
+    ///   is compatible with the "syscall" event source, otherwise
+    /// - the plugin will only receive events of plugin type [`falco_event::events::PPME_PLUGINEVENT_E`].
     const EVENT_TYPES: &'static [EventType];
+
+    /// # Supported event sources
+    ///
+    /// This list contains the event sources that this plugin is capable of parsing.
+    ///
+    /// If this list is empty, then if plugin has sourcing capability, and implements a specific
+    /// event source, it will only receive events matching its event source, otherwise it will
+    /// receive events from all event sources.
     const EVENT_SOURCES: &'static [&'static str];
 
-    fn parse_event(
-        &mut self,
-        event: &ss_plugin_event_input,
-        parse_input: &ss_plugin_event_parse_input,
-    ) -> anyhow::Result<()>;
+    /// # Parse an event
+    ///
+    /// Receives an event from the current capture and parses its content.
+    /// The plugin is guaranteed to receive an event at most once, after any
+    /// operation related the event sourcing capability, and before
+    /// any operation related to the field extraction capability.
+    fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput) -> anyhow::Result<()>;
 }
 
+/// # Allow table access during event parsing
+///
+/// See [`base::TableInitInput`](`crate::base::TableInitInput`) for details
 pub trait EventParseInput {
+    /// # Look up an entry in `table` corresponding to `key`
+    ///
+    /// See [`base::TableInitInput`](`crate::base::TableInitInput`) for details
     fn table_entry<K: TableKey>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry>;
 }
 
-impl EventParseInput for ss_plugin_event_parse_input {
+impl EventParseInput for ParseInput {
     fn table_entry<K: TableKey>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry> {
         unsafe {
             Some(

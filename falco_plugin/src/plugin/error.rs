@@ -6,17 +6,41 @@ use thiserror::Error;
 use crate::strings::from_ptr::try_str_from_ptr;
 use falco_plugin_api::{ss_plugin_owner_t, ss_plugin_rc};
 
+/// # Failure reason to report to the plugin framework
 #[derive(Debug, Clone, Copy, Error)]
 pub enum FailureReason {
+    /// # General failure
+    ///
+    /// This failure reason indicates an actual error that occurred and may end up with
+    /// the Falco process shutting down (after a long chain of error propagation).
+    ///
+    /// All [`Result`] values without a specific reason set default to this value
     #[error("failure")]
     Failure,
 
+    /// # Timeout
+    ///
+    /// This is not an actual failure but an indication that there's no data available yet.
+    /// This code is meaningful in source plugins, in the [`next_batch`](`crate::source::SourcePluginInstance::next_batch`)
+    /// method.
+    ///
+    /// The framework will retry the call at a later time.
     #[error("timeout")]
     Timeout,
 
+    /// # End of data
+    ///
+    /// This is not an actual failure but an indication that there will be no more data.
+    /// This code is meaningful in source plugins, in the [`next_batch`](`crate::source::SourcePluginInstance::next_batch`)
+    /// method.
+    ///
+    /// The framework will stop the event collection process cleanly.
     #[error("end of data")]
     Eof,
 
+    /// # Not supported
+    ///
+    /// This code indicates that an operation is not supported.
     #[error("not supported")]
     NotSupported,
 }
@@ -60,6 +84,7 @@ impl LastError {
     }
 }
 
+#[doc(hidden)]
 pub trait FfiResult {
     fn status_code(&self) -> ss_plugin_rc;
     fn set_last_error(&self, lasterr: &mut CString);

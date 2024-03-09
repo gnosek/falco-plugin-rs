@@ -1,7 +1,7 @@
 use falco_event::EventToBytes;
 
 #[derive(Default, Debug)]
-pub struct EventBatchStorage {
+pub(crate) struct EventBatchStorage {
     buf: Vec<u8>,
     offsets: Vec<usize>,
 
@@ -35,12 +35,26 @@ impl EventBatchStorage {
     }
 }
 
+/// # An object that describes a batch of events
+///
+/// This is only available by reference, not by ownership, since the data needs to outlive
+/// the plugin API call and is stored elsewhere (in a wrapper struct that's not exposed to
+/// plugin developers)
 pub struct EventBatch<'a> {
     buf: &'a mut Vec<u8>,
     offsets: &'a mut Vec<usize>,
 }
 
 impl EventBatch<'_> {
+    /// # Add an event to a batch
+    ///
+    /// The event can be any type, but please note that the framework may have different
+    /// opinions on this. For example, only source plugins with the `syscall` source can generate
+    /// events other than [`falco_event::events::PPME_PLUGINEVENT_E`].
+    ///
+    /// **Note**: to generate such events, you may use
+    /// the [`source::SourcePluginInstance::plugin_event`](`crate::source::SourcePluginInstance::plugin_event`)
+    /// helper method.
     pub fn add(&mut self, event: impl EventToBytes) -> std::io::Result<()> {
         let pos = self.buf.len();
         event.write(&mut self.buf)?;
