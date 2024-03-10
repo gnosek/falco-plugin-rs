@@ -224,21 +224,12 @@ mod strings;
 
 #[doc(hidden)]
 pub mod internals {
-    pub use falco_plugin_api::plugin_api;
-    pub use falco_plugin_api::ss_plugin_rc_SS_PLUGIN_SUCCESS as SUCCESS;
-
-    pub use crate::plugin::error::FfiResult;
-
     pub mod base {
         pub use crate::plugin::base::wrappers;
-        pub use crate::plugin::base::PluginWrapper;
     }
 
     pub mod source {
-        pub use falco_plugin_api::ss_plugin_event;
-
         pub use crate::plugin::source::wrappers;
-        pub use crate::plugin::source::SourcePluginInstanceWrapper;
     }
 
     pub mod extract {

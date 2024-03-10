@@ -1,7 +1,7 @@
-use crate::internals::FfiResult;
 use crate::plugin::async_event::async_handler::AsyncHandler;
 use crate::plugin::async_event::AsyncEventPlugin;
 use crate::plugin::base::PluginWrapper;
+use crate::plugin::error::FfiResult;
 use falco_plugin_api::{
     ss_plugin_async_event_handler_t, ss_plugin_owner_t, ss_plugin_rc,
     ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_t,

@@ -1,4 +1,4 @@
-use crate::internals::FfiResult;
+use crate::plugin::error::FfiResult;
 use crate::plugin::exported_tables::ExportedTable;
 use crate::plugin::tables::field::FromData;
 use falco_event::type_id::TypeId;

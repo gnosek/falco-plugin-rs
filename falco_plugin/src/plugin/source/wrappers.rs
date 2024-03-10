@@ -221,7 +221,7 @@ macro_rules! source_plugin {
                 plugin: *mut falco_plugin_api::ss_plugin_t,
                 instance: *mut falco_plugin_api::ss_instance_t,
                 nevts: *mut u32,
-                evts: *mut *mut *mut $crate::internals::source::ss_plugin_event,
+                evts: *mut *mut *mut falco_plugin_api::ss_plugin_event,
             ) -> i32;
             unsafe fn plugin_get_progress(
                 plugin: *mut falco_plugin_api::ss_plugin_t,

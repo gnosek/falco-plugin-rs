@@ -90,7 +90,7 @@ pub struct ProgressInfo<'a> {
     detail: Option<&'a CStr>,
 }
 
-pub struct SourcePluginInstanceWrapper<I: SourcePluginInstance> {
+pub(crate) struct SourcePluginInstanceWrapper<I: SourcePluginInstance> {
     pub(crate) instance: I,
     pub(crate) batch: EventBatchStorage,
 }
