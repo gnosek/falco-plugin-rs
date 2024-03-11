@@ -72,7 +72,7 @@ pub struct DynamicField {
 // TODO(sdk) maybe use tinyvec (here, for storage and for extractions)
 pub struct DynamicTable<K: TableData + Ord + Clone> {
     name: CString,
-    fields: BTreeMap<CString, Rc<RefCell<DynamicField>>>,
+    fields: BTreeMap<CString, Rc<DynamicField>>,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,
     data: BTreeMap<K, Rc<RefCell<BTreeMap<usize, DynamicFieldValue>>>>,
 }
@@ -114,7 +114,7 @@ pub trait ExportedTable {
 impl<K: TableData + Ord + Clone> ExportedTable for DynamicTable<K> {
     type Key = K;
     type Entry = RefCell<BTreeMap<usize, DynamicFieldValue>>;
-    type Field = RefCell<DynamicField>;
+    type Field = DynamicField;
 
     fn name(&self) -> &CStr {
         self.name.as_c_str()
@@ -134,10 +134,7 @@ impl<K: TableData + Ord + Clone> ExportedTable for DynamicTable<K> {
         field: &Rc<Self::Field>,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), FailureReason> {
-        let (type_id, index) = {
-            let field = field.borrow();
-            (field.type_id, field.index)
-        };
+        let (type_id, index) = { (field.type_id, field.index) };
 
         entry
             .borrow()
@@ -183,10 +180,7 @@ impl<K: TableData + Ord + Clone> ExportedTable for DynamicTable<K> {
         field: &Rc<Self::Field>,
         value: &ss_plugin_state_data,
     ) -> Result<(), FailureReason> {
-        let (type_id, index) = {
-            let field = field.borrow();
-            (field.type_id, field.index)
-        };
+        let (type_id, index) = { (field.type_id, field.index) };
 
         let value =
             unsafe { DynamicFieldValue::from_data(value, type_id).ok_or(FailureReason::Failure)? };
@@ -202,11 +196,8 @@ impl<K: TableData + Ord + Clone> ExportedTable for DynamicTable<K> {
 
     fn get_field(&self, name: &CStr, field_type: TypeId) -> Option<Rc<Self::Field>> {
         let field = self.fields.get(name)?;
-        {
-            let field = field.borrow();
-            if field.type_id != field_type {
-                return None;
-            }
+        if field.type_id != field_type {
+            return None;
         }
         Some(Rc::clone(field))
     }
@@ -219,10 +210,10 @@ impl<K: TableData + Ord + Clone> ExportedTable for DynamicTable<K> {
         let index = self.field_descriptors.len();
         let name = name.to_owned();
 
-        let field = Rc::new(RefCell::new(DynamicField {
+        let field = Rc::new(DynamicField {
             index,
             type_id: field_type,
-        }));
+        });
         self.fields.insert(name.clone(), Rc::clone(&field));
 
         self.field_descriptors.push(ss_plugin_table_fieldinfo {
