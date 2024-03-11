@@ -129,7 +129,8 @@ where
     /// use falco_plugin::tables::TableReader;
     ///
     /// # type R = u32;
-    ///
+    /// # struct Plugin;
+    /// # impl Plugin {
     /// fn extract_sample(
     ///     &mut self,
     ///     context: &mut (),
@@ -139,6 +140,7 @@ where
     /// ) -> Result<R, Error> {
     /// #   Ok(0)
     /// }
+    /// # }
     ///
     /// ```
     /// where `R` is one of the following types or a [`Vec`] of them:

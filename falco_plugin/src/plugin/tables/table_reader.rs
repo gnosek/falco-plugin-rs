@@ -1,5 +1,5 @@
+use crate::plugin::tables::data::TableData;
 use crate::plugin::tables::entry::TableEntryReader;
-use crate::plugin::tables::key::TableKey;
 use crate::tables::TypedTable;
 use falco_plugin_api::ss_plugin_table_reader_vtable_ext;
 
@@ -19,7 +19,7 @@ impl TableReader {
     /// the corresponding [entry](`TableEntryReader`), which can be used to read individual fields.
     ///
     /// Returns [`None`] if the entry cannot be found
-    pub fn table_entry<K: TableKey>(
+    pub fn table_entry<K: TableData>(
         &self,
         table: &TypedTable<K>,
         key: &K,

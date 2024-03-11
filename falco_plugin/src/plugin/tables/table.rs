@@ -12,9 +12,8 @@ use falco_plugin_api::{
 };
 
 use crate::plugin::error::LastError;
+use crate::plugin::tables::data::TableData;
 use crate::plugin::tables::entry::{TableEntry, TableEntryReader};
-use crate::plugin::tables::field::FromDataTag;
-use crate::plugin::tables::key::{TableKey, ToData};
 use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
 use crate::tables::TypedTableField;
 use crate::FailureReason;
@@ -22,7 +21,7 @@ use crate::FailureReason;
 /// # A handle for a specific table
 ///
 /// See [`base::TableInitInput`](`crate::base::TableInitInput`) for details.
-pub struct TypedTable<K: TableKey> {
+pub struct TypedTable<K: TableData> {
     table: *mut ss_plugin_table_t,
     fields_vtable: *const ss_plugin_table_fields_vtable_ext,
     last_error: LastError,
@@ -38,7 +37,7 @@ pub enum TableError {
     FromPtrError(#[from] FromPtrError),
 }
 
-impl<K: TableKey> TypedTable<K> {
+impl<K: TableData> TypedTable<K> {
     pub(crate) fn new(
         table: *mut ss_plugin_table_t,
         fields_vtable: *const ss_plugin_table_fields_vtable_ext,
@@ -82,7 +81,7 @@ impl<K: TableKey> TypedTable<K> {
     ///
     /// Note that the field objects remembers the table it was retrieved from and accessing
     /// an entry from a different table will cause an error at runtime.
-    pub fn get_field<V: FromDataTag + ?Sized>(
+    pub fn get_field<V: TableData + ?Sized>(
         &self,
         name: &CStr,
     ) -> Result<TypedTableField<V>, FailureReason> {
@@ -94,7 +93,7 @@ impl<K: TableKey> TypedTable<K> {
             get_table_field(
                 self.table,
                 name.as_ptr().cast(),
-                V::Actual::TYPE_ID as ss_plugin_state_type,
+                V::TYPE_ID as ss_plugin_state_type,
             )
             .as_mut()
             .ok_or(FailureReason::Failure)?
@@ -108,7 +107,7 @@ impl<K: TableKey> TypedTable<K> {
     ///
     /// Note that the field objects remembers the table it was retrieved from and accessing
     /// an entry from a different table will cause an error at runtime.
-    pub fn add_field<V: FromDataTag + ?Sized>(
+    pub fn add_field<V: TableData + ?Sized>(
         &self,
         name: &CStr,
     ) -> Result<TypedTableField<V>, FailureReason> {
@@ -121,7 +120,7 @@ impl<K: TableKey> TypedTable<K> {
             add_table_field(
                 self.table,
                 name.as_ptr().cast(),
-                V::Actual::TYPE_ID as ss_plugin_state_type,
+                V::TYPE_ID as ss_plugin_state_type,
             )
             .as_mut()
         }

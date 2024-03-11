@@ -11,7 +11,7 @@ use falco_plugin_api::{
 use crate::plugin::error::{AsResult, LastError};
 use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, writer_vtable};
 use crate::plugin::exported_tables::ExportedTable;
-use crate::plugin::tables::key::TableKey;
+use crate::plugin::tables::data::TableData;
 use crate::plugin::tables::table::TypedTable;
 use crate::FailureReason;
 
@@ -93,11 +93,11 @@ pub trait InitInput {
     /// table. The generic parameter must correspond to the key type of the table in question.
     /// It must be one of:
     /// - a primitive numeric type (u8-u64, i8-i64)
-    /// - bool
+    /// - [`Bool`](`crate::tables::Bool`) (a [`bool`] equivalent)
     /// - [`CStr`](`std::ffi::CStr`) (the key type used for lookups is &CStr in that case)
     ///
     /// **Note**: CStr keys are broken right now (they expect &CStr as the key type)
-    fn get_table<K: TableKey>(&self, name: &CStr) -> Result<TypedTable<K>, FailureReason>;
+    fn get_table<K: TableData>(&self, name: &CStr) -> Result<TypedTable<K>, FailureReason>;
 
     /// # Expose a table for other plugins to use
     ///
@@ -109,7 +109,7 @@ pub trait InitInput {
     /// so you will have to register any fields that your plugin wishes to use as dynamic
     /// fields. This comes with some performance overhead and may change later, e.g. by
     /// introducing a custom derive macro for the ExportedTable trait.
-    fn add_table<K: TableKey, T: ExportedTable<Key = K>>(
+    fn add_table<K: TableData, T: ExportedTable<Key = K>>(
         &self,
         name: &'static CStr,
         table: Box<T>,
@@ -129,7 +129,7 @@ impl InitInput for ss_plugin_init_input {
         }
     }
 
-    fn get_table<K: TableKey>(&self, name: &CStr) -> Result<TypedTable<K>, FailureReason> {
+    fn get_table<K: TableData>(&self, name: &CStr) -> Result<TypedTable<K>, FailureReason> {
         let vtable = unsafe { self.tables.as_ref() }.ok_or(FailureReason::Failure)?;
         let fields_vtable = vtable.fields_ext as *const _;
         let table = unsafe {
@@ -151,7 +151,7 @@ impl InitInput for ss_plugin_init_input {
         }
     }
 
-    fn add_table<K: TableKey, T: ExportedTable>(
+    fn add_table<K: TableData, T: ExportedTable>(
         &self,
         name: &'static CStr,
         table: Box<T>,

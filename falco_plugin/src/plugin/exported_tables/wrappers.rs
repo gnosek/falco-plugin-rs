@@ -1,6 +1,8 @@
-use crate::plugin::error::FfiResult;
-use crate::plugin::exported_tables::ExportedTable;
-use crate::plugin::tables::field::FromData;
+use std::ffi::{c_char, CStr};
+use std::rc::Rc;
+
+use num_traits::FromPrimitive;
+
 use falco_event::type_id::TypeId;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_rc, ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS,
@@ -9,9 +11,10 @@ use falco_plugin_api::{
     ss_plugin_table_iterator_state_t, ss_plugin_table_reader_vtable_ext, ss_plugin_table_t,
     ss_plugin_table_writer_vtable_ext,
 };
-use num_traits::FromPrimitive;
-use std::ffi::{c_char, CStr};
-use std::rc::Rc;
+
+use crate::plugin::error::FfiResult;
+use crate::plugin::exported_tables::ExportedTable;
+use crate::plugin::tables::data::TableData;
 
 // SAFETY: `table` must be a valid pointer to T
 unsafe extern "C" fn get_table_name<T: ExportedTable>(
@@ -50,7 +53,7 @@ unsafe extern "C" fn get_table_entry<T: ExportedTable>(
         };
 
         let key = T::Key::from_data(key);
-        match table.lookup(&key) {
+        match table.lookup(key) {
             Some(entry) => Box::into_raw(Box::new(entry)) as *mut _,
             None => std::ptr::null_mut(),
         }
@@ -142,7 +145,7 @@ unsafe extern "C" fn erase_table_entry<T: ExportedTable>(
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let key = T::Key::from_data(key);
-        table.erase(&key);
+        table.erase(key);
     }
     ss_plugin_rc_SS_PLUGIN_SUCCESS
 }
@@ -174,7 +177,7 @@ unsafe extern "C" fn add_table_entry<T: ExportedTable>(
         let key = T::Key::from_data(key);
         let entry = Box::from_raw(entry as *mut Rc<T::Entry>);
 
-        match table.add(&key, *entry) {
+        match table.add(key, *entry) {
             Some(entry) => Box::into_raw(Box::new(entry)) as *mut _,
             None => std::ptr::null_mut(),
         }

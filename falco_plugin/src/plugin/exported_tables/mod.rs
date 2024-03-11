@@ -1,13 +1,15 @@
-pub(super) mod wrappers;
-
-use crate::plugin::tables::key::TableKey;
-use crate::FailureReason;
-use falco_event::type_id::TypeId;
-use falco_plugin_api::{ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
 use std::rc::Rc;
+
+use falco_event::type_id::TypeId;
+use falco_plugin_api::{ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo};
+
+use crate::plugin::tables::data::TableData;
+use crate::FailureReason;
+
+pub(super) mod wrappers;
 
 // ss_plugin_state_data, but type-safe and memory-safe
 pub enum DynamicFieldValue {
@@ -68,7 +70,7 @@ pub struct DynamicField {
 
 // TODO(sdk) consider predefined fields (with a derive)
 // TODO(sdk) maybe use tinyvec (here, for storage and for extractions)
-pub struct DynamicTable<K: TableKey + Ord + Clone> {
+pub struct DynamicTable<K: TableData + Ord + Clone> {
     name: CString,
     fields: BTreeMap<CString, Rc<RefCell<DynamicField>>>,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,
@@ -76,7 +78,7 @@ pub struct DynamicTable<K: TableKey + Ord + Clone> {
 }
 
 pub trait ExportedTable {
-    type Key: TableKey;
+    type Key: TableData;
     type Entry;
     type Field;
 
@@ -109,7 +111,7 @@ pub trait ExportedTable {
     fn add_field(&mut self, name: &CStr, field_type: TypeId) -> Option<Rc<Self::Field>>;
 }
 
-impl<K: TableKey + Ord + Clone> ExportedTable for DynamicTable<K> {
+impl<K: TableData + Ord + Clone> ExportedTable for DynamicTable<K> {
     type Key = K;
     type Entry = RefCell<BTreeMap<usize, DynamicFieldValue>>;
     type Field = RefCell<DynamicField>;

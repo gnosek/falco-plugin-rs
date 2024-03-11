@@ -1,6 +1,5 @@
 use crate::plugin::error::{AsResult, LastError};
-use crate::plugin::tables::field::{FromData, FromDataTag, TypedTableField};
-use crate::plugin::tables::key::ToData;
+use crate::plugin::tables::data::{TableData, TypedTableField};
 use crate::plugin::tables::table::TableError;
 use falco_plugin_api::{
     ss_plugin_state_data, ss_plugin_table_entry_t, ss_plugin_table_reader_vtable_ext,
@@ -28,10 +27,10 @@ impl TableEntryReader {
     ///
     /// Given a [field descriptor](`crate::tables::TypedTableField`), this method returns
     /// the value of that field for the entry it describes
-    pub fn read_field<'a, V: FromDataTag + ?Sized>(
+    pub fn read_field<'a, V: TableData + ?Sized>(
         &'a mut self,
         field: &'a TypedTableField<V>,
-    ) -> Result<V::Actual<'a>, anyhow::Error> {
+    ) -> Result<&'a V, anyhow::Error> {
         if self.table != field.table {
             anyhow::bail!("Trying to access a field from another table")
         }
@@ -49,7 +48,7 @@ impl TableEntryReader {
             )
             .as_result_with_last_error(&self.last_error)?;
 
-            Ok(V::Actual::from_data(&self.entry_value))
+            Ok(V::from_data(&self.entry_value))
         }
     }
 
@@ -98,10 +97,10 @@ impl TableEntry {
     ///
     /// Given a [field descriptor](`crate::tables::TypedTableField`), this method returns
     /// the value of that field for the entry it describes.
-    pub fn read_field<'a, V: FromDataTag + ?Sized>(
+    pub fn read_field<'a, V: TableData + ?Sized>(
         &'a mut self,
         field: &'a TypedTableField<V>,
-    ) -> Result<V::Actual<'a>, anyhow::Error> {
+    ) -> Result<&'a V, anyhow::Error> {
         self.reader.read_field(field)
     }
 
@@ -109,10 +108,10 @@ impl TableEntry {
     ///
     /// Given a [field descriptor](`crate::tables::TypedTableField`), this method sets
     /// the value of that field for the entry it describes to `value`.
-    pub fn write_field<V: FromDataTag + ?Sized>(
+    pub fn write_field<V: TableData + ?Sized>(
         &self,
         field: &TypedTableField<V>,
-        value: V::Actual<'_>,
+        value: &V,
     ) -> Result<(), anyhow::Error> {
         if self.reader.table != field.table {
             anyhow::bail!("Trying to access a field from another table")

@@ -212,9 +212,10 @@ pub mod tables {
     pub use crate::plugin::exported_tables::DynamicFieldValue;
     pub use crate::plugin::exported_tables::DynamicTable;
     pub use crate::plugin::exported_tables::ExportedTable;
+    pub use crate::plugin::tables::data::Bool;
+    pub use crate::plugin::tables::data::TypedTableField;
     pub use crate::plugin::tables::entry::TableEntry;
     pub use crate::plugin::tables::entry::TableEntryReader;
-    pub use crate::plugin::tables::field::TypedTableField;
     pub use crate::plugin::tables::table::TypedTable;
     pub use crate::plugin::tables::table_reader::TableReader;
 }

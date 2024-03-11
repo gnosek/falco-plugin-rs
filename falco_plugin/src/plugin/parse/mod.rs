@@ -2,8 +2,8 @@ use falco_event::EventType;
 
 use crate::parse::{EventInput, ParseInput};
 use crate::plugin::base::Plugin;
+use crate::plugin::tables::data::TableData;
 use crate::plugin::tables::entry::TableEntry;
-use crate::plugin::tables::key::TableKey;
 use crate::plugin::tables::table::TypedTable;
 
 #[doc(hidden)]
@@ -54,11 +54,11 @@ pub trait EventParseInput {
     /// # Look up an entry in `table` corresponding to `key`
     ///
     /// See [`base::TableInitInput`](`crate::base::TableInitInput`) for details
-    fn table_entry<K: TableKey>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry>;
+    fn table_entry<K: TableData>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry>;
 }
 
 impl EventParseInput for ParseInput {
-    fn table_entry<K: TableKey>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry> {
+    fn table_entry<K: TableData>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry> {
         unsafe {
             Some(
                 table
