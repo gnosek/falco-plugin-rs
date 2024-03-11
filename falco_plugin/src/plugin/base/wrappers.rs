@@ -138,6 +138,10 @@ macro_rules! wrap_ffi {
     }
 }
 
+/// # Register a Falco plugin
+///
+/// This macro must be called at most once in a crate (it generates public functions)
+/// with a type implementing [`Plugin`] as the sole parameter.
 #[macro_export]
 macro_rules! plugin {
     ($ty:ty) => {

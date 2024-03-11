@@ -32,7 +32,7 @@ pub unsafe fn plugin_list_open_params<T: SourcePlugin>(
         Some(plugin) => match plugin.plugin.list_open_params() {
             Ok(s) => {
                 unsafe {
-                    *rc = falco_plugin_api::ss_plugin_rc_SS_PLUGIN_SUCCESS;
+                    *rc = ss_plugin_rc_SS_PLUGIN_SUCCESS;
                 }
                 s.as_ptr()
             }
@@ -147,7 +147,7 @@ pub unsafe fn plugin_next_batch<T: SourcePlugin>(
                 let (batch_evts, batch_nevts) = instance.batch.get_raw_pointers();
                 *nevts = batch_nevts as u32;
                 *evts = batch_evts as *mut *mut _;
-                falco_plugin_api::ss_plugin_rc_SS_PLUGIN_SUCCESS
+                ss_plugin_rc_SS_PLUGIN_SUCCESS
             }
             Err(e) => {
                 e.set_last_error(&mut plugin.error_buf);
@@ -202,16 +202,20 @@ pub unsafe fn plugin_event_to_string<T: SourcePlugin>(
             return std::ptr::null_mut();
         };
 
-        match plugin
-            .plugin
-            .event_to_string(event, &mut plugin.string_storage)
-        {
-            Ok(_) => plugin.string_storage.as_ptr(),
+        match plugin.plugin.event_to_string(event) {
+            Ok(s) => {
+                plugin.string_storage = s;
+                plugin.string_storage.as_ptr()
+            }
             Err(_) => std::ptr::null(),
         }
     }
 }
 
+/// # Register a source plugin
+///
+/// This macro must be called at most once in a crate (it generates public functions)
+/// with a type implementing [`SourcePlugin`] as the sole parameter.
 #[macro_export]
 macro_rules! source_plugin {
     ($ty:ty) => {

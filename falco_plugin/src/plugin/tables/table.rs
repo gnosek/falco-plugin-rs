@@ -38,7 +38,7 @@ pub enum TableError {
 }
 
 impl<K: TableData> TypedTable<K> {
-    pub(crate) fn new(
+    pub(crate) unsafe fn new(
         table: *mut ss_plugin_table_t,
         fields_vtable: *const ss_plugin_table_fields_vtable_ext,
         owner: *mut ss_plugin_owner_t,

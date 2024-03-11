@@ -63,7 +63,7 @@ pub(crate) struct LastError {
 }
 
 impl LastError {
-    pub fn new(
+    pub unsafe fn new(
         owner: *mut ss_plugin_owner_t,
         get_owner_last_error: Option<unsafe extern "C" fn(*mut ss_plugin_owner_t) -> *const c_char>,
     ) -> Self {

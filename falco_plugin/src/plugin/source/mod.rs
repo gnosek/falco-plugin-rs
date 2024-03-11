@@ -78,16 +78,15 @@ pub trait SourcePlugin: Plugin {
     /// # Render an event to string
     ///
     /// This string will be available as `%evt.plugininfo` in Falco rules.
-    fn event_to_string(
-        &mut self,
-        event: &EventInput,
-        output: &mut CString,
-    ) -> Result<(), anyhow::Error>;
+    fn event_to_string(&mut self, event: &EventInput) -> Result<CString, anyhow::Error>;
 }
 
+/// Information about capture progress
 pub struct ProgressInfo<'a> {
-    value: f64,
-    detail: Option<&'a CStr>,
+    /// Progress percentage (0.0-100.0)
+    pub value: f64,
+    /// Optional detailed message about the progress
+    pub detail: Option<&'a CStr>,
 }
 
 pub(crate) struct SourcePluginInstanceWrapper<I: SourcePluginInstance> {
@@ -95,16 +94,59 @@ pub(crate) struct SourcePluginInstanceWrapper<I: SourcePluginInstance> {
     pub(crate) batch: EventBatchStorage,
 }
 
+/// # An open instance of a source plugin
 pub trait SourcePluginInstance {
+    /// # The [`SourcePlugin`] this instance belongs to.
+    ///
+    /// Source plugin and instance types must correspond 1:1 to each other.
     type Plugin: SourcePlugin<Instance = Self>;
 
-    // TODO document that this should not sleep forever (but also should not spin)
+    /// # Fill the next batch of events
+    ///
+    /// This is the most important method for the source plugin implementation. It is responsible
+    /// for actually generating the events for the main event loop.
+    ///
+    /// For performance, events are returned in batches. Of course, it's entirely valid to have
+    /// just a single event in a batch.
+    ///
+    /// ## Returning one or more events
+    ///
+    /// For each event that is ready, pass it to `batch.add()` to add it to the current batch
+    /// to be returned.
+    ///
+    /// ## Returning no events, temporarily
+    ///
+    /// If there are no events to return at the moment but there might be later, you should
+    /// return [`FailureReason::Timeout`](`crate::FailureReason::Timeout`) as the error. The plugin framework will retry the call
+    /// to `next_batch` later.
+    ///
+    /// ## Returning no events, permanently
+    ///
+    /// If there will be no more events coming from this instance, you should return\
+    /// [`FailureReason::Eof`](`crate::FailureReason::Eof`) as the error. The plugin framework will end the capture and shut down
+    /// gracefully.
+    ///
+    /// ## Timing considerations
+    ///
+    /// This method is effectively called in a loop by Falco and there's a delicate balance of
+    /// how much time to spend here waiting for events. On the one hand, you don't want to poll
+    /// in a tight loop, since that leads to excessive CPU usage. On the other hand, you don't
+    /// want to sleep forever waiting for an event, since it may block other tasks running in the
+    /// main event loop thread. As a rule of thumb, waiting up to 10-100 milliseconds for an event
+    /// works fine.
     fn next_batch(
         &mut self,
         plugin: &mut Self::Plugin,
         batch: &mut EventBatch,
     ) -> Result<(), anyhow::Error>;
 
+    /// # Get progress information
+    ///
+    /// If your plugin reads from a source that has a well-defined end (like a file),
+    /// you can use this method to report progress information.
+    ///
+    /// It consists of a percentage (0.0-100.0) and an optional description containing more
+    /// details about the progress (e.g. bytes read/bytes total).
     fn get_progress(&mut self) -> ProgressInfo {
         ProgressInfo {
             value: 0.0,
@@ -112,6 +154,14 @@ pub trait SourcePluginInstance {
         }
     }
 
+    /// # A helper for generating plugin events
+    ///
+    /// If your plugin defines a PLUGIN_ID and a source name, the only allowed events are
+    /// of type [`PluginEvent`] and effectively the only customizable field is the event data
+    /// (which is a generic byte buffer).
+    ///
+    /// This method makes it easy to generate such events: just pass it the event data and get
+    /// the complete event, with all the metadata set to reasonable defaults.
     fn plugin_event(data: &[u8]) -> Event<PluginEvent> {
         let event = PluginEvent {
             plugin_id: Some(Self::Plugin::PLUGIN_ID),

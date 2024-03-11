@@ -24,7 +24,7 @@ pub(crate) fn lifetime_type(name: &str) -> LifetimeType {
 }
 
 enum IdentOrNumber {
-    Ident(syn::Ident),
+    Ident(Ident),
     Number(syn::LitInt),
 }
 
@@ -38,7 +38,7 @@ impl Parse for IdentOrNumber {
     }
 }
 
-type EventArgInfo = Option<(Token![,], IdentOrNumber, Option<(Token![,], syn::Ident)>)>;
+type EventArgInfo = Option<(Token![,], IdentOrNumber, Option<(Token![,], Ident)>)>;
 
 struct EventArg {
     _braces: syn::token::Brace,

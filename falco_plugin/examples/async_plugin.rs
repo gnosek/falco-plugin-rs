@@ -36,6 +36,7 @@ impl AsyncEventPlugin for DummyAsyncPlugin {
     const ASYNC_EVENTS: &'static [&'static str] = &["sample_async"];
     const EVENT_SOURCES: &'static [&'static str] = &["syscall", "example"];
 
+    // TODO(example) use channels and recv_timeout instead of sleeping
     // TODO(sdk) wrapper struct for managing the thread
     fn start_async(&mut self, handler: AsyncHandler) -> Result<(), Error> {
         dbg!("start_async");

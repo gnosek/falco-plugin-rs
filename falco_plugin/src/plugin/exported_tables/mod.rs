@@ -11,7 +11,10 @@ use crate::FailureReason;
 
 pub(super) mod wrappers;
 
-// ss_plugin_state_data, but type-safe and memory-safe
+/// # A value actually stored in a dynamic table
+///
+/// This corresponds to `ss_plugin_state_data` in the plugin API.
+#[allow(missing_docs)]
 pub enum DynamicFieldValue {
     U8(u8),
     I8(i8),
@@ -63,6 +66,13 @@ impl DynamicFieldValue {
     }
 }
 
+/// # A descriptor for a dynamically added field
+///
+/// It knows its sequential ID (to look up fields by numbers, not by strings all the time)
+/// and the type of stored data.
+///
+/// **Note**: the data is stored as [`DynamicFieldValue`] in any case, but the table enforces
+/// the defined type on all incoming data.
 pub struct DynamicField {
     index: usize,
     type_id: TypeId,
@@ -70,6 +80,10 @@ pub struct DynamicField {
 
 // TODO(sdk) consider predefined fields (with a derive)
 // TODO(sdk) maybe use tinyvec (here, for storage and for extractions)
+/// # A table with dynamic fields only
+///
+/// An instance of this type can be exposed to other plugins via
+/// [`base::TableInitInput::add_table`](`crate::base::TableInitInput::add_table`)
 pub struct DynamicTable<K: TableData + Ord + Clone> {
     name: CString,
     fields: BTreeMap<CString, Rc<DynamicField>>,
@@ -77,28 +91,60 @@ pub struct DynamicTable<K: TableData + Ord + Clone> {
     data: BTreeMap<K, Rc<RefCell<BTreeMap<usize, DynamicFieldValue>>>>,
 }
 
+/// # A table that can be exported to other plugins
+///
+/// Currently, there's no implementation of this trait other than [`DynamicTable`],
+/// but once we have a derive macro, there should be no need to implement this trait
+/// manually.
+///
+/// Since the trait specification uses [`Rc`], it's *not* thread-safe.
 pub trait ExportedTable {
+    /// The table key type.
     type Key: TableData;
+    /// The table entry type, exposed over FFI as an opaque pointer.
     type Entry;
+    /// The table field descriptor type, exposed over FFI as an opaque pointer.
     type Field;
 
+    /// Return the table name.
     fn name(&self) -> &CStr;
+
+    /// Return the number of entries in the table.
     fn size(&self) -> usize;
+
+    /// Get an entry corresponding to a particular key.
     fn lookup(&self, key: &Self::Key) -> Option<Rc<Self::Entry>>;
+
+    /// Get the value for a field in an entry.
     fn get_field_value(
         &self,
         entry: &Rc<Self::Entry>,
         field: &Rc<Self::Field>,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), FailureReason>;
+
+    /// Execute a closure on all entries in the table with read-only access.
+    ///
+    /// The iteration continues until all entries are visited or the closure returns false.
     fn iterate_entries<F>(&mut self, func: F) -> bool
     where
         F: FnMut(&mut Rc<Self::Entry>) -> bool; // TODO(upstream) the closure cannot store away the entry but we could use explicit docs
 
+    /// Remove all entries from the table.
     fn clear(&mut self);
+
+    /// Erase an entry by key.
     fn erase(&mut self, key: &Self::Key) -> Option<Rc<Self::Entry>>;
+
+    /// Create a new table entry.
+    ///
+    /// This is a detached entry that can be later inserted into the table using [`ExportedTable::add`].
     fn create_entry() -> Rc<Self::Entry>;
+
+    /// Attach an entry to a table key
     fn add(&mut self, key: &Self::Key, entry: Rc<Self::Entry>) -> Option<Rc<Self::Entry>>;
+
+    /// Write a value to a field of an entry
     fn write(
         &self,
         entry: &mut Rc<Self::Entry>,
@@ -106,8 +152,15 @@ pub trait ExportedTable {
         value: &ss_plugin_state_data,
     ) -> Result<(), FailureReason>;
 
+    /// Return a list of fields as a slice of raw FFI objects
     fn list_fields(&mut self) -> &[ss_plugin_table_fieldinfo];
+
+    /// Return a field descriptor for a particular field
+    ///
+    /// The requested `field_type` must match the actual type of the field
     fn get_field(&self, name: &CStr, field_type: TypeId) -> Option<Rc<Self::Field>>;
+
+    /// Add a new field to the table
     fn add_field(&mut self, name: &CStr, field_type: TypeId) -> Option<Rc<Self::Field>>;
 }
 

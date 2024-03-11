@@ -91,12 +91,6 @@ pub trait InitInput {
     ///
     /// Get a handle (to be passed to one of the `table_entry` functions) describing a particular
     /// table. The generic parameter must correspond to the key type of the table in question.
-    /// It must be one of:
-    /// - a primitive numeric type (u8-u64, i8-i64)
-    /// - [`Bool`](`crate::tables::Bool`) (a [`bool`] equivalent)
-    /// - [`CStr`](`std::ffi::CStr`) (the key type used for lookups is &CStr in that case)
-    ///
-    /// **Note**: CStr keys are broken right now (they expect &CStr as the key type)
     fn get_table<K: TableData>(&self, name: &CStr) -> Result<TypedTable<K>, FailureReason>;
 
     /// # Expose a table for other plugins to use
@@ -105,7 +99,7 @@ pub trait InitInput {
     /// of [`tables::DynamicTable<K>`](`crate::tables::DynamicTable`) with the key type
     /// you want and pass it to this method.
     ///
-    /// **Note*: At this point, there is no support for tables with predefined fields,
+    /// **Note**: At this point, there is no support for tables with predefined fields,
     /// so you will have to register any fields that your plugin wishes to use as dynamic
     /// fields. This comes with some performance overhead and may change later, e.g. by
     /// introducing a custom derive macro for the ExportedTable trait.
@@ -142,12 +136,10 @@ impl InitInput for ss_plugin_init_input {
         if table.is_null() {
             Err(FailureReason::Failure)
         } else {
-            Ok(TypedTable::<K>::new(
-                table,
-                fields_vtable,
-                self.owner,
-                self.get_owner_last_error,
-            ))
+            // Safety: we pass the data directly from FFI, the framework would never lie to us, right?
+            Ok(unsafe {
+                TypedTable::<K>::new(table, fields_vtable, self.owner, self.get_owner_last_error)
+            })
         }
     }
 
@@ -159,7 +151,8 @@ impl InitInput for ss_plugin_init_input {
         let vtable = unsafe { self.tables.as_ref() }.ok_or(FailureReason::Failure)?;
         let add_table = vtable.add_table.ok_or(FailureReason::Failure)?;
 
-        let last_err = LastError::new(self.owner, self.get_owner_last_error);
+        // Safety: we pass the data directly from FFI, the framework would never lie to us, right?
+        let last_err = unsafe { LastError::new(self.owner, self.get_owner_last_error) };
 
         let mut reader_vtable_ext = reader_vtable::<T>();
         let mut writer_vtable_ext = writer_vtable::<T>();

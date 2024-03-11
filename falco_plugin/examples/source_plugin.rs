@@ -7,10 +7,10 @@ use falco_plugin::base::{Json, Plugin};
 use falco_plugin::schemars::JsonSchema;
 use falco_plugin::serde::Deserialize;
 use falco_plugin::source::{
-    CStringWriter, EventBatch, PluginEvent, SourcePlugin, SourcePluginInstance,
+    CStringWriter, EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
 };
-use falco_plugin::{c, plugin, source_plugin, EventInput, FailureReason};
-use falco_plugin_api::{ss_plugin_event_input, ss_plugin_init_input};
+use falco_plugin::{c, plugin, source_plugin, EventInput as _, FailureReason};
+use falco_plugin_api::ss_plugin_init_input;
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct Config {
@@ -49,11 +49,7 @@ impl SourcePlugin for DummyPlugin {
         Ok(DummyPluginInstance::default())
     }
 
-    fn event_to_string(
-        &mut self,
-        event: &ss_plugin_event_input,
-        output: &mut CString,
-    ) -> Result<(), Error> {
+    fn event_to_string(&mut self, event: &EventInput) -> Result<CString, Error> {
         let event_num = event.event_number();
         let event_source = event.source();
         let event = event.event()?;
@@ -70,8 +66,7 @@ impl SourcePlugin for DummyPlugin {
                 .map(|e| String::from_utf8_lossy(e))
                 .unwrap_or_default()
         )?;
-        writer.store(output);
-        Ok(())
+        Ok(writer.into_cstring())
     }
 }
 

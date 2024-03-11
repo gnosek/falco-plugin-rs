@@ -6,15 +6,35 @@ use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_state_data, ss_plugin_table_field_t, ss_plugin_table_t,
 };
 
-pub trait TableData {
+mod seal {
+    pub trait Sealed {}
+}
+
+/// # A trait describing types usable as table keys and values
+pub trait TableData: seal::Sealed {
+    /// The Falco plugin type id of the data
     const TYPE_ID: TypeId;
 
+    /// # Borrow from the raw FFI representation
+    ///
+    /// **Note**: this function only borrows the data and must return a reference.
+    /// This means that the types implementing this trait must be repr(C) and compatible
+    /// with the layout of `ss_plugin_state_data`.
+    ///
+    /// # Safety
+    /// `data` must contain valid data of the correct type
     unsafe fn from_data(data: &ss_plugin_state_data) -> &Self;
+
+    /// # Convert to the raw FFI representation
+    ///
+    /// **Note**: even though the signature specifies an owned value, this value technically
+    /// still borrows from `self`, as it contains raw pointers (for string values)
     fn to_data(&self) -> ss_plugin_state_data;
 }
 
 macro_rules! impl_table_data_for_numeric_type {
     ($ty:ty => $field:ident: $type_id:expr) => {
+        impl seal::Sealed for $ty {}
         impl TableData for $ty {
             const TYPE_ID: TypeId = $type_id;
 
@@ -60,6 +80,8 @@ impl From<Bool> for bool {
     }
 }
 
+impl seal::Sealed for Bool {}
+
 impl TableData for Bool {
     const TYPE_ID: TypeId = TypeId::Bool;
 
@@ -71,6 +93,8 @@ impl TableData for Bool {
         ss_plugin_state_data { b: self.0 }
     }
 }
+
+impl seal::Sealed for CStr {}
 
 impl TableData for CStr {
     const TYPE_ID: TypeId = TypeId::CharBuf;
