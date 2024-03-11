@@ -1,2 +1,4 @@
-pub mod absolute_path;
-pub mod relative_path;
+mod absolute_path;
+mod relative_path;
+
+pub use relative_path::*;

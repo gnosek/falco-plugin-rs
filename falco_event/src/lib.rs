@@ -1,3 +1,6 @@
+#![warn(missing_docs)]
+#![deny(rustdoc::broken_intra_doc_links)]
+
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -7,7 +10,9 @@ use crate::payload::PayloadToBytes;
 
 pub mod dynamic_params;
 pub mod event_field_type;
+#[allow(missing_docs)]
 pub mod event_flags;
+#[allow(missing_docs)]
 pub mod events;
 pub mod from_bytes;
 pub mod payload;
@@ -20,6 +25,7 @@ pub mod types;
 #[allow(non_snake_case)]
 #[allow(non_camel_case_types)]
 #[allow(non_upper_case_globals)]
+#[allow(missing_docs)]
 mod ffi;
 
 #[derive(Clone)]

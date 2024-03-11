@@ -1,2 +1,2 @@
-pub mod duration;
-pub mod system_time;
+mod duration;
+mod system_time;

@@ -1,3 +1,5 @@
-pub mod bool;
-pub mod integers;
-pub mod newtypes;
+mod bool;
+mod integers;
+mod newtypes;
+
+pub use newtypes::*;
