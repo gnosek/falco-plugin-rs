@@ -55,6 +55,17 @@ pub trait EventParseInput {
     ///
     /// See [`base::TableInitInput`](`crate::base::TableInitInput`) for details
     fn table_entry<K: TableData>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry>;
+
+    /// # Iterate over all entries in a table with mutable access
+    ///
+    /// The closure is called once for each table entry with a corresponding [`TableEntry`]
+    /// object as a parameter.
+    ///
+    /// The iteration stops when either all entries have been processed or the closure returns `false`.
+    fn iter_entries_mut<F, K>(&self, table: &TypedTable<K>, func: F) -> bool
+    where
+        F: FnMut(&mut TableEntry) -> bool,
+        K: TableData;
 }
 
 impl EventParseInput for ParseInput {
@@ -65,6 +76,23 @@ impl EventParseInput for ParseInput {
                     .get_entry(self.table_reader_ext.as_ref()?, key)?
                     .with_writer(self.table_writer_ext.as_ref()?),
             )
+        }
+    }
+
+    fn iter_entries_mut<F, K>(&self, table: &TypedTable<K>, func: F) -> bool
+    where
+        F: FnMut(&mut TableEntry) -> bool,
+        K: TableData,
+    {
+        unsafe {
+            let Some(reader_vtable) = self.table_reader_ext.as_ref() else {
+                return false;
+            };
+            let Some(writer_vtable) = self.table_writer_ext.as_ref() else {
+                return false;
+            };
+
+            table.iter_entries_mut(reader_vtable, writer_vtable, func)
         }
     }
 }

@@ -171,15 +171,7 @@ impl<K: TableData> TypedTable<K> {
         })
     }
 
-    /// # Iterate over all entries in a table with read-only access
-    ///
-    /// The closure is called once for each table entry with a corresponding [`TableEntryReader`]
-    /// object as a parameter.
-    ///
-    /// The iteration stops when either all entries have been processed or the closure returns `false`.
-    ///
-    /// TODO(sdk): this should be wrapped by [`crate::tables::TableReader`]
-    pub fn iter_entries<F>(
+    pub(crate) fn iter_entries<F>(
         &self,
         reader_vtable: &ss_plugin_table_reader_vtable_ext,
         mut func: F,
@@ -210,15 +202,7 @@ impl<K: TableData> TypedTable<K> {
         )
     }
 
-    /// # Iterate over all entries in a table with mutable access
-    ///
-    /// The closure is called once for each table entry with a corresponding [`TableEntry`]
-    /// object as a parameter.
-    ///
-    /// The iteration stops when either all entries have been processed or the closure returns `false`.
-    ///
-    /// TODO(sdk): this should be wrapped by [`crate::plugin::parse::EventParseInput`]
-    pub fn iter_entries_mut<F>(
+    pub(crate) fn iter_entries_mut<F>(
         &self,
         reader_vtable: &ss_plugin_table_reader_vtable_ext,
         writer_vtable: &ss_plugin_table_writer_vtable_ext,
