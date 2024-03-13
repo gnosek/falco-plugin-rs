@@ -36,11 +36,11 @@ mod event_derive {
     pub use byteorder::ReadBytesExt;
     pub use byteorder::WriteBytesExt;
 
-    pub use crate::events::payload::EventPayload;
-    pub use crate::events::payload::PayloadFromBytes;
-    pub use crate::events::payload::PayloadToBytes;
     pub use crate::events::Event;
     pub use crate::events::EventMetadata;
+    pub use crate::events::EventPayload;
+    pub use crate::events::PayloadFromBytes;
+    pub use crate::events::PayloadToBytes;
     pub use crate::events::RawEvent;
     pub use crate::fields::types as event_field_type;
     pub use crate::fields::FromBytes;
