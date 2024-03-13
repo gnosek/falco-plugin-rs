@@ -2,6 +2,10 @@ use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use std::io::Write;
 use std::net::IpAddr;
 
+/// An IP network
+///
+/// This is a wrapper around [IpAddr] that makes it a distinct type, suitable for storing
+/// IP (v4 or v6) subnets.
 pub struct IpNet(pub IpAddr);
 
 impl FromBytes<'_> for IpNet {

@@ -6,6 +6,7 @@ use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use crate::fields::event_flags::PT_FLAGS16_file_flags;
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 
+/// A list of file descriptors with flags
 #[derive(Debug, Eq, PartialEq)]
 pub struct FdList(pub Vec<(u64, PT_FLAGS16_file_flags)>);
 

@@ -5,18 +5,25 @@ use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 
 // TODO(sdk) not really trivial to use DIRFD_PARAM :)
 //      might need a dedicated generated method on the event type
+/// A relative path
+///
+/// This type has a generic const parameter to describe which parameter (by number)
+/// of the event containing this field stores the directory file descriptor needed
+/// to convert this path to absolute.
+///
+/// **Note**: there isn't really a way to use this parameter right now, but that would
+/// require much more infrastructure (involving e.g. actually keeping track of dir fds
+/// and where they point).
 #[derive(Debug)]
-pub struct RelativePath<'a, const DIRFD_PARAM: usize> {
-    rel_path: &'a Path,
-}
+pub struct RelativePath<'a, const DIRFD_PARAM: usize>(pub &'a Path);
 
 impl<'a, const DIRFD_PARAM: usize> ToBytes for RelativePath<'a, DIRFD_PARAM> {
     fn binary_size(&self) -> usize {
-        self.rel_path.binary_size()
+        self.0.binary_size()
     }
 
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
-        self.rel_path.write(writer)
+        self.0.write(writer)
     }
 
     fn default_repr() -> impl ToBytes {
@@ -26,9 +33,7 @@ impl<'a, const DIRFD_PARAM: usize> ToBytes for RelativePath<'a, DIRFD_PARAM> {
 
 impl<'a, const DIRFD_PARAM: usize> FromBytes<'a> for RelativePath<'a, DIRFD_PARAM> {
     fn from_bytes(buf: &mut &'a [u8]) -> FromBytesResult<Self> {
-        Ok(Self {
-            rel_path: <&'a Path>::from_bytes(buf)?,
-        })
+        Ok(Self(<&'a Path>::from_bytes(buf)?))
     }
 }
 
@@ -43,9 +48,7 @@ mod tests {
     #[test]
     fn test_relative_path() {
         let path = PathBuf::from_str("/foo").unwrap();
-        let rel_path = RelativePath::<'_, 0usize> {
-            rel_path: path.as_path(),
-        };
+        let rel_path = RelativePath::<'_, 0usize>(path.as_path());
         let mut binary = Vec::new();
 
         rel_path.write(&mut binary).unwrap();
@@ -55,6 +58,6 @@ mod tests {
 
         let mut buf = binary.as_slice();
         let path = <RelativePath<'_, 0usize>>::from_bytes(&mut buf).unwrap();
-        assert_eq!(path.rel_path.to_str().unwrap(), "/foo");
+        assert_eq!(path.0.to_str().unwrap(), "/foo");
     }
 }

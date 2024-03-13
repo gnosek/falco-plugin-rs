@@ -133,6 +133,8 @@ pub use num_traits;
 
 #[allow(missing_docs)]
 pub mod events;
+
+/// All the types available in event fields
 pub mod fields;
 mod types;
 

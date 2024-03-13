@@ -3,6 +3,10 @@ use std::net::Ipv4Addr;
 
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 
+/// An IPv4 network
+///
+/// This is a wrapper around [Ipv4Addr] that makes it a distinct type, suitable for storing
+/// IPv4 subnets.
 pub struct Ipv4Net(pub Ipv4Addr);
 
 impl FromBytes<'_> for Ipv4Net {
