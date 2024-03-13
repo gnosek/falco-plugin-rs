@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
 use std::rc::Rc;
 
-use falco_event::TypeId;
+use falco_event::fields::TypeId;
 use falco_plugin_api::{ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo};
 
 use crate::plugin::tables::data::TableData;

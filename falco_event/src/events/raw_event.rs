@@ -1,9 +1,8 @@
 use byteorder::{NativeEndian, ReadBytesExt};
 
-use crate::events::EventMetadata;
+use crate::events::payload::{EventPayload, PayloadFromBytes};
+use crate::events::{Event, EventMetadata};
 use crate::fields::from_bytes::{FromBytesError, FromBytesResult};
-use crate::payload::{EventPayload, PayloadFromBytes};
-use crate::Event;
 
 #[derive(Debug)]
 pub struct RawEvent<'a> {

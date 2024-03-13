@@ -315,7 +315,7 @@ pub fn event_info(input: TokenStream) -> TokenStream {
     let matches = events.enum_matches();
     quote!(
         use falco_event_derive::BinaryPayload;
-        use crate::raw_event::RawEvent;
+        use crate::event_derive::RawEvent;
 
         #(#typedefs)*
 
@@ -333,13 +333,13 @@ pub fn event_info(input: TokenStream) -> TokenStream {
         }
 
         impl RawEvent<'_> {
-            pub fn load_any(&self) -> crate::event_derive::FromBytesResult<crate::Event<AnyEvent>> {
+            pub fn load_any(&self) -> crate::event_derive::FromBytesResult<crate::event_derive::Event<AnyEvent>> {
                 let any: AnyEvent = match self.event_type as u32 {
                     #(#matches,)*
                     _ => return Err(crate::event_derive::FromBytesError::UnsupportedEventType),
                 };
 
-                Ok(crate::Event {
+                Ok(crate::event_derive::Event {
                     metadata: self.metadata.clone(),
                     params: any,
                 })

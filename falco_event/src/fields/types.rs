@@ -1,15 +1,7 @@
 #![allow(non_camel_case_types)]
 
-use std::ffi::CStr;
-pub use std::net::IpAddr as PT_IPADDR;
-pub use std::net::Ipv4Addr as PT_IPV4ADDR;
-pub use std::net::Ipv6Addr as PT_IPV6ADDR;
-pub use std::path::Path as PT_FSPATH;
-pub use std::time::Duration as PT_RELTIME;
-pub use std::time::SystemTime as PT_ABSTIME;
-
-pub use crate::dynamic_params::*;
-pub use crate::event_flags::*;
+pub use crate::fields::dynamic_params::*;
+pub use crate::fields::event_flags::*;
 pub use crate::types::Bool as PT_BOOL;
 pub use crate::types::Errno as PT_ERRNO;
 pub use crate::types::Fd as PT_FD;
@@ -28,6 +20,13 @@ pub use crate::types::SockFamily as PT_SOCKFAMILY;
 pub use crate::types::SockTuple as PT_SOCKTUPLE;
 pub use crate::types::SyscallId as PT_SYSCALLID;
 pub use crate::types::Uid as PT_UID;
+use std::ffi::CStr;
+pub use std::net::IpAddr as PT_IPADDR;
+pub use std::net::Ipv4Addr as PT_IPV4ADDR;
+pub use std::net::Ipv6Addr as PT_IPV6ADDR;
+pub use std::path::Path as PT_FSPATH;
+pub use std::time::Duration as PT_RELTIME;
+pub use std::time::SystemTime as PT_ABSTIME;
 
 pub type PT_INT8 = i8;
 pub type PT_INT16 = i16;

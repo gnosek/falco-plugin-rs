@@ -1,4 +1,4 @@
-use falco_event::EventToBytes;
+use falco_event::events::EventToBytes;
 
 #[derive(Default, Debug)]
 pub(crate) struct EventBatchStorage {

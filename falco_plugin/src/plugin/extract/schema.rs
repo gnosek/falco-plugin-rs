@@ -1,5 +1,5 @@
 use anyhow::Error;
-use falco_event::TypeId;
+use falco_event::fields::TypeId;
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 

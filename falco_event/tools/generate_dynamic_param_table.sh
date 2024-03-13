@@ -12,4 +12,4 @@ EOF
 
 sed -n '/ppm_param_info/,$p' < $DYNAMIC_PARAM_TABLE
 
-echo '}') > src/dynamic_params.rs
+echo '}') > src/fields/dynamic_params.rs

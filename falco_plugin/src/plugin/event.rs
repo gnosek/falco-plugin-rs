@@ -1,4 +1,4 @@
-use falco_event::raw_event::RawEvent;
+use falco_event::events::RawEvent;
 use std::ffi::CStr;
 
 pub use falco_plugin_api::ss_plugin_event_input;

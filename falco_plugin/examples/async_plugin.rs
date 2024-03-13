@@ -7,8 +7,8 @@ use std::time::Duration;
 
 use anyhow::Error;
 
+use falco_event::events::Event;
 use falco_event::events::EventMetadata;
-use falco_event::Event;
 use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
 use falco_plugin::base::Plugin;
 use falco_plugin::{async_event_plugin, c, plugin, FailureReason};
