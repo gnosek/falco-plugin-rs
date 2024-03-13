@@ -1,4 +1,4 @@
-use falco_event::type_id::TypeId;
+use falco_event::TypeId;
 use std::ffi::CStr;
 use std::marker::PhantomData;
 

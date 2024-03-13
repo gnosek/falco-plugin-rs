@@ -18,8 +18,10 @@ pub mod from_bytes;
 pub mod payload;
 pub mod raw_event;
 pub mod to_bytes;
-pub mod type_id;
+mod type_id;
 pub mod types;
+
+pub use type_id::TypeId;
 
 #[allow(dead_code)]
 #[allow(non_snake_case)]

@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use num_traits::FromPrimitive;
 
-use falco_event::type_id::TypeId;
+use falco_event::TypeId;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_rc, ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS,
     ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_entry_t, ss_plugin_table_field_t,

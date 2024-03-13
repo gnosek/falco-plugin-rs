@@ -1,6 +1,6 @@
 use crate::plugin::storage::FieldStorageSession;
 use falco_event::to_bytes::ToBytes;
-use falco_event::type_id::TypeId;
+use falco_event::TypeId;
 use falco_plugin_api::ss_plugin_extract_field;
 use std::ffi::{c_void, CString};
 
