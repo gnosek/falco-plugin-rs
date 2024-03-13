@@ -1,4 +1,5 @@
-use std::ffi::c_char;
+use std::ffi::{c_char, CString};
+use std::sync::OnceLock;
 
 use falco_plugin_api::{ss_plugin_init_input, ss_plugin_rc_SS_PLUGIN_SUCCESS};
 
@@ -8,6 +9,20 @@ use crate::plugin::base::PluginWrapper;
 use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
 use crate::strings::from_ptr::try_str_from_ptr;
 use crate::{c, FailureReason};
+
+pub fn plugin_get_required_api_version<
+    const MAJOR: usize,
+    const MINOR: usize,
+    const PATCH: usize,
+>() -> *const c_char {
+    static REQUIRED_API_VERSION: OnceLock<CString> = OnceLock::new();
+    REQUIRED_API_VERSION
+        .get_or_init(|| {
+            let version = format!("{}.{}.{}", MAJOR, MINOR, PATCH);
+            CString::new(version).unwrap()
+        })
+        .as_ptr()
+}
 
 pub fn plugin_get_version<T: Plugin>() -> *const c_char {
     T::PLUGIN_VERSION.as_ptr()
@@ -141,29 +156,80 @@ macro_rules! wrap_ffi {
 /// # Register a Falco plugin
 ///
 /// This macro must be called at most once in a crate (it generates public functions)
-/// with a type implementing [`Plugin`] as the sole parameter.
+/// with a type implementing [`Plugin`] as the sole parameter:
+///
+/// ```
+/// # use std::ffi::CStr;
+/// # use falco_plugin::c;
+/// # use falco_plugin::base::InitInput;
+/// # use falco_plugin::FailureReason;
+/// use falco_plugin::base::Plugin;
+/// use falco_plugin::plugin;
+///
+/// struct MyPlugin;
+/// impl Plugin for MyPlugin {
+///     // ...
+/// #    const NAME: &'static CStr = c!("sample-plugin-rs");
+/// #    const PLUGIN_VERSION: &'static CStr = c!("0.0.1");
+/// #    const DESCRIPTION: &'static CStr = c!("A sample Falco plugin that does nothing");
+/// #    const CONTACT: &'static CStr = c!("you@example.com");
+/// #    type ConfigType = ();
+/// #
+/// #    fn new(input: &InitInput, config: Self::ConfigType)
+/// #        -> Result<Self, FailureReason> {
+/// #        Ok(MyPlugin)
+/// #    }
+/// }
+///
+/// plugin!(MyPlugin);
+/// ```
+///
+/// It implements a form where you can override the required API version (for example, if
+/// you wish to advertise an older version for increased compatibility):
+///
+/// ```
+/// # use std::ffi::CStr;
+/// # use falco_plugin::c;
+/// # use falco_plugin::base::InitInput;
+/// # use falco_plugin::FailureReason;
+/// use falco_plugin::base::Plugin;
+/// use falco_plugin::plugin;
+///
+/// struct MyPlugin;
+/// impl Plugin for MyPlugin {
+///     // ...
+/// #    const NAME: &'static CStr = c!("sample-plugin-rs");
+/// #    const PLUGIN_VERSION: &'static CStr = c!("0.0.1");
+/// #    const DESCRIPTION: &'static CStr = c!("A sample Falco plugin that does nothing");
+/// #    const CONTACT: &'static CStr = c!("you@example.com");
+/// #    type ConfigType = ();
+/// #
+/// #    fn new(input: &InitInput, config: Self::ConfigType)
+/// #        -> Result<Self, FailureReason> {
+/// #        Ok(MyPlugin)
+/// #    }
+/// }
+///
+/// // require version 3.3.0 of the API
+/// plugin!(3;3;0 => MyPlugin);
+/// ```
+///
+/// **Note**: this does not affect the actual version supported in any way. If you use this form,
+/// it's **entirely your responsibility** to ensure the advertised version is compatible with the actual
+/// version supported by this crate.
 #[macro_export]
 macro_rules! plugin {
     ($ty:ty) => {
+        plugin!(
+            falco_plugin_api::PLUGIN_API_VERSION_MAJOR as usize;
+            falco_plugin_api::PLUGIN_API_VERSION_MINOR as usize;
+            falco_plugin_api::PLUGIN_API_VERSION_PATCH as usize => $ty
+        );
+    };
+    ($maj:expr; $min:expr; $patch:expr => $ty:ty) => {
         #[no_mangle]
         pub extern "C" fn plugin_get_required_api_version() -> *const std::ffi::c_char {
-            $crate::c!("3.3.0").as_ptr()
-            /*
-            // SAFETY: we have exactly one trailing NUL
-            unsafe {
-                ::std::ffi::CStr::from_bytes_with_nul_unchecked(
-                    const_format::concatcp!(
-                        falco_plugin_api::PLUGIN_API_VERSION_MAJOR,
-                        ".",
-                        falco_plugin_api::PLUGIN_API_VERSION_MINOR,
-                        ".",
-                        falco_plugin_api::PLUGIN_API_VERSION_PATCH,
-                        "\0",
-                    )
-                    .as_bytes(),
-                )
-                .as_ptr()
-            }*/
+            $crate::internals::base::wrappers::plugin_get_required_api_version::<{$maj}, {$min}, {$patch}>()
         }
 
         $crate::wrap_ffi! {

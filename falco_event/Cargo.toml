@@ -2,19 +2,24 @@
 name = "falco_event"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "Apache-2.0"
+description = "Type-safe wrappers for Falco events"
+homepage = "https://gnosek.github.io/falco-plugin-rs/falco_event/"
+repository = "https://github.com/gnosek/falco-plugin-rs"
+readme = "README.md"
+keywords = ["falco", "security"]
+categories = ["api-bindings"]
 
 [dependencies]
 byteorder = "1.5.0"
-falco_event_derive = { path = "../falco_event_derive" }
-falco_plugin_api = { path = "../falco_plugin_api" }
+falco_event_derive = { path = "../falco_event_derive", version = "0.1" }
+falco_plugin_api = { path = "../falco_plugin_api", version = "0.1" }
 memchr = "2.7.1"
-num-derive = "0.4.1"
+num-derive = "0.4.2"
 num-traits = "0.2.17"
-thiserror = "1.0.56"
+thiserror = "1.0.58"
 bitflags = "2.4.2"
-anyhow = "1.0.80"
+anyhow = "1.0.81"
 
 [dev-dependencies]
 hexdump = "0.1.1"

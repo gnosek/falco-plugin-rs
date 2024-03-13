@@ -91,5 +91,5 @@ impl SourcePluginInstance for DummyPluginInstance {
     }
 }
 
-plugin!(DummyPlugin);
+plugin!(3;3;0 => DummyPlugin);
 source_plugin!(DummyPlugin);
