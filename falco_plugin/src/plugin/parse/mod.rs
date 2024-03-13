@@ -26,7 +26,7 @@ pub trait ParsePlugin: Plugin {
     /// If this list is empty, then:
     /// - the plugin will receive every event type if [`ParsePlugin::EVENT_SOURCES`]
     ///   is compatible with the "syscall" event source, otherwise
-    /// - the plugin will only receive events of plugin type [`falco_event::events::PPME_PLUGINEVENT_E`].
+    /// - the plugin will only receive events of plugin type [`source::PluginEvent`](`crate::source::PluginEvent`)
     const EVENT_TYPES: &'static [EventType];
 
     /// # Supported event sources

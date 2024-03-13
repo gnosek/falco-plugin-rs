@@ -59,7 +59,7 @@ pub trait FromBytes<'a>: Sized {
     /// Read the binary representation of a field from a buffer that may or may not exist
     ///
     /// The default implementation returns an error when the buffer does not exist, but the blanket
-    /// impl for Option<T> effectively returns `Ok(None)`
+    /// impl for `Option<T>` effectively returns `Ok(None)`
     fn from_maybe_bytes(buf: Option<&mut &'a [u8]>) -> FromBytesResult<Self> {
         match buf {
             Some(buf) => Self::from_bytes(buf),
