@@ -2,7 +2,7 @@ use std::ffi::{CStr, CString};
 
 use anyhow::{anyhow, Error};
 
-use falco_event::events::EventType;
+use falco_event::events::types::EventType;
 use falco_plugin::base::{Plugin, TableInitInput};
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin};
 use falco_plugin::tables::TypedTableField;

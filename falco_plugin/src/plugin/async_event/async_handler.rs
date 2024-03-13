@@ -1,7 +1,7 @@
 use crate::plugin::error::AsResult;
 use crate::strings::from_ptr::try_str_from_ptr;
 use anyhow::Context;
-use falco_event::events::PPME_ASYNCEVENT_E as AsyncEvent;
+use falco_event::events::types::PPME_ASYNCEVENT_E as AsyncEvent;
 use falco_event::{Event, EventToBytes};
 use falco_plugin_api::{ss_plugin_event, ss_plugin_owner_t, ss_plugin_rc, PLUGIN_MAX_ERRLEN};
 use std::ffi::c_char;

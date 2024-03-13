@@ -1,4 +1,4 @@
-use falco_event::events::EventType;
+use falco_event::events::types::EventType;
 
 use crate::parse::{EventInput, ParseInput};
 use crate::plugin::base::Plugin;

@@ -135,7 +135,7 @@ pub mod base {
 /// ```
 /// use std::ffi::{CStr, CString};
 /// use anyhow::Error;
-/// use falco_event::events::EventType;
+/// use falco_event::events::types::EventType;
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{c, extract_plugin, FailureReason, plugin};
 /// use falco_plugin::extract::{
@@ -221,7 +221,7 @@ pub mod extract {
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
 /// use falco_event::{Event };
-/// use falco_event::events::EventType;
+/// use falco_event::events::types::EventType;
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{c, EventInput as _, FailureReason, parse_plugin, plugin};
 /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
@@ -293,7 +293,8 @@ pub mod parse {
 /// use std::sync::atomic::{AtomicBool, Ordering};
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
-/// use falco_event::{Event, EventMetadata};
+/// use falco_event::Event;
+/// use falco_event::events::EventMetadata;
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{async_event_plugin, c, EventInput as _, FailureReason, plugin};
 /// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
@@ -376,7 +377,7 @@ pub mod parse {
 /// async_event_plugin!(MyAsyncPlugin);
 /// ```
 pub mod async_event {
-    pub use falco_event::events::PPME_ASYNCEVENT_E as AsyncEvent;
+    pub use falco_event::events::types::PPME_ASYNCEVENT_E as AsyncEvent;
 
     pub use crate::plugin::async_event::async_handler::AsyncHandler;
     pub use crate::plugin::async_event::AsyncEventPlugin;
@@ -399,7 +400,7 @@ pub mod async_event {
 /// use std::sync::atomic::{AtomicBool, Ordering};
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
-/// use falco_event::{Event, EventMetadata};
+/// use falco_event::Event;
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{c, EventInput as _, FailureReason, plugin, source_plugin};
 /// use falco_plugin::source::{
@@ -477,7 +478,7 @@ pub mod source {
     pub use crate::plugin::source::open_params::{serialize_open_params, OpenParam};
     pub use crate::plugin::source::{ProgressInfo, SourcePlugin, SourcePluginInstance};
     pub use crate::strings::cstring_writer::CStringWriter;
-    pub use falco_event::events::PPME_PLUGINEVENT_E as PluginEvent;
+    pub use falco_event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
     pub use falco_plugin_api::ss_plugin_event_input as EventInput;
 }
 

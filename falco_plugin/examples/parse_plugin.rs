@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use anyhow::anyhow;
 
-use falco_event::events::EventType;
+use falco_event::events::types::EventType;
 use falco_plugin::base::{Plugin, TableInitInput};
 use falco_plugin::parse::{EventParseInput, ParsePlugin};
 use falco_plugin::tables::TypedTable;

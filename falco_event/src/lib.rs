@@ -21,7 +21,7 @@
 use std::fmt::Debug;
 use std::io::Write;
 
-pub use metadata::EventMetadata;
+use crate::events::EventMetadata;
 pub use type_id::TypeId;
 
 use crate::payload::PayloadToBytes;
@@ -38,7 +38,6 @@ pub mod event_flags;
 #[allow(missing_docs)]
 pub mod events;
 pub mod fields;
-mod metadata;
 pub mod payload;
 pub mod raw_event;
 mod type_id;
@@ -80,6 +79,7 @@ pub mod event_derive {
     pub use byteorder::ReadBytesExt;
     pub use byteorder::WriteBytesExt;
 
+    pub use crate::events::EventMetadata;
     pub use crate::fields::from_bytes::FromBytes;
     pub use crate::fields::from_bytes::FromBytesError;
     pub use crate::fields::from_bytes::FromBytesResult;
@@ -89,5 +89,4 @@ pub mod event_derive {
     pub use crate::payload::EventPayload;
     pub use crate::payload::PayloadFromBytes;
     pub use crate::payload::PayloadToBytes;
-    pub use crate::EventMetadata;
 }
