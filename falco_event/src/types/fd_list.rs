@@ -3,30 +3,23 @@ use std::io::Write;
 
 use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 
+use crate::fields::event_flags::PT_FLAGS16_file_flags;
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct FdListItem {
-    fd: u64,
-    flags: u16,
-}
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct FdList {
-    list: Vec<FdListItem>,
-}
+pub struct FdList(pub Vec<(u64, PT_FLAGS16_file_flags)>);
 
 impl Display for FdList {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut first = true;
-        for item in &self.list {
+        for item in &self.0 {
             if first {
                 first = false;
                 write!(f, "[")?;
             } else {
                 write!(f, " ")?;
             }
-            write!(f, "{}:{:x}", item.fd, item.flags)?
+            write!(f, "{}:{:?}", item.0, item.1)?
         }
 
         write!(f, "]")?;
@@ -36,14 +29,14 @@ impl Display for FdList {
 
 impl ToBytes for FdList {
     fn binary_size(&self) -> usize {
-        2 + (8 + 2) * self.list.len()
+        2 + (8 + 2) * self.0.len()
     }
 
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
-        writer.write_u16::<NativeEndian>(self.list.len() as u16)?;
-        for item in &self.list {
-            item.fd.write(&mut writer)?;
-            item.flags.write(&mut writer)?;
+        writer.write_u16::<NativeEndian>(self.0.len() as u16)?;
+        for item in &self.0 {
+            item.0.write(&mut writer)?;
+            item.1.write(&mut writer)?;
         }
 
         Ok(())
@@ -60,11 +53,11 @@ impl FromBytes<'_> for FdList {
         let len = buf.read_u16::<NativeEndian>()?;
         for _ in 0..len as usize {
             let fd = u64::from_bytes(buf)?;
-            let flags = u16::from_bytes(buf)?;
-            fds.push(FdListItem { fd, flags })
+            let flags = PT_FLAGS16_file_flags::from_bytes(buf)?;
+            fds.push((fd, flags))
         }
 
-        Ok(Self { list: fds })
+        Ok(Self(fds))
     }
 }
 
@@ -74,9 +67,7 @@ mod tests {
 
     #[test]
     fn test_fd_list() {
-        let fdlist = FdList {
-            list: vec![FdListItem { fd: 13, flags: 1 }],
-        };
+        let fdlist = FdList(vec![(13, PT_FLAGS16_file_flags::O_RDONLY)]);
 
         dbg!(&fdlist);
 

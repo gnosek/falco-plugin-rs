@@ -130,7 +130,7 @@ fn render_enum(
     quote!(
         #[repr(#repr_type)]
         #[allow(non_camel_case_types)]
-        #[derive(FromPrimitive, Copy, Clone, Debug)]
+        #[derive(FromPrimitive, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
         pub enum #name {
             #(#items,)*
         }
@@ -172,7 +172,7 @@ fn render_bitflags(
     quote!(
         bitflags::bitflags! {
             #[allow(non_camel_case_types)]
-            #[derive(Debug)]
+            #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
             pub struct #name: #repr_type {
                 #(#items;)*
                 const _ = !0;

@@ -315,11 +315,13 @@ pub fn event_info(input: TokenStream) -> TokenStream {
     let matches = events.enum_matches();
     quote!(
         use falco_event_derive::BinaryPayload;
+        use num_derive::FromPrimitive;
         use crate::event_derive::RawEvent;
 
         #(#typedefs)*
 
         #[derive(Debug)]
+        #[derive(FromPrimitive)]
         #[allow(non_camel_case_types)]
         #[repr(u16)]
         pub enum EventType {
