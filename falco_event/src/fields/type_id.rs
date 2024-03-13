@@ -29,14 +29,23 @@ use num_derive::FromPrimitive;
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive)]
 pub enum TypeId {
+    /// No type (unused)
     None = ppm_param_type_PT_NONE,
+    /// 8-bit signed int
     I8 = ppm_param_type_PT_INT8,
+    /// 16-bit signed int
     I16 = ppm_param_type_PT_INT16,
+    /// 32-bit signed int
     I32 = ppm_param_type_PT_INT32,
+    /// 64-bit signed int
     I64 = ppm_param_type_PT_INT64,
+    /// 8-bit unsigned int
     U8 = ppm_param_type_PT_UINT8,
+    /// 16-bit unsigned int
     U16 = ppm_param_type_PT_UINT16,
+    /// 32-bit unsigned int
     U32 = ppm_param_type_PT_UINT32,
+    /// 64-bit unsigned int
     U64 = ppm_param_type_PT_UINT64,
     /// A printable buffer of bytes, NULL terminated
     CharBuf = ppm_param_type_PT_CHARBUF,

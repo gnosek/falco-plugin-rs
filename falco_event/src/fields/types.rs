@@ -28,17 +28,29 @@ pub use std::path::Path as PT_FSPATH;
 pub use std::time::Duration as PT_RELTIME;
 pub use std::time::SystemTime as PT_ABSTIME;
 
+/// Signed 8-bit value ([i8])
 pub type PT_INT8 = i8;
+/// Signed 16-bit value ([i16])
 pub type PT_INT16 = i16;
+/// Signed 32-bit value ([i32])
 pub type PT_INT32 = i32;
+/// Signed 64-bit value ([i64])
 pub type PT_INT64 = i64;
+/// Unsigned 8-bit value ([u8])
 pub type PT_UINT8 = u8;
+/// Unsigned 16-bit value ([u16])
 pub type PT_UINT16 = u16;
+/// Unsigned 32-bit value ([u32])
 pub type PT_UINT32 = u32;
+/// Unsigned 64-bit value ([u64])
 pub type PT_UINT64 = u64;
+/// C-style string ([CStr])
 pub type PT_CHARBUF = CStr;
+/// Arbitrary byte buffer (`[u8]`)
 pub type PT_BYTEBUF = [u8];
+/// Array of C-style strings (`Vec<&CStr>`)
 pub type PT_CHARBUFARRAY<'a> = Vec<&'a CStr>;
+/// Array of pairs of C-style strings (`Vec<(&CStr, &CStr)>`)
 pub type PT_CHARBUF_PAIR_ARRAY<'a> = Vec<(&'a CStr, &'a CStr)>;
 
 // PT_DOUBLE = 33, /* this is a double precision floating point number. */ // this remains unimplemented

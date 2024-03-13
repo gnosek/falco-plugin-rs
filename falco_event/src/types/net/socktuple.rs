@@ -7,14 +7,9 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
+use crate::types::Port;
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct EndpointV4(Ipv4Addr, u16);
-impl Display for EndpointV4 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.0, self.1)
-    }
-}
+type EndpointV4 = (Ipv4Addr, Port);
 
 impl ToBytes for EndpointV4 {
     fn binary_size(&self) -> usize {
@@ -28,27 +23,17 @@ impl ToBytes for EndpointV4 {
     }
 
     fn default_repr() -> impl ToBytes {
-        Self(Ipv4Addr::from(0), 0)
+        (Ipv4Addr::from(0), Port(0))
     }
 }
 
 impl FromBytes<'_> for EndpointV4 {
     fn from_bytes(buf: &mut &'_ [u8]) -> FromBytesResult<Self> {
-        Ok(Self(
-            FromBytes::from_bytes(buf)?,
-            FromBytes::from_bytes(buf)?,
-        ))
+        Ok((FromBytes::from_bytes(buf)?, FromBytes::from_bytes(buf)?))
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct EndpointV6(Ipv6Addr, u16);
-
-impl Display for EndpointV6 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}]:{}", self.0, self.1)
-    }
-}
+type EndpointV6 = (Ipv6Addr, Port);
 
 impl ToBytes for EndpointV6 {
     fn binary_size(&self) -> usize {
@@ -62,35 +47,49 @@ impl ToBytes for EndpointV6 {
     }
 
     fn default_repr() -> impl ToBytes {
-        Self(Ipv6Addr::from(0), 0)
+        (Ipv6Addr::from(0), Port(0))
     }
 }
 
 impl FromBytes<'_> for EndpointV6 {
     fn from_bytes(buf: &mut &'_ [u8]) -> FromBytesResult<Self> {
-        Ok(Self(
-            FromBytes::from_bytes(buf)?,
-            FromBytes::from_bytes(buf)?,
-        ))
+        Ok((FromBytes::from_bytes(buf)?, FromBytes::from_bytes(buf)?))
     }
 }
 
+/// Socket tuple: describing both endpoints of a connection
 #[derive(Debug, Eq, PartialEq)]
 pub enum SockTuple<'a> {
+    /// Unknown
     None,
+
+    /// Unix socket connection
     Unix {
-        source_addr: u64,
-        dest_addr: u64,
+        /// source socket kernel pointer
+        source_ptr: u64,
+        /// destination socket kernel pointer
+        dest_ptr: u64,
+        /// filesystem path to the socket
         path: &'a Path,
     },
+
+    /// IPv4 connection
     V4 {
+        /// source address and port
         source: EndpointV4,
+        /// destination address and port
         dest: EndpointV4,
     },
+
+    /// IPv6 connection
     V6 {
+        /// source address and port
         source: EndpointV6,
+        /// destination address and port
         dest: EndpointV6,
     },
+
+    /// Unknown/other socket family: `PPM_AF_*` id and a raw byte buffer
     Other(u8, &'a [u8]),
 }
 
@@ -99,12 +98,20 @@ impl Display for SockTuple<'_> {
         match self {
             SockTuple::None => write!(f, "None"),
             SockTuple::Unix {
-                source_addr,
-                dest_addr,
+                source_ptr,
+                dest_ptr,
                 path,
-            } => write!(f, "{:x}->{:x} {}", source_addr, dest_addr, path.display()),
-            SockTuple::V4 { source, dest } => write!(f, "{:?} -> {:?}", source, dest),
-            SockTuple::V6 { source, dest } => write!(f, "{:?} -> {:?}", source, dest),
+            } => write!(f, "{:x}->{:x} {}", source_ptr, dest_ptr, path.display()),
+            SockTuple::V4 { source, dest } => write!(
+                f,
+                "{}:{} -> {}:{}",
+                source.0, source.1 .0, dest.0, dest.1 .0
+            ),
+            SockTuple::V6 { source, dest } => write!(
+                f,
+                "[{}]:{} -> [{}]:{}",
+                source.0, source.1 .0, dest.0, dest.1 .0
+            ),
             SockTuple::Other(af, buf) => f
                 .debug_struct("SockTuple")
                 .field("af", &af)
@@ -119,8 +126,8 @@ impl ToBytes for SockTuple<'_> {
         match self {
             SockTuple::None => 0,
             SockTuple::Unix {
-                source_addr,
-                dest_addr,
+                source_ptr: source_addr,
+                dest_ptr: dest_addr,
                 path,
             } => 1 + source_addr.binary_size() + dest_addr.binary_size() + path.binary_size(),
             SockTuple::V4 { source, dest } => 1 + source.binary_size() + dest.binary_size(),
@@ -133,8 +140,8 @@ impl ToBytes for SockTuple<'_> {
         match self {
             SockTuple::None => Ok(()),
             SockTuple::Unix {
-                source_addr,
-                dest_addr,
+                source_ptr: source_addr,
+                dest_ptr: dest_addr,
                 path,
             } => {
                 writer.write_u8(PPM_AF_LOCAL as u8)?;
@@ -169,8 +176,8 @@ impl<'a> FromBytes<'a> for SockTuple<'a> {
         let variant = buf.read_u8()?;
         match variant as u32 {
             PPM_AF_LOCAL => Ok(Self::Unix {
-                source_addr: FromBytes::from_bytes(buf)?,
-                dest_addr: FromBytes::from_bytes(buf)?,
+                source_ptr: FromBytes::from_bytes(buf)?,
+                dest_ptr: FromBytes::from_bytes(buf)?,
                 path: FromBytes::from_bytes(buf)?,
             }),
             PPM_AF_INET => Ok(Self::V4 {
@@ -196,8 +203,8 @@ mod tests {
     #[test]
     fn test_socktuple_ipv4() {
         let socktuple = SockTuple::V4 {
-            source: EndpointV4(Ipv4Addr::from_str("172.31.33.48").unwrap(), 47263),
-            dest: EndpointV4(Ipv4Addr::from_str("172.31.0.2").unwrap(), 53),
+            source: (Ipv4Addr::from_str("172.31.33.48").unwrap(), Port(47263)),
+            dest: (Ipv4Addr::from_str("172.31.0.2").unwrap(), Port(53)),
         };
 
         dbg!(&socktuple);
@@ -218,8 +225,14 @@ mod tests {
     #[test]
     fn test_socktuple_ipv6() {
         let socktuple = SockTuple::V6 {
-            source: EndpointV6(Ipv6Addr::from_str("2001:4860:4860::8844").unwrap(), 47263),
-            dest: EndpointV6(Ipv6Addr::from_str("2001:4860:4860::8800").unwrap(), 53),
+            source: (
+                Ipv6Addr::from_str("2001:4860:4860::8844").unwrap(),
+                Port(47263),
+            ),
+            dest: (
+                Ipv6Addr::from_str("2001:4860:4860::8800").unwrap(),
+                Port(53),
+            ),
         };
 
         dbg!(&socktuple);
@@ -249,8 +262,8 @@ mod tests {
         socktuple.write(&mut binary2).unwrap();
 
         let SockTuple::Unix {
-            source_addr,
-            dest_addr,
+            source_ptr: source_addr,
+            dest_ptr: dest_addr,
             path,
         } = socktuple
         else {

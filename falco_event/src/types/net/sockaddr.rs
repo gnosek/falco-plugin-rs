@@ -7,11 +7,19 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
+/// A socket address
 #[derive(Debug)]
 pub enum SockAddr<'a> {
+    /// Unix sockets
     Unix(&'a Path),
+
+    /// IPv4 sockets
     V4(Ipv4Addr),
+
+    /// IPv6 socket
     V6(Ipv6Addr),
+
+    /// any other address family is represented as the number (`PPM_AF_*` constant) and the raw data
     Other(u8, &'a [u8]),
 }
 
