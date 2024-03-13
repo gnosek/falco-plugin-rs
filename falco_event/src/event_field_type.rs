@@ -4,8 +4,9 @@ use std::ffi::CStr;
 pub use std::net::IpAddr as PT_IPADDR;
 pub use std::net::Ipv4Addr as PT_IPV4ADDR;
 pub use std::net::Ipv6Addr as PT_IPV6ADDR;
-use std::path::Path;
-use std::time::{Duration, SystemTime};
+pub use std::path::Path as PT_FSPATH;
+pub use std::time::Duration as PT_RELTIME;
+pub use std::time::SystemTime as PT_ABSTIME;
 
 pub use crate::dynamic_params::*;
 pub use crate::event_flags::*;
@@ -38,9 +39,6 @@ pub type PT_UINT32 = u32;
 pub type PT_UINT64 = u64;
 pub type PT_CHARBUF = CStr;
 pub type PT_BYTEBUF = [u8];
-pub type PT_FSPATH = Path;
-pub type PT_RELTIME = Duration;
-pub type PT_ABSTIME = SystemTime;
 pub type PT_CHARBUFARRAY<'a> = Vec<&'a CStr>;
 pub type PT_CHARBUF_PAIR_ARRAY<'a> = Vec<(&'a CStr, &'a CStr)>;
 

@@ -1,7 +1,8 @@
 use std::io::Write;
 
+use crate::events::EventType;
 use crate::from_bytes::FromBytesResult;
-use crate::{EventMetadata, EventType};
+use crate::EventMetadata;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum EventDirection {

@@ -2,7 +2,7 @@ use std::ffi::{CStr, CString};
 
 use thiserror::Error;
 
-use falco_event::EventType;
+use falco_event::events::EventType;
 use falco_plugin_api::ss_plugin_extract_field;
 
 use crate::extract::{EventInput, ExtractArgType};

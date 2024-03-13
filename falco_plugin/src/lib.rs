@@ -135,7 +135,7 @@ pub mod base {
 /// ```
 /// use std::ffi::{CStr, CString};
 /// use anyhow::Error;
-/// use falco_event::EventType;
+/// use falco_event::events::EventType;
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{c, extract_plugin, FailureReason, plugin};
 /// use falco_plugin::extract::{
@@ -220,7 +220,8 @@ pub mod extract {
 /// use std::sync::atomic::{AtomicBool, Ordering};
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
-/// use falco_event::{Event, EventMetadata, EventType};
+/// use falco_event::{Event, EventMetadata};
+/// use falco_event::events::EventType;
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{c, EventInput as _, FailureReason, parse_plugin, plugin};
 /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
@@ -292,7 +293,7 @@ pub mod parse {
 /// use std::sync::atomic::{AtomicBool, Ordering};
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
-/// use falco_event::{Event, EventMetadata, EventType};
+/// use falco_event::{Event, EventMetadata};
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{async_event_plugin, c, EventInput as _, FailureReason, plugin};
 /// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
@@ -398,7 +399,7 @@ pub mod async_event {
 /// use std::sync::atomic::{AtomicBool, Ordering};
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
-/// use falco_event::{Event, EventMetadata, EventType};
+/// use falco_event::{Event, EventMetadata};
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{c, EventInput as _, FailureReason, plugin, source_plugin};
 /// use falco_plugin::source::{
