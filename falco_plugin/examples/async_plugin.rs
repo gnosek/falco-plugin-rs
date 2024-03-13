@@ -1,15 +1,18 @@
-use anyhow::Error;
-use falco_event::{Event, EventMetadata};
-use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
-use falco_plugin::base::Plugin;
-use falco_plugin::{async_event_plugin, c, plugin, FailureReason};
-use falco_plugin_api::ss_plugin_init_input;
 use std::ffi::CStr;
 use std::panic;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Duration;
+
+use anyhow::Error;
+
+use falco_event::Event;
+use falco_event::EventMetadata;
+use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
+use falco_plugin::base::Plugin;
+use falco_plugin::{async_event_plugin, c, plugin, FailureReason};
+use falco_plugin_api::ss_plugin_init_input;
 
 #[derive(Default)]
 struct DummyAsyncPlugin {

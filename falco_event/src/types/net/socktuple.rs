@@ -5,8 +5,9 @@ use std::path::Path;
 
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
-use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
+use crate::fields::from_bytes::{FromBytes, FromBytesResult};
+use crate::fields::to_bytes::ToBytes;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct EndpointV4(Ipv4Addr, u16);
@@ -188,12 +189,10 @@ impl<'a> FromBytes<'a> for SockTuple<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::from_bytes::FromBytes;
-    use crate::to_bytes::ToBytes;
-    use crate::types::net::socktuple::{EndpointV4, EndpointV6, SockTuple};
-    use std::net::{Ipv4Addr, Ipv6Addr};
     use std::os::unix::ffi::OsStrExt;
     use std::str::FromStr;
+
+    use super::*;
 
     #[test]
     fn test_socktuple_ipv4() {

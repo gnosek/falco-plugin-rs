@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
-use crate::from_bytes::{FromBytes, FromBytesResult};
-use crate::to_bytes::ToBytes;
+use crate::fields::from_bytes::{FromBytes, FromBytesResult};
+use crate::fields::to_bytes::ToBytes;
 
 macro_rules! newtype {
     ($(#[$attr:meta])* $name:ident($repr:ty)) => {

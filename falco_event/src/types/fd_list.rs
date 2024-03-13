@@ -1,6 +1,5 @@
-use crate::event_derive::FromBytesResult;
-use crate::from_bytes::FromBytes;
-use crate::to_bytes::ToBytes;
+use crate::fields::from_bytes::{FromBytes, FromBytesResult};
+use crate::fields::to_bytes::ToBytes;
 use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use std::fmt::{Debug, Display, Formatter};
 use std::io::Write;
@@ -70,9 +69,7 @@ impl FromBytes<'_> for FdList {
 
 #[cfg(test)]
 mod tests {
-    use crate::from_bytes::FromBytes;
-    use crate::to_bytes::ToBytes;
-    use crate::types::fd_list::{FdList, FdListItem};
+    use super::*;
 
     #[test]
     fn test_fd_list() {

@@ -220,7 +220,7 @@ pub mod extract {
 /// use std::sync::atomic::{AtomicBool, Ordering};
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
-/// use falco_event::{Event, EventMetadata};
+/// use falco_event::{Event };
 /// use falco_event::events::EventType;
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{c, EventInput as _, FailureReason, parse_plugin, plugin};

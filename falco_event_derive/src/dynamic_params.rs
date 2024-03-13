@@ -74,7 +74,7 @@ impl DynamicParamVariant {
     fn variant_definition(&self) -> proc_macro2::TokenStream {
         let (disc, ty, field_ref, field_lifetime) = self.unpack();
 
-        quote!(#disc(#field_ref crate::event_field_type::#ty #field_lifetime))
+        quote!(#disc(#field_ref crate::event_derive::event_field_type::#ty #field_lifetime))
     }
 
     fn variant_read(&self) -> proc_macro2::TokenStream {
@@ -82,7 +82,7 @@ impl DynamicParamVariant {
 
         quote!(crate::ffi:: #disc => {
             Ok(Self:: #disc(
-                <#field_ref crate::event_field_type::#ty #field_lifetime as crate::event_derive::FromBytes>::from_bytes(buf)?
+                <#field_ref crate::event_derive::event_field_type::#ty #field_lifetime as crate::event_derive::FromBytes>::from_bytes(buf)?
             ))
         })
     }

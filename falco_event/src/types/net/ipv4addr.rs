@@ -3,7 +3,8 @@ use std::net::Ipv4Addr;
 
 use byteorder::{NetworkEndian, ReadBytesExt};
 
-use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
+use crate::fields::from_bytes::{FromBytes, FromBytesResult};
+use crate::fields::to_bytes::ToBytes;
 
 impl FromBytes<'_> for Ipv4Addr {
     fn from_bytes(buf: &mut &[u8]) -> FromBytesResult<Self> {
@@ -28,11 +29,9 @@ impl ToBytes for Ipv4Addr {
 
 #[cfg(test)]
 mod tests {
-    use std::net::Ipv4Addr;
     use std::str::FromStr;
 
-    use crate::event_derive::FromBytes;
-    use crate::to_bytes::ToBytes;
+    use super::*;
 
     #[test]
     fn test_ipv6_addr() {

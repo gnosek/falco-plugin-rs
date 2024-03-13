@@ -1,4 +1,4 @@
-use crate::from_bytes::{FromBytesError, FromBytesResult};
+use crate::fields::from_bytes::{FromBytesError, FromBytesResult};
 use crate::payload::{EventPayload, PayloadFromBytes};
 use crate::{Event, EventMetadata};
 use byteorder::{NativeEndian, ReadBytesExt};

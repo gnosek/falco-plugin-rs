@@ -31,10 +31,9 @@ impl ToBytes for Ipv6Addr {
 
 #[cfg(test)]
 mod tests {
-    use crate::event_derive::FromBytes;
-    use crate::to_bytes::ToBytes;
-    use std::net::Ipv6Addr;
     use std::str::FromStr;
+
+    use super::*;
 
     #[test]
     fn test_ipv6_addr() {
