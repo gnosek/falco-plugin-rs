@@ -6,8 +6,7 @@ use std::path::Path;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
-use crate::fields::from_bytes::{FromBytes, FromBytesResult};
-use crate::fields::to_bytes::ToBytes;
+use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct EndpointV4(Ipv4Addr, u16);

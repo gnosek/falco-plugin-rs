@@ -2,7 +2,7 @@ use byteorder::{NativeEndian, ReadBytesExt};
 
 use crate::events::payload::{EventPayload, PayloadFromBytes};
 use crate::events::{Event, EventMetadata};
-use crate::fields::from_bytes::{FromBytesError, FromBytesResult};
+use crate::fields::{FromBytesError, FromBytesResult};
 
 #[derive(Debug)]
 pub struct RawEvent<'a> {

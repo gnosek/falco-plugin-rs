@@ -1,4 +1,4 @@
-use crate::fields::from_bytes::FromBytesResult;
+use crate::fields::FromBytesResult;
 use std::io::Write;
 
 use crate::events::types::EventType;

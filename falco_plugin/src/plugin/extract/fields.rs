@@ -1,8 +1,10 @@
-use crate::plugin::storage::FieldStorageSession;
-use falco_event::fields::to_bytes::ToBytes;
+use std::ffi::{c_void, CString};
+
+use falco_event::fields::ToBytes;
 use falco_event::fields::TypeId;
 use falco_plugin_api::ss_plugin_extract_field;
-use std::ffi::{c_void, CString};
+
+use crate::plugin::storage::FieldStorageSession;
 
 pub trait Extract {
     const IS_LIST: bool;

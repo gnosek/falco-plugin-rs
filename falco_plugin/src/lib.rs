@@ -293,7 +293,7 @@ pub mod parse {
 /// use std::sync::atomic::{AtomicBool, Ordering};
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
-/// use falco_event::events::event::Event;
+/// use falco_event::events::Event;
 /// use falco_event::events::EventMetadata;
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{async_event_plugin, c, EventInput as _, FailureReason, plugin};
@@ -400,7 +400,7 @@ pub mod async_event {
 /// use std::sync::atomic::{AtomicBool, Ordering};
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
-/// use falco_event::events::event::Event;
+/// use falco_event::events::Event;
 /// use falco_plugin::base::{InitInput, Plugin};
 /// use falco_plugin::{c, EventInput as _, FailureReason, plugin, source_plugin};
 /// use falco_plugin::source::{

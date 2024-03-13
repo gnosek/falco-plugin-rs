@@ -42,10 +42,10 @@ mod event_derive {
     pub use crate::events::Event;
     pub use crate::events::EventMetadata;
     pub use crate::events::RawEvent;
-    pub use crate::fields::from_bytes::FromBytes;
-    pub use crate::fields::from_bytes::FromBytesError;
-    pub use crate::fields::from_bytes::FromBytesResult;
-    pub use crate::fields::to_bytes::NoDefault;
-    pub use crate::fields::to_bytes::ToBytes;
     pub use crate::fields::types as event_field_type;
+    pub use crate::fields::FromBytes;
+    pub use crate::fields::FromBytesError;
+    pub use crate::fields::FromBytesResult;
+    pub use crate::fields::NoDefault;
+    pub use crate::fields::ToBytes;
 }

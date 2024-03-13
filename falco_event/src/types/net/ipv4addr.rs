@@ -3,8 +3,7 @@ use std::net::Ipv4Addr;
 
 use byteorder::{NetworkEndian, ReadBytesExt};
 
-use crate::fields::from_bytes::{FromBytes, FromBytesResult};
-use crate::fields::to_bytes::ToBytes;
+use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 
 impl FromBytes<'_> for Ipv4Addr {
     fn from_bytes(buf: &mut &[u8]) -> FromBytesResult<Self> {

@@ -1,5 +1,4 @@
-use crate::fields::from_bytes::{FromBytes, FromBytesResult};
-use crate::fields::to_bytes::ToBytes;
+use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 macro_rules! impl_int_type {

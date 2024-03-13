@@ -1,4 +1,4 @@
-use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
+use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 use std::io::Write;
 
 impl<'a> FromBytes<'a> for &'a [u8] {

@@ -1,8 +1,9 @@
-use crate::fields::from_bytes::{FromBytes, FromBytesResult};
-use crate::fields::to_bytes::ToBytes;
-use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use std::fmt::{Debug, Display, Formatter};
 use std::io::Write;
+
+use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
+
+use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct FdListItem {
