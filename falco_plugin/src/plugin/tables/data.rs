@@ -66,7 +66,7 @@ impl_table_data_for_numeric_type!(i64 => s64: TypeId::I64);
 ///
 /// This type serves as a wrapper, exposing conversion methods to/from Rust bool.
 #[repr(transparent)]
-pub struct Bool(ss_plugin_bool);
+pub struct Bool(pub(crate) ss_plugin_bool);
 
 impl From<bool> for Bool {
     fn from(value: bool) -> Self {

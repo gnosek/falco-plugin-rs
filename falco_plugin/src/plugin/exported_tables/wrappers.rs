@@ -266,7 +266,7 @@ unsafe extern "C" fn add_table_field<T: ExportedTable>(
         } else {
             CStr::from_ptr(name)
         };
-        match table.add_field(name, data_type) {
+        match table.add_field(name, data_type, false) {
             Some(field) => Box::into_raw(Box::new(field)) as *mut _,
             None => std::ptr::null_mut(),
         }

@@ -1,18 +1,46 @@
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 
 use anyhow::anyhow;
 
 use falco_event::events::types::EventType;
 use falco_plugin::base::{Plugin, TableInitInput};
 use falco_plugin::parse::{EventParseInput, ParsePlugin};
-use falco_plugin::tables::TypedTable;
-use falco_plugin::tables::TypedTableField;
+use falco_plugin::tables::{DynamicFieldValues, TypedTableField};
+use falco_plugin::tables::{DynamicTable, TypedTable};
 use falco_plugin::{c, parse_plugin, plugin, EventInput, FailureReason};
 use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input, ss_plugin_init_input};
+use falco_plugin_derive::TableValues;
+
+#[derive(TableValues, Default)]
+struct AnotherTable {
+    #[readonly]
+    int_field: u64,
+    string_field: CString,
+
+    #[hidden]
+    secret: Vec<u8>,
+
+    #[dynamic]
+    dynamic_fields: DynamicFieldValues,
+}
+
+#[derive(TableValues, Default)]
+#[static_only]
+struct TableWithStaticFieldsOnly {
+    #[readonly]
+    int_field: u64,
+    string_field: CString,
+
+    #[hidden]
+    secret: Vec<u8>,
+}
 
 pub struct DummyPlugin {
     thread_table: TypedTable<i64>,
     sample_field: TypedTableField<u64>,
+    new_table: &'static mut DynamicTable<u64>,
+    another_table: &'static mut DynamicTable<u64, AnotherTable>,
+    table_with_static_fields_only: &'static mut DynamicTable<u64, TableWithStaticFieldsOnly>,
 }
 
 impl Plugin for DummyPlugin {
@@ -26,9 +54,17 @@ impl Plugin for DummyPlugin {
         let thread_table = input.get_table::<i64>(c!("threads"))?;
         let sample_field = thread_table.add_field::<u64>(c!("sample"))?;
 
+        let new_table = input.add_table(DynamicTable::new(c!("sample")))?;
+        let another_table = input.add_table(DynamicTable::new(c!("another")))?;
+        let table_with_static_fields_only =
+            input.add_table(DynamicTable::new(c!("static_fields_only")))?;
+
         Ok(DummyPlugin {
             thread_table,
             sample_field,
+            new_table,
+            another_table,
+            table_with_static_fields_only,
         })
     }
 }

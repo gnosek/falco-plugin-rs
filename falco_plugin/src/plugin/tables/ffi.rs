@@ -1,14 +1,12 @@
 use std::ffi::CStr;
 
-use anyhow::Error;
-
 use falco_plugin_api::{
     ss_plugin_init_input, ss_plugin_state_type, ss_plugin_table_fields_vtable,
     ss_plugin_table_info, ss_plugin_table_input, ss_plugin_table_reader_vtable,
     ss_plugin_table_writer_vtable,
 };
 
-use crate::plugin::error::{AsResult, LastError};
+use crate::plugin::error::AsResult;
 use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, writer_vtable};
 use crate::plugin::exported_tables::ExportedTable;
 use crate::plugin::tables::data::TableData;
@@ -105,9 +103,8 @@ pub trait InitInput {
     /// introducing a custom derive macro for the ExportedTable trait.
     fn add_table<K: TableData, T: ExportedTable<Key = K>>(
         &self,
-        name: &'static CStr,
-        table: Box<T>,
-    ) -> Result<(), Error>;
+        table: T,
+    ) -> Result<&'static mut T, FailureReason>;
 }
 
 impl InitInput for ss_plugin_init_input {
@@ -145,26 +142,25 @@ impl InitInput for ss_plugin_init_input {
 
     fn add_table<K: TableData, T: ExportedTable>(
         &self,
-        name: &'static CStr,
-        table: Box<T>,
-    ) -> Result<(), Error> {
+        table: T,
+    ) -> Result<&'static mut T, FailureReason> {
         let vtable = unsafe { self.tables.as_ref() }.ok_or(FailureReason::Failure)?;
         let add_table = vtable.add_table.ok_or(FailureReason::Failure)?;
-
-        // Safety: we pass the data directly from FFI, the framework would never lie to us, right?
-        let last_err = unsafe { LastError::new(self.owner, self.get_owner_last_error) };
 
         let mut reader_vtable_ext = reader_vtable::<T>();
         let mut writer_vtable_ext = writer_vtable::<T>();
         let mut fields_vtable_ext = fields_vtable::<T>();
 
+        let mut table = Box::new(table);
+        let table_ptr = table.as_mut() as *mut T;
+
         // Note: we lend the ss_plugin_table_input to the FFI api and do not need
         // to hold on to it (everything is copied out), but the name field is copied
         // as a pointer, so the name we receive must be a 'static ref
         let table_input = ss_plugin_table_input {
-            name: name.as_ptr(),
+            name: table.name().as_ptr(),
             key_type: K::TYPE_ID as ss_plugin_state_type,
-            table: Box::into_raw(table) as *mut _,
+            table: table_ptr.cast(),
             reader: ss_plugin_table_reader_vtable {
                 get_table_name: reader_vtable_ext.get_table_name,
                 get_table_size: reader_vtable_ext.get_table_size,
@@ -189,7 +185,9 @@ impl InitInput for ss_plugin_init_input {
             fields_ext: &mut fields_vtable_ext as *mut _,
         };
 
-        unsafe { add_table(self.owner, &table_input as *const _) }
-            .as_result_with_last_error(&last_err)
+        unsafe { add_table(self.owner, &table_input as *const _) }.as_result()?;
+        // There is no API for destroying a table, so we leak the pointer. At least we can have
+        // a &'static back
+        Ok(Box::leak(table))
     }
 }

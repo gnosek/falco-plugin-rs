@@ -1,0 +1,18 @@
+[package]
+name = "falco_plugin_derive"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Derive macros for the falco_plugin library"
+homepage = "https://gnosek.github.io/falco-plugin-rs/falco_plugin_derive/"
+repository = "https://github.com/gnosek/falco-plugin-rs"
+readme = "README.md"
+keywords = ["falco", "security"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1"
+proc-macro2 = "1.0"
+syn = "2"

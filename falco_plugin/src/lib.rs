@@ -3,8 +3,62 @@
 #![deny(rustdoc::broken_intra_doc_links)]
 
 // reexport dependencies
+pub use falco_plugin_api as api;
 pub use schemars;
 pub use serde;
+
+/// Mark a struct type as a table value
+///
+/// Tables in Falco plugins are effectively maps from a [key](`tables::TableData`)
+/// to a (possibly dynamic) struct of values.
+///
+/// The default implementation for tables ([`tables::DynamicFieldValues`]) uses
+/// dynamic fields only, but with this macro you can also define structs containing static
+/// (predefined) fields that are accessible to your plugin without going through the Falco
+/// plugin API.
+///
+/// A table can be fully static (no dynamic fields allowed). In this case, it must be tagged
+/// with a `#[static_only]` attribute (to prevent accidental omission of the dynamic field values,
+/// which would only get caught at runtime, possibly much later).
+///
+/// Alternatively, it can mark a single field as `#[dynamic]`. That field needs to implement
+/// [`tables::TableValues`] and it will generally be of type [`tables::DynamicFieldValues`].
+///
+/// Fields tagged as `#[readonly]` won't be writable via the Falco API and fields tagged
+/// as `#[hidden]` won't be exposed to the API at all. This is useful if you want to store data
+/// that's incompatible with the Falco plugin API in your table.
+///
+/// # Example
+/// ```
+/// use std::ffi::CString;
+/// use falco_plugin::tables::DynamicFieldValues;
+/// use falco_plugin::TableValues;
+///
+/// #[derive(TableValues, Default)]     // all table structs must implement Default
+/// #[static_only]                      // no dynamic fields in this one
+/// struct TableWithStaticFieldsOnly {
+///     #[readonly]
+///     int_field: u64,                 // this field cannot be modified with the Falco API
+///     string_field: CString,
+///
+///     #[hidden]
+///     secret: Vec<u8>,                // this field is not visible via the Falco API
+/// }
+///
+/// #[derive(TableValues, Default)]
+/// struct AnotherTable {
+///     #[readonly]
+///     int_field: u64,                 // this field cannot be modified with the Falco API
+///     string_field: CString,
+///
+///     #[hidden]
+///     secret: Vec<u8>,                // this field is not visible via the Falco API
+///
+///     #[dynamic]
+///     dynamic_fields: DynamicFieldValues, // dynamically added fields have their values here
+/// }
+/// ```
+pub use falco_plugin_derive::TableValues;
 
 pub use crate::plugin::error::FailureReason;
 pub use crate::plugin::event::EventInput;
@@ -440,8 +494,12 @@ pub mod source {
 pub mod tables {
     pub use crate::plugin::exported_tables::DynamicField;
     pub use crate::plugin::exported_tables::DynamicFieldValue;
+    pub use crate::plugin::exported_tables::DynamicFieldValues;
     pub use crate::plugin::exported_tables::DynamicTable;
     pub use crate::plugin::exported_tables::ExportedTable;
+    pub use crate::plugin::exported_tables::FieldValue;
+    pub use crate::plugin::exported_tables::StaticField;
+    pub use crate::plugin::exported_tables::TableValues;
     pub use crate::plugin::tables::data::Bool;
     pub use crate::plugin::tables::data::TableData;
     pub use crate::plugin::tables::data::TypedTableField;
@@ -449,6 +507,7 @@ pub mod tables {
     pub use crate::plugin::tables::entry::TableEntryReader;
     pub use crate::plugin::tables::table::TypedTable;
     pub use crate::plugin::tables::table_reader::TableReader;
+    pub use falco_event::fields::TypeId;
 }
 
 mod plugin;
