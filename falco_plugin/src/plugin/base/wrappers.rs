@@ -67,7 +67,7 @@ impl<T: Plugin, const MAJOR: usize, const MINOR: usize, const PATCH: usize>
 pub type PluginApi<T> = PluginApiWithVersionOverride<
     { falco_plugin_api::PLUGIN_API_VERSION_MAJOR as usize },
     { falco_plugin_api::PLUGIN_API_VERSION_MINOR as usize },
-    { falco_plugin_api::PLUGIN_API_VERSION_PATCH as usize },
+    0usize,
     T,
 >;
 
@@ -320,7 +320,7 @@ macro_rules! plugin {
         plugin!(
             falco_plugin_api::PLUGIN_API_VERSION_MAJOR as usize;
             falco_plugin_api::PLUGIN_API_VERSION_MINOR as usize;
-            falco_plugin_api::PLUGIN_API_VERSION_PATCH as usize => $ty
+            0 => $ty
         );
     };
     ($maj:expr; $min:expr; $patch:expr => $ty:ty) => {
