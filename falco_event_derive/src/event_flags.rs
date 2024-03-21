@@ -7,14 +7,15 @@ use syn::token::{Brace, Bracket};
 use syn::{braced, bracketed, parse_macro_input, Ident, LitInt, LitStr, Token};
 
 enum NumberOr<T: Parse> {
-    Number(LitInt),
+    Number,
     Token(T),
 }
 
 impl<T: Parse> Parse for NumberOr<T> {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         if input.peek(LitInt) {
-            Ok(Self::Number(input.parse()?))
+            let _: LitInt = input.parse()?;
+            Ok(Self::Number)
         } else {
             Ok(Self::Token(input.parse()?))
         }
