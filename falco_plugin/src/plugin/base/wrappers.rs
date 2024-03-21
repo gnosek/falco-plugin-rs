@@ -19,7 +19,7 @@ use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::FfiResult;
 use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
 use crate::strings::from_ptr::try_str_from_ptr;
-use crate::{c, FailureReason};
+use crate::FailureReason;
 
 /// # Automatically generate the Falco plugin API structure (overriding the API version)
 ///
@@ -178,7 +178,7 @@ pub unsafe extern "C" fn plugin_get_last_error<P: Plugin>(
     let plugin = plugin as *mut PluginWrapper<P>;
     match unsafe { plugin.as_mut() } {
         Some(plugin) => plugin.error_buf.as_ptr(),
-        None => c!("no instance").as_ptr(),
+        None => c"no instance".as_ptr(),
     }
 }
 
@@ -249,7 +249,6 @@ macro_rules! wrap_ffi {
 ///
 /// ```
 /// # use std::ffi::CStr;
-/// # use falco_plugin::c;
 /// # use falco_plugin::base::InitInput;
 /// # use falco_plugin::FailureReason;
 /// use falco_plugin::base::Plugin;
@@ -258,10 +257,10 @@ macro_rules! wrap_ffi {
 /// struct MyPlugin;
 /// impl Plugin for MyPlugin {
 ///     // ...
-/// #    const NAME: &'static CStr = c!("sample-plugin-rs");
-/// #    const PLUGIN_VERSION: &'static CStr = c!("0.0.1");
-/// #    const DESCRIPTION: &'static CStr = c!("A sample Falco plugin that does nothing");
-/// #    const CONTACT: &'static CStr = c!("you@example.com");
+/// #    const NAME: &'static CStr = c"sample-plugin-rs";
+/// #    const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+/// #    const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+/// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
@@ -282,7 +281,6 @@ macro_rules! wrap_ffi {
 ///
 /// ```
 /// # use std::ffi::CStr;
-/// # use falco_plugin::c;
 /// # use falco_plugin::base::InitInput;
 /// # use falco_plugin::FailureReason;
 /// use falco_plugin::base::Plugin;
@@ -291,10 +289,10 @@ macro_rules! wrap_ffi {
 /// struct MyPlugin;
 /// impl Plugin for MyPlugin {
 ///     // ...
-/// #    const NAME: &'static CStr = c!("sample-plugin-rs");
-/// #    const PLUGIN_VERSION: &'static CStr = c!("0.0.1");
-/// #    const DESCRIPTION: &'static CStr = c!("A sample Falco plugin that does nothing");
-/// #    const CONTACT: &'static CStr = c!("you@example.com");
+/// #    const NAME: &'static CStr = c"sample-plugin-rs";
+/// #    const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+/// #    const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+/// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)

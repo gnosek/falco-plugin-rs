@@ -7,7 +7,7 @@ use falco_plugin::base::{Plugin, TableInitInput};
 use falco_plugin::parse::{EventParseInput, ParsePlugin};
 use falco_plugin::tables::{DynamicFieldValues, TypedTableField};
 use falco_plugin::tables::{DynamicTable, TypedTable};
-use falco_plugin::{c, parse_plugin, plugin, EventInput, FailureReason};
+use falco_plugin::{parse_plugin, plugin, EventInput, FailureReason};
 use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input, ss_plugin_init_input};
 use falco_plugin_derive::TableValues;
 
@@ -44,20 +44,20 @@ pub struct DummyPlugin {
 }
 
 impl Plugin for DummyPlugin {
-    const NAME: &'static CStr = c!("parse-plugin-rs");
-    const PLUGIN_VERSION: &'static CStr = c!("0.0.0");
-    const DESCRIPTION: &'static CStr = c!("sample source plugin");
-    const CONTACT: &'static CStr = c!("rust@localdomain.pl");
+    const NAME: &'static CStr = c"parse-plugin-rs";
+    const PLUGIN_VERSION: &'static CStr = c"0.0.0";
+    const DESCRIPTION: &'static CStr = c"sample source plugin";
+    const CONTACT: &'static CStr = c"rust@localdomain.pl";
     type ConfigType = ();
 
     fn new(input: &ss_plugin_init_input, _config: Self::ConfigType) -> Result<Self, FailureReason> {
-        let thread_table = input.get_table::<i64>(c!("threads"))?;
-        let sample_field = thread_table.add_field::<u64>(c!("sample"))?;
+        let thread_table = input.get_table::<i64>(c"threads")?;
+        let sample_field = thread_table.add_field::<u64>(c"sample")?;
 
-        let new_table = input.add_table(DynamicTable::new(c!("sample")))?;
-        let another_table = input.add_table(DynamicTable::new(c!("another")))?;
+        let new_table = input.add_table(DynamicTable::new(c"sample"))?;
+        let another_table = input.add_table(DynamicTable::new(c"another"))?;
         let table_with_static_fields_only =
-            input.add_table(DynamicTable::new(c!("static_fields_only")))?;
+            input.add_table(DynamicTable::new(c"static_fields_only"))?;
 
         Ok(DummyPlugin {
             thread_table,

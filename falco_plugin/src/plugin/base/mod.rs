@@ -33,9 +33,7 @@ impl<P: Plugin> PluginWrapper<P> {
 /// # A base trait for implementing Falco plugins
 ///
 /// There are several constants you need to set to describe the metadata for your plugin, described
-/// below. All the constants are C-style strings. In Rust versions below 1.77, you can use
-/// the [`c!`](`crate::c`) macro to construct them. Since 1.77, native C strings (`c"sample-plugin-rs"`)
-/// are a much better alternative.
+/// below. All the constants are C-style strings: you can initialize the fields with `c"foo"`.
 pub trait Plugin: Sized {
     /// the name of your plugin, must match the plugin name in the Falco config file
     const NAME: &'static CStr;

@@ -73,7 +73,7 @@ pub use crate::plugin::event::EventInput;
 /// ```
 /// use std::ffi::CStr;
 /// use falco_plugin::base::{InitInput, Plugin};
-/// use falco_plugin::{c, plugin};
+/// use falco_plugin::plugin;
 /// use falco_plugin::FailureReason;
 ///
 /// // define the type holding the plugin state
@@ -81,10 +81,10 @@ pub use crate::plugin::event::EventInput;
 ///
 /// // implement the base::Plugin trait
 /// impl Plugin for NoOpPlugin {
-///     const NAME: &'static CStr = c!("sample-plugin-rs");
-///     const PLUGIN_VERSION: &'static CStr = c!("0.0.1");
-///     const DESCRIPTION: &'static CStr = c!("A sample Falco plugin that does nothing");
-///     const CONTACT: &'static CStr = c!("you@example.com");
+///     const NAME: &'static CStr = c"sample-plugin-rs";
+///     const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+///     const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+///     const CONTACT: &'static CStr = c"you@example.com";
 ///     type ConfigType = ();
 ///
 ///     fn new(input: &InitInput, config: Self::ConfigType)
@@ -147,7 +147,7 @@ pub mod base {
 /// use anyhow::Error;
 /// use falco_event::events::types::EventType;
 /// use falco_plugin::base::{InitInput, Plugin};
-/// use falco_plugin::{c, extract_plugin, FailureReason, plugin};
+/// use falco_plugin::{extract_plugin, FailureReason, plugin};
 /// use falco_plugin::extract::{
 ///     EventInput,
 ///     ExtractFieldInfo,
@@ -159,10 +159,10 @@ pub mod base {
 /// struct MyExtractPlugin;
 /// impl Plugin for MyExtractPlugin {
 ///     // ...
-/// #    const NAME: &'static CStr = c!("sample-plugin-rs");
-/// #    const PLUGIN_VERSION: &'static CStr = c!("0.0.1");
-/// #    const DESCRIPTION: &'static CStr = c!("A sample Falco plugin that does nothing");
-/// #    const CONTACT: &'static CStr = c!("you@example.com");
+/// #    const NAME: &'static CStr = c"sample-plugin-rs";
+/// #    const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+/// #    const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+/// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
@@ -183,7 +183,7 @@ pub mod base {
 ///         _input: &EventInput,
 ///         _tables: &TableReader,
 ///     ) -> Result<CString, Error> {
-///         Ok(c!("hello").to_owned())
+///         Ok(c"hello".to_owned())
 ///     }
 /// }
 ///
@@ -237,7 +237,7 @@ pub mod extract {
 /// use falco_event::{ };
 /// use falco_event::events::types::EventType;
 /// use falco_plugin::base::{InitInput, Plugin};
-/// use falco_plugin::{c, EventInput as _, FailureReason, parse_plugin, plugin};
+/// use falco_plugin::{EventInput as _, FailureReason, parse_plugin, plugin};
 /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
 /// use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input};
 ///
@@ -245,10 +245,10 @@ pub mod extract {
 ///
 /// impl Plugin for MyParsePlugin {
 ///     // ...
-/// #    const NAME: &'static CStr = c!("sample-plugin-rs");
-/// #    const PLUGIN_VERSION: &'static CStr = c!("0.0.1");
-/// #    const DESCRIPTION: &'static CStr = c!("A sample Falco plugin that does nothing");
-/// #    const CONTACT: &'static CStr = c!("you@example.com");
+/// #    const NAME: &'static CStr = c"sample-plugin-rs";
+/// #    const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+/// #    const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+/// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
@@ -314,7 +314,7 @@ pub mod parse {
 /// use falco_event::events::Event;
 /// use falco_event::events::EventMetadata;
 /// use falco_plugin::base::{InitInput, Plugin};
-/// use falco_plugin::{async_event_plugin, c, EventInput as _, FailureReason, plugin};
+/// use falco_plugin::{async_event_plugin, EventInput as _, FailureReason, plugin};
 /// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
 ///
 /// struct MyAsyncPlugin {
@@ -324,10 +324,10 @@ pub mod parse {
 ///
 /// impl Plugin for MyAsyncPlugin {
 ///     // ...
-/// #    const NAME: &'static CStr = c!("sample-plugin-rs");
-/// #    const PLUGIN_VERSION: &'static CStr = c!("0.0.1");
-/// #    const DESCRIPTION: &'static CStr = c!("A sample Falco plugin that does nothing");
-/// #    const CONTACT: &'static CStr = c!("you@example.com");
+/// #    const NAME: &'static CStr = c"sample-plugin-rs";
+/// #    const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+/// #    const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+/// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
@@ -363,7 +363,7 @@ pub mod parse {
 ///                 // build an event
 ///                 let event = AsyncEvent {
 ///                     plugin_id: Some(0),
-///                     name: Some(c!("sample_async")),
+///                     name: Some(c"sample_async"),
 ///                     data: Some(b"hello"),
 ///                 };
 ///
@@ -424,7 +424,7 @@ pub mod async_event {
 /// use anyhow::Error;
 /// use falco_event::events::Event;
 /// use falco_plugin::base::{InitInput, Plugin};
-/// use falco_plugin::{c, EventInput as _, FailureReason, plugin, source_plugin};
+/// use falco_plugin::{EventInput as _, FailureReason, plugin, source_plugin};
 /// use falco_plugin::source::{
 ///     EventBatch,
 ///     EventInput,
@@ -437,10 +437,10 @@ pub mod async_event {
 ///
 /// impl Plugin for MySourcePlugin {
 ///     // ...
-/// #    const NAME: &'static CStr = c!("sample-plugin-rs");
-/// #    const PLUGIN_VERSION: &'static CStr = c!("0.0.1");
-/// #    const DESCRIPTION: &'static CStr = c!("A sample Falco plugin that does nothing");
-/// #    const CONTACT: &'static CStr = c!("you@example.com");
+/// #    const NAME: &'static CStr = c"sample-plugin-rs";
+/// #    const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+/// #    const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+/// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
@@ -457,7 +457,7 @@ pub mod async_event {
 ///
 /// impl SourcePlugin for MySourcePlugin {
 ///     type Instance = MySourcePluginInstance;
-///     const EVENT_SOURCE: &'static CStr = c!("my-source-plugin");
+///     const EVENT_SOURCE: &'static CStr = c"my-source-plugin";
 ///     const PLUGIN_ID: u32 = 0; // we do not have one assigned for this example :)
 ///
 ///     fn open(&mut self, params: Option<&str>) -> Result<Self::Instance, Error> {

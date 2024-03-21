@@ -85,10 +85,13 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
 
     let static_fields = visible_static_fields.clone().map(|f| {
         let readonly = f.attrs.iter().any(|a| a.meta.path().is_ident(&readonly));
-        let name = f.ident.as_ref().unwrap().to_string();
+        let mut name = f.ident.as_ref().unwrap().to_string();
+        name.push('\0');
         let ty = &f.ty;
 
-        quote!( (::falco_plugin::c!(#name), <#ty as ::falco_plugin::tables::StaticField>::TYPE_ID, #readonly) )
+        // TODO(sdk): seems we cannot use the c"foo" syntax here yet:
+        //            https://github.com/rust-lang/rust/issues/119750
+        quote!( ( unsafe { ::std::ffi::CStr::from_bytes_with_nul_unchecked((#name).as_bytes()) }, <#ty as ::falco_plugin::tables::StaticField>::TYPE_ID, #readonly) )
     });
 
     let static_field_gets = visible_static_fields.clone().enumerate().map(|(i, f)| {

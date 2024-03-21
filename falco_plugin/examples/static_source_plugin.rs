@@ -9,7 +9,7 @@ use falco_plugin::serde::Deserialize;
 use falco_plugin::source::{
     CStringWriter, EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
 };
-use falco_plugin::{c, EventInput as _, FailureReason};
+use falco_plugin::{EventInput as _, FailureReason};
 use falco_plugin_api::ss_plugin_init_input;
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -27,10 +27,10 @@ pub struct DummyPluginInstance {
 }
 
 impl Plugin for DummyPlugin {
-    const NAME: &'static CStr = c!("source-plugin-rs");
-    const PLUGIN_VERSION: &'static CStr = c!("0.0.0");
-    const DESCRIPTION: &'static CStr = c!("sample source plugin");
-    const CONTACT: &'static CStr = c!("rust@localdomain.pl");
+    const NAME: &'static CStr = c"source-plugin-rs";
+    const PLUGIN_VERSION: &'static CStr = c"0.0.0";
+    const DESCRIPTION: &'static CStr = c"sample source plugin";
+    const CONTACT: &'static CStr = c"rust@localdomain.pl";
     type ConfigType = Json<Config>;
 
     fn new(_input: &ss_plugin_init_input, config: Self::ConfigType) -> Result<Self, FailureReason> {
@@ -47,7 +47,7 @@ impl Plugin for DummyPlugin {
 
 impl SourcePlugin for DummyPlugin {
     type Instance = DummyPluginInstance;
-    const EVENT_SOURCE: &'static CStr = c!("example");
+    const EVENT_SOURCE: &'static CStr = c"example";
     const PLUGIN_ID: u32 = 1220;
 
     fn open(&mut self, _params: Option<&str>) -> Result<Self::Instance, Error> {

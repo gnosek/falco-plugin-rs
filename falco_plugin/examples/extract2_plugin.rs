@@ -7,7 +7,7 @@ use falco_plugin::base::{Plugin, TableInitInput};
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin};
 use falco_plugin::tables::TypedTableField;
 use falco_plugin::tables::{TableReader, TypedTable};
-use falco_plugin::{c, extract_plugin, plugin, EventInput, FailureReason};
+use falco_plugin::{extract_plugin, plugin, EventInput, FailureReason};
 use falco_plugin_api::{ss_plugin_event_input, ss_plugin_init_input};
 
 pub struct DummyPlugin {
@@ -16,15 +16,15 @@ pub struct DummyPlugin {
 }
 
 impl Plugin for DummyPlugin {
-    const NAME: &'static CStr = c!("extract2-plugin-rs");
-    const PLUGIN_VERSION: &'static CStr = c!("0.0.0");
-    const DESCRIPTION: &'static CStr = c!("sample extract plugin");
-    const CONTACT: &'static CStr = c!("rust@localdomain.pl");
+    const NAME: &'static CStr = c"extract2-plugin-rs";
+    const PLUGIN_VERSION: &'static CStr = c"0.0.0";
+    const DESCRIPTION: &'static CStr = c"sample extract plugin";
+    const CONTACT: &'static CStr = c"rust@localdomain.pl";
     type ConfigType = ();
 
     fn new(input: &ss_plugin_init_input, _config: Self::ConfigType) -> Result<Self, FailureReason> {
-        let thread_table = input.get_table::<i64>(c!("threads"))?;
-        let sample_field = thread_table.get_field::<u64>(c!("sample"))?;
+        let thread_table = input.get_table::<i64>(c"threads")?;
+        let sample_field = thread_table.get_field::<u64>(c"sample")?;
 
         Ok(DummyPlugin {
             thread_table,
@@ -45,7 +45,7 @@ impl DummyPlugin {
         _input: &ss_plugin_event_input,
         _tables: &TableReader,
     ) -> Result<CString, Error> {
-        Ok(c!("hello").to_owned())
+        Ok(c"hello".to_owned())
     }
 
     fn extract_sample_strs(
@@ -55,7 +55,7 @@ impl DummyPlugin {
         _input: &ss_plugin_event_input,
         _tables: &TableReader,
     ) -> Result<Vec<CString>, Error> {
-        Ok(vec![c!("hello").to_owned(), c!("byebye").to_owned()])
+        Ok(vec![c"hello".to_owned(), c"byebye".to_owned()])
     }
 
     //noinspection DuplicatedCode

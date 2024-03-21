@@ -11,7 +11,7 @@ use falco_event::events::Event;
 use falco_event::events::EventMetadata;
 use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
 use falco_plugin::base::Plugin;
-use falco_plugin::{async_event_plugin, c, plugin, FailureReason};
+use falco_plugin::{async_event_plugin, plugin, FailureReason};
 use falco_plugin_api::ss_plugin_init_input;
 
 #[derive(Default)]
@@ -21,10 +21,10 @@ struct DummyAsyncPlugin {
 }
 
 impl Plugin for DummyAsyncPlugin {
-    const NAME: &'static CStr = c!("async-plugin-rs");
-    const PLUGIN_VERSION: &'static CStr = c!("0.0.0");
-    const DESCRIPTION: &'static CStr = c!("sample async plugin");
-    const CONTACT: &'static CStr = c!("rust@localdomain.pl");
+    const NAME: &'static CStr = c"async-plugin-rs";
+    const PLUGIN_VERSION: &'static CStr = c"0.0.0";
+    const DESCRIPTION: &'static CStr = c"sample async plugin";
+    const CONTACT: &'static CStr = c"rust@localdomain.pl";
     type ConfigType = ();
 
     fn new(
@@ -59,7 +59,7 @@ impl AsyncEventPlugin for DummyAsyncPlugin {
                 // TODO(sdk) some helper for generating the event
                 let event = AsyncEvent {
                     plugin_id: Some(0),
-                    name: Some(c!("sample_async")),
+                    name: Some(c"sample_async"),
                     data: Some(b"hello"),
                 };
 
