@@ -7,23 +7,53 @@ use crate::plugin::source::SourcePluginInstanceWrapper;
 use crate::source::{SourcePlugin, SourcePluginInstance};
 use crate::strings::cstring_writer::WriteIntoCString;
 use crate::strings::from_ptr::try_str_from_ptr;
+use falco_plugin_api::plugin_api__bindgen_ty_1 as source_plugin_api;
 use falco_plugin_api::{
     ss_instance_t, ss_plugin_event, ss_plugin_event_input, ss_plugin_rc,
     ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_t,
 };
 
-pub fn plugin_get_event_source<T: SourcePlugin>() -> *const c_char {
+pub trait SourcePluginFallbackApi {
+    const SOURCE_API: source_plugin_api = source_plugin_api {
+        get_id: None,
+        get_event_source: None,
+        open: None,
+        close: None,
+        list_open_params: None,
+        get_progress: None,
+        event_to_string: None,
+        next_batch: None,
+    };
+}
+impl<T> SourcePluginFallbackApi for T {}
+
+pub struct SourcePluginApi<T>(std::marker::PhantomData<T>);
+
+impl<T: SourcePlugin> SourcePluginApi<T> {
+    pub const SOURCE_API: source_plugin_api = source_plugin_api {
+        get_id: Some(plugin_get_id::<T>),
+        get_event_source: Some(plugin_get_event_source::<T>),
+        open: Some(plugin_open::<T>),
+        close: Some(plugin_close::<T>),
+        list_open_params: Some(plugin_list_open_params::<T>),
+        get_progress: Some(plugin_get_progress::<T>),
+        event_to_string: Some(plugin_event_to_string::<T>),
+        next_batch: Some(plugin_next_batch::<T>),
+    };
+}
+
+pub extern "C" fn plugin_get_event_source<T: SourcePlugin>() -> *const c_char {
     T::EVENT_SOURCE.as_ptr()
 }
 
-pub fn plugin_get_id<T: SourcePlugin>() -> u32 {
+pub extern "C" fn plugin_get_id<T: SourcePlugin>() -> u32 {
     T::PLUGIN_ID
 }
 
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_list_open_params<T: SourcePlugin>(
+pub unsafe extern "C" fn plugin_list_open_params<T: SourcePlugin>(
     plugin: *mut ss_plugin_t,
     rc: *mut i32,
 ) -> *const c_char {
@@ -51,7 +81,7 @@ pub unsafe fn plugin_list_open_params<T: SourcePlugin>(
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_open<T: SourcePlugin>(
+pub unsafe extern "C" fn plugin_open<T: SourcePlugin>(
     plugin: *mut ss_plugin_t,
     params: *const c_char,
     rc: *mut ss_plugin_rc,
@@ -108,7 +138,7 @@ pub unsafe fn plugin_open<T: SourcePlugin>(
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_close<T: SourcePlugin>(
+pub unsafe extern "C" fn plugin_close<T: SourcePlugin>(
     plugin: *mut ss_plugin_t,
     instance: *mut ss_instance_t,
 ) {
@@ -125,7 +155,7 @@ pub unsafe fn plugin_close<T: SourcePlugin>(
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_next_batch<T: SourcePlugin>(
+pub unsafe extern "C" fn plugin_next_batch<T: SourcePlugin>(
     plugin: *mut ss_plugin_t,
     instance: *mut ss_instance_t,
     nevts: *mut u32,
@@ -160,7 +190,7 @@ pub unsafe fn plugin_next_batch<T: SourcePlugin>(
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_get_progress<T: SourcePlugin>(
+pub unsafe extern "C" fn plugin_get_progress<T: SourcePlugin>(
     _plugin: *mut ss_plugin_t,
     instance: *mut ss_instance_t,
     progress_pct: *mut u32,
@@ -189,7 +219,7 @@ pub unsafe fn plugin_get_progress<T: SourcePlugin>(
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_event_to_string<T: SourcePlugin>(
+pub unsafe extern "C" fn plugin_event_to_string<T: SourcePlugin>(
     plugin: *mut ss_plugin_t,
     event: *const ss_plugin_event_input,
 ) -> *const c_char {

@@ -2,6 +2,7 @@ use crate::plugin::async_event::async_handler::AsyncHandler;
 use crate::plugin::async_event::AsyncEventPlugin;
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::FfiResult;
+use falco_plugin_api::plugin_api__bindgen_ty_4 as async_plugin_api;
 use falco_plugin_api::{
     ss_plugin_async_event_handler_t, ss_plugin_owner_t, ss_plugin_rc,
     ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_t,
@@ -9,8 +10,26 @@ use falco_plugin_api::{
 use std::ffi::{c_char, CString};
 use std::sync::OnceLock;
 
+pub trait AsyncPluginFallbackApi {
+    const ASYNC_API: async_plugin_api = async_plugin_api {
+        get_async_event_sources: None,
+        get_async_events: None,
+        set_async_event_handler: None,
+    };
+}
+impl<T> AsyncPluginFallbackApi for T {}
+
+pub struct AsyncPluginApi<T>(std::marker::PhantomData<T>);
+impl<T: AsyncEventPlugin> AsyncPluginApi<T> {
+    pub const ASYNC_API: async_plugin_api = async_plugin_api {
+        get_async_event_sources: Some(plugin_get_async_event_sources::<T>),
+        get_async_events: Some(plugin_get_async_events::<T>),
+        set_async_event_handler: Some(plugin_set_async_event_handler::<T>),
+    };
+}
+
 //noinspection DuplicatedCode
-pub fn plugin_get_async_event_sources<T: AsyncEventPlugin>() -> *const c_char {
+pub extern "C" fn plugin_get_async_event_sources<T: AsyncEventPlugin>() -> *const c_char {
     static SOURCES: OnceLock<CString> = OnceLock::new();
     if SOURCES.get().is_none() {
         let sources = serde_json::to_string(T::EVENT_SOURCES)
@@ -26,7 +45,7 @@ pub fn plugin_get_async_event_sources<T: AsyncEventPlugin>() -> *const c_char {
 }
 
 //noinspection DuplicatedCode
-pub fn plugin_get_async_events<T: AsyncEventPlugin>() -> *const c_char {
+pub extern "C" fn plugin_get_async_events<T: AsyncEventPlugin>() -> *const c_char {
     static EVENTS: OnceLock<CString> = OnceLock::new();
     if EVENTS.get().is_none() {
         let sources =
@@ -44,7 +63,7 @@ pub fn plugin_get_async_events<T: AsyncEventPlugin>() -> *const c_char {
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_set_async_event_handler<T: AsyncEventPlugin>(
+pub unsafe extern "C" fn plugin_set_async_event_handler<T: AsyncEventPlugin>(
     plugin: *mut ss_plugin_t,
     owner: *mut ss_plugin_owner_t,
     handler: ss_plugin_async_event_handler_t,

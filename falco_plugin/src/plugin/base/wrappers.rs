@@ -1,16 +1,77 @@
 use std::ffi::{c_char, CString};
 use std::sync::OnceLock;
 
-use falco_plugin_api::{ss_plugin_init_input, ss_plugin_rc_SS_PLUGIN_SUCCESS};
+use falco_plugin_api::{
+    ss_plugin_init_input, ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS,
+};
 
 use crate::base::Plugin;
+use crate::internals::async_events::wrappers::AsyncPluginApi;
+use crate::internals::async_events::wrappers::AsyncPluginFallbackApi;
+use crate::internals::extract::wrappers::ExtractPluginApi;
+use crate::internals::extract::wrappers::ExtractPluginFallbackApi;
+use crate::internals::parse::wrappers::ParsePluginApi;
+use crate::internals::parse::wrappers::ParsePluginFallbackApi;
+use crate::internals::source::wrappers::SourcePluginApi;
+use crate::internals::source::wrappers::SourcePluginFallbackApi;
 use crate::plugin::base::logger::FalcoPluginLogger;
 use crate::plugin::base::PluginWrapper;
+use crate::plugin::error::FfiResult;
 use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
 use crate::strings::from_ptr::try_str_from_ptr;
 use crate::{c, FailureReason};
 
-pub fn plugin_get_required_api_version<
+/// # Automatically generate the Falco plugin API structure (overriding the API version)
+///
+/// **Note**: you probably want [`PluginApi`], which picks the current API version automatically
+///
+/// For any type `T` that implements [`Plugin`], you can find the [`falco_plugin_api::plugin_api`]
+/// struct corresponding to this plugin and advertising X.Y.Z as the API version
+/// at `PluginApiWithVersionOverride<X, Y, Z, T>::PLUGIN_API`.
+///
+/// **Note**: this does not affect the actual version supported in any way. If you use this form,
+/// it's **entirely your responsibility** to ensure the advertised version is compatible with the actual
+/// version supported by this crate.
+pub struct PluginApiWithVersionOverride<
+    const MAJOR: usize,
+    const MINOR: usize,
+    const PATCH: usize,
+    T,
+>(std::marker::PhantomData<T>);
+
+impl<T: Plugin, const MAJOR: usize, const MINOR: usize, const PATCH: usize>
+    PluginApiWithVersionOverride<MAJOR, MINOR, PATCH, T>
+{
+    pub const PLUGIN_API: falco_plugin_api::plugin_api = falco_plugin_api::plugin_api {
+        get_required_api_version: Some(plugin_get_required_api_version::<MAJOR, MINOR, PATCH>),
+        get_init_schema: Some(plugin_get_init_schema::<T>),
+        init: Some(plugin_init::<T>),
+        destroy: Some(plugin_destroy::<T>),
+        get_last_error: Some(plugin_get_last_error::<T>),
+        get_name: Some(plugin_get_name::<T>),
+        get_description: Some(plugin_get_description::<T>),
+        get_contact: Some(plugin_get_contact::<T>),
+        get_version: Some(plugin_get_version::<T>),
+        __bindgen_anon_1: SourcePluginApi::<T>::SOURCE_API,
+        __bindgen_anon_2: ExtractPluginApi::<T>::EXTRACT_API,
+        __bindgen_anon_3: ParsePluginApi::<T>::PARSE_API,
+        __bindgen_anon_4: AsyncPluginApi::<T>::ASYNC_API,
+        set_config: Some(plugin_set_config::<T>),
+    };
+}
+
+/// # Automatically generate the Falco plugin API structure
+///
+/// For any type `T` that implements [`Plugin`], you can find the [`falco_plugin_api::plugin_api`]
+/// struct corresponding to this plugin at `PluginApi<T>::PLUGIN_API`.
+pub type PluginApi<T> = PluginApiWithVersionOverride<
+    { falco_plugin_api::PLUGIN_API_VERSION_MAJOR as usize },
+    { falco_plugin_api::PLUGIN_API_VERSION_MINOR as usize },
+    { falco_plugin_api::PLUGIN_API_VERSION_PATCH as usize },
+    T,
+>;
+
+pub extern "C" fn plugin_get_required_api_version<
     const MAJOR: usize,
     const MINOR: usize,
     const PATCH: usize,
@@ -24,26 +85,26 @@ pub fn plugin_get_required_api_version<
         .as_ptr()
 }
 
-pub fn plugin_get_version<T: Plugin>() -> *const c_char {
+pub extern "C" fn plugin_get_version<T: Plugin>() -> *const c_char {
     T::PLUGIN_VERSION.as_ptr()
 }
 
-pub fn plugin_get_name<T: Plugin>() -> *const c_char {
+pub extern "C" fn plugin_get_name<T: Plugin>() -> *const c_char {
     T::NAME.as_ptr()
 }
 
-pub fn plugin_get_description<T: Plugin>() -> *const c_char {
+pub extern "C" fn plugin_get_description<T: Plugin>() -> *const c_char {
     T::DESCRIPTION.as_ptr()
 }
 
-pub fn plugin_get_contact<T: Plugin>() -> *const c_char {
+pub extern "C" fn plugin_get_contact<T: Plugin>() -> *const c_char {
     T::CONTACT.as_ptr()
 }
 
 /// # Safety
 ///
 /// init_input must be null or a valid pointer
-pub unsafe fn plugin_init<P: Plugin>(
+pub unsafe extern "C" fn plugin_init<P: Plugin>(
     init_input: *const ss_plugin_init_input,
     rc: *mut i32,
 ) -> *mut falco_plugin_api::ss_plugin_t {
@@ -80,7 +141,7 @@ pub unsafe fn plugin_init<P: Plugin>(
 /// # Safety
 ///
 /// schema_type must be null or a valid pointer
-pub unsafe fn plugin_get_init_schema<P: Plugin>(
+pub unsafe extern "C" fn plugin_get_init_schema<P: Plugin>(
     schema_type: *mut falco_plugin_api::ss_plugin_schema_type,
 ) -> *const c_char {
     let Some(schema_type) = schema_type.as_mut() else {
@@ -101,7 +162,7 @@ pub unsafe fn plugin_get_init_schema<P: Plugin>(
 /// # Safety
 ///
 /// `plugin` must have been created by `init()` and not destroyed since
-pub unsafe fn plugin_destroy<P: Plugin>(plugin: *mut falco_plugin_api::ss_plugin_t) {
+pub unsafe extern "C" fn plugin_destroy<P: Plugin>(plugin: *mut falco_plugin_api::ss_plugin_t) {
     unsafe {
         let plugin = plugin as *mut PluginWrapper<P>;
         let _ = Box::from_raw(plugin);
@@ -111,13 +172,41 @@ pub unsafe fn plugin_destroy<P: Plugin>(plugin: *mut falco_plugin_api::ss_plugin
 /// # Safety
 ///
 /// `plugin` must be a valid pointer to `PluginWrapper<P>`
-pub unsafe fn plugin_get_last_error<P: Plugin>(
+pub unsafe extern "C" fn plugin_get_last_error<P: Plugin>(
     plugin: *mut falco_plugin_api::ss_plugin_t,
 ) -> *const c_char {
     let plugin = plugin as *mut PluginWrapper<P>;
     match unsafe { plugin.as_mut() } {
         Some(plugin) => plugin.error_buf.as_ptr(),
         None => c!("no instance").as_ptr(),
+    }
+}
+
+pub unsafe extern "C" fn plugin_set_config<P: Plugin>(
+    plugin: *mut falco_plugin_api::ss_plugin_t,
+    config_input: *const falco_plugin_api::ss_plugin_set_config_input,
+) -> falco_plugin_api::ss_plugin_rc {
+    let plugin = plugin as *mut PluginWrapper<P>;
+    let Some(plugin) = plugin.as_mut() else {
+        return ss_plugin_rc_SS_PLUGIN_FAILURE;
+    };
+
+    let res = (|| -> Result<(), anyhow::Error> {
+        let config_input = unsafe { config_input.as_ref() }.ok_or(FailureReason::Failure)?;
+
+        let updated_config = try_str_from_ptr(config_input.config, &config_input)
+            .map_err(|_| FailureReason::Failure)?;
+        let config = P::ConfigType::from_str(updated_config).map_err(|_| FailureReason::Failure)?;
+
+        plugin.plugin.set_config(config)
+    })();
+
+    match res {
+        Ok(()) => ss_plugin_rc_SS_PLUGIN_SUCCESS,
+        Err(e) => {
+            e.set_last_error(&mut plugin.error_buf);
+            e.status_code()
+        }
     }
 }
 
@@ -179,6 +268,10 @@ macro_rules! wrap_ffi {
 /// #        -> Result<Self, FailureReason> {
 /// #        Ok(MyPlugin)
 /// #    }
+/// #
+/// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+/// #        Ok(())
+/// #    }
 /// }
 ///
 /// plugin!(MyPlugin);
@@ -207,6 +300,10 @@ macro_rules! wrap_ffi {
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
 /// #        -> Result<Self, FailureReason> {
 /// #        Ok(MyPlugin)
+/// #    }
+/// #
+/// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+/// #        Ok(())
 /// #    }
 /// }
 ///
@@ -248,19 +345,34 @@ macro_rules! plugin {
             unsafe fn plugin_get_last_error(
                 plugin: *mut falco_plugin_api::ss_plugin_t,
             ) -> *const std::ffi::c_char;
+            unsafe fn plugin_set_config(
+                plugin: *mut falco_plugin_api::ss_plugin_t,
+                config_input: *const falco_plugin_api::ss_plugin_set_config_input,
+            ) -> falco_plugin_api::ss_plugin_rc;
         }
 
         #[allow(dead_code)]
-        fn __typecheck_plugin_base_api(api: &mut falco_plugin_api::plugin_api) {
-            api.get_required_api_version = Some(plugin_get_required_api_version);
-            api.get_version = Some(plugin_get_version);
-            api.get_name = Some(plugin_get_name);
-            api.get_description = Some(plugin_get_description);
-            api.get_contact = Some(plugin_get_contact);
-            api.get_init_schema = Some(plugin_get_init_schema);
-            api.init = Some(plugin_init);
-            api.destroy = Some(plugin_destroy);
-            api.get_last_error = Some(plugin_get_last_error);
+        fn __typecheck_plugin_base_api() -> falco_plugin_api::plugin_api {
+            use $crate::internals::source::wrappers::SourcePluginFallbackApi;
+            use $crate::internals::extract::wrappers::ExtractPluginFallbackApi;
+            use $crate::internals::parse::wrappers::ParsePluginFallbackApi;
+            use $crate::internals::async_events::wrappers::AsyncPluginFallbackApi;
+            falco_plugin_api::plugin_api {
+                get_required_api_version: Some(plugin_get_required_api_version),
+                get_version: Some(plugin_get_version),
+                get_name: Some(plugin_get_name),
+                get_description: Some(plugin_get_description),
+                get_contact: Some(plugin_get_contact),
+                get_init_schema: Some(plugin_get_init_schema),
+                init: Some(plugin_init),
+                destroy: Some(plugin_destroy),
+                get_last_error: Some(plugin_get_last_error),
+                __bindgen_anon_1: $crate::internals::source::wrappers::SourcePluginApi::<$ty>::SOURCE_API,
+                __bindgen_anon_2: $crate::internals::extract::wrappers::ExtractPluginApi::<$ty>::EXTRACT_API,
+                __bindgen_anon_3: $crate::internals::parse::wrappers::ParsePluginApi::<$ty>::PARSE_API,
+                __bindgen_anon_4: $crate::internals::async_events::wrappers::AsyncPluginApi::<$ty>::ASYNC_API,
+                set_config: Some(plugin_set_config),
+            }
         }
     };
 }

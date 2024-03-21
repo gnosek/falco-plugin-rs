@@ -2,20 +2,42 @@ use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::FfiResult;
 use crate::plugin::extract::ExtractPlugin;
 use crate::tables::TableReader;
+use falco_plugin_api::plugin_api__bindgen_ty_2 as extract_plugin_api;
 use falco_plugin_api::ss_plugin_rc;
 use falco_plugin_api::{ss_plugin_event_input, ss_plugin_rc_SS_PLUGIN_FAILURE};
 use falco_plugin_api::{ss_plugin_field_extract_input, ss_plugin_t};
 use std::ffi::{c_char, CString};
 use std::sync::OnceLock;
 
-pub fn plugin_get_fields<T: ExtractPlugin>() -> *const c_char {
+pub trait ExtractPluginFallbackApi {
+    const EXTRACT_API: extract_plugin_api = extract_plugin_api {
+        get_extract_event_types: None,
+        get_extract_event_sources: None,
+        get_fields: None,
+        extract_fields: None,
+    };
+}
+impl<T> ExtractPluginFallbackApi for T {}
+
+pub struct ExtractPluginApi<T>(std::marker::PhantomData<T>);
+
+impl<T: ExtractPlugin> ExtractPluginApi<T> {
+    pub const EXTRACT_API: extract_plugin_api = extract_plugin_api {
+        get_extract_event_types: Some(plugin_get_extract_event_types::<T>),
+        get_extract_event_sources: Some(plugin_get_extract_event_sources::<T>),
+        get_fields: Some(plugin_get_fields::<T>),
+        extract_fields: Some(plugin_extract_fields::<T>),
+    };
+}
+
+pub extern "C" fn plugin_get_fields<T: ExtractPlugin>() -> *const c_char {
     T::get_fields().as_ptr()
 }
 
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_get_extract_event_types<T: ExtractPlugin>(
+pub unsafe extern "C" fn plugin_get_extract_event_types<T: ExtractPlugin>(
     numtypes: *mut u32,
     _plugin: *mut ss_plugin_t,
 ) -> *mut u16 {
@@ -25,7 +47,7 @@ pub unsafe fn plugin_get_extract_event_types<T: ExtractPlugin>(
 }
 
 //noinspection DuplicatedCode
-pub fn plugin_get_extract_event_sources<T: ExtractPlugin>() -> *const c_char {
+pub extern "C" fn plugin_get_extract_event_sources<T: ExtractPlugin>() -> *const c_char {
     static SOURCES: OnceLock<CString> = OnceLock::new();
     if SOURCES.get().is_none() {
         let sources = serde_json::to_string(T::EVENT_SOURCES)
@@ -43,7 +65,7 @@ pub fn plugin_get_extract_event_sources<T: ExtractPlugin>() -> *const c_char {
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_extract_fields<T: ExtractPlugin>(
+pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
     plugin: *mut ss_plugin_t,
     event_input: *const ss_plugin_event_input,
     extract_input: *const ss_plugin_field_extract_input,

@@ -1,6 +1,6 @@
 use std::ffi::{CStr, CString};
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Error};
 
 use falco_event::events::types::EventType;
 use falco_plugin::base::{Plugin, TableInitInput};
@@ -66,6 +66,10 @@ impl Plugin for DummyPlugin {
             another_table,
             table_with_static_fields_only,
         })
+    }
+
+    fn set_config(&mut self, _config: Self::ConfigType) -> Result<(), Error> {
+        Ok(())
     }
 }
 

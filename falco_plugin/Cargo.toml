@@ -15,6 +15,10 @@ name = "source_plugin"
 crate_type = ["dylib"]
 
 [[example]]
+name = "static_source_plugin"
+crate_type = ["staticlib"]
+
+[[example]]
 name = "extract_plugin"
 crate_type = ["dylib"]
 

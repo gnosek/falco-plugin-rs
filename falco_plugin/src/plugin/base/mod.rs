@@ -72,8 +72,13 @@ pub trait Plugin: Sized {
     /// the same version of serde as the SDK.
     type ConfigType: ConfigSchema;
 
-    /// This is the only required method. It takes a plugin init input instance (its only notable
-    /// feature is that it supports the [`TableInitInput`](`crate::base::TableInitInput`) trait,
-    /// which lets you access tables exposed by other plugins (and Falco core).
+    /// This method takes a plugin init input instance, whose only notable feature is that it supports
+    /// the [`TableInitInput`](`crate::base::TableInitInput`) trait, which lets you access tables
+    /// exposed by other plugins (and Falco core).
+    ///
+    /// It should return a new instance of `Self`
     fn new(input: &InitInput, config: Self::ConfigType) -> Result<Self, FailureReason>;
+
+    /// Update the configuration of a running plugin
+    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error>;
 }

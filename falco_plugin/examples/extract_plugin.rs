@@ -31,6 +31,10 @@ impl Plugin for DummyPlugin {
             comm_field,
         })
     }
+
+    fn set_config(&mut self, _config: Self::ConfigType) -> Result<(), Error> {
+        Ok(())
+    }
 }
 
 impl DummyPlugin {

@@ -4,15 +4,34 @@ use std::sync::OnceLock;
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::FfiResult;
 use crate::plugin::parse::ParsePlugin;
+use falco_plugin_api::plugin_api__bindgen_ty_3 as parse_plugin_api;
 use falco_plugin_api::{
     ss_plugin_event_input, ss_plugin_event_parse_input, ss_plugin_rc,
     ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_t,
 };
 
+pub trait ParsePluginFallbackApi {
+    const PARSE_API: parse_plugin_api = parse_plugin_api {
+        get_parse_event_types: None,
+        get_parse_event_sources: None,
+        parse_event: None,
+    };
+}
+impl<T> ParsePluginFallbackApi for T {}
+
+pub struct ParsePluginApi<T>(std::marker::PhantomData<T>);
+impl<T: ParsePlugin> ParsePluginApi<T> {
+    pub const PARSE_API: parse_plugin_api = parse_plugin_api {
+        get_parse_event_types: Some(plugin_get_parse_event_types::<T>),
+        get_parse_event_sources: Some(plugin_get_parse_event_sources::<T>),
+        parse_event: Some(plugin_parse_event::<T>),
+    };
+}
+
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_get_parse_event_types<T: ParsePlugin>(
+pub unsafe extern "C" fn plugin_get_parse_event_types<T: ParsePlugin>(
     numtypes: *mut u32,
     _plugin: *mut ss_plugin_t,
 ) -> *mut u16 {
@@ -26,7 +45,7 @@ pub unsafe fn plugin_get_parse_event_types<T: ParsePlugin>(
 }
 
 //noinspection DuplicatedCode
-pub fn plugin_get_parse_event_sources<T: ParsePlugin>() -> *const c_char {
+pub extern "C" fn plugin_get_parse_event_sources<T: ParsePlugin>() -> *const c_char {
     static SOURCES: OnceLock<CString> = OnceLock::new();
     if SOURCES.get().is_none() {
         let sources = serde_json::to_string(T::EVENT_SOURCES)
@@ -44,7 +63,7 @@ pub fn plugin_get_parse_event_sources<T: ParsePlugin>() -> *const c_char {
 /// # Safety
 ///
 /// All pointers must be valid
-pub unsafe fn plugin_parse_event<T: ParsePlugin>(
+pub unsafe extern "C" fn plugin_parse_event<T: ParsePlugin>(
     plugin: *mut ss_plugin_t,
     event: *const ss_plugin_event_input,
     parse_input: *const ss_plugin_event_parse_input,

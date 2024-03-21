@@ -4,14 +4,67 @@ This crate provides a framework for writing [Falco](https://github.com/falcosecu
 plugins. There are several types of plugins available. Learn more about Falco plugins
 and plugin types in the [Falco plugin documentation](https://falco.org/docs/plugins/).
 
-Since Falco plugins are distributed as shared libraries, they must be built
-with `crate_type = ["dylib"]`.
+## Dynamically linked plugins
+
+The typical way to distribute a Falco plugin is to build a shared library. To build a plugin as a shared
+library, you need to:
+
+1. Specify `crate_type = ["dylib"]` in the `[lib]` section of `Cargo.toml`,
+2. Invoke all the [macros](#macros) corresponding to the capabilities your plugin implements.
 
 All plugins must implement the base plugin trait (see [`base`]) and at least one of the plugin
 capabilities.
 
 **Note**: due to the structure of the Falco plugin API, there can be only one plugin per shared
 library, though that plugin can implement multiple capabilities, as described below.
+
+## Statically linked plugins
+
+In some circumstances, you might prefer to link plugins statically into your application. This changes
+the interface somewhat (instead of using predefined symbol names, you register your plugin by directly
+passing a [`falco_plugin_api::plugin_api`] struct to `sinsp::register_plugin`).
+
+For a statically linked plugin, you need to:
+
+1. Specify `crate_type = ["staticlib"]` in the `[lib]` section of `Cargo.toml`,
+2. Export the plugin API under a name of your choice, for example:
+
+```
+use std::ffi::CStr;
+use falco_plugin::base::{InitInput, Plugin};
+use falco_plugin::base::PluginApi;
+use falco_plugin::FailureReason;
+
+// define the type holding the plugin state
+struct DummyPlugin;
+
+// implement the base::Plugin trait
+impl Plugin for DummyPlugin {
+    const NAME: &'static CStr = c"sample-plugin-rs";
+    const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+    const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+    const CONTACT: &'static CStr = c"you@example.com";
+    type ConfigType = ();
+
+    fn new(input: &InitInput, config: Self::ConfigType)
+        -> Result<Self, FailureReason> {
+        Ok(DummyPlugin)
+    }
+
+    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+        Ok(())
+    }
+}
+
+#[no_mangle]
+pub static DUMMY_PLUGIN_API: falco_plugin_api::plugin_api =
+    PluginApi::<DummyPlugin>::PLUGIN_API;
+```
+
+**Note**: due to implementation limitations, there can be only one plugin per static library, though that
+plugin can implement multiple capabilities, as described below. This limitation is more painful for static
+libraries than for shared ones (since you could meaningfully ship multiple plugins in a static library)
+and might be lifted in the future.
 
 ### Event sourcing plugins
 

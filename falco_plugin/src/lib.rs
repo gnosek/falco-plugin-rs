@@ -91,6 +91,10 @@ pub use crate::plugin::event::EventInput;
 ///         -> Result<Self, FailureReason> {
 ///         Ok(NoOpPlugin)
 ///     }
+///
+///     fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+///         Ok(())
+///     }
 /// }
 ///
 /// // generate the actual plugin wrapper code
@@ -105,6 +109,8 @@ pub mod base {
     /// need to access its fields directly.
     pub use falco_plugin_api::ss_plugin_init_input as InitInput;
 
+    pub use crate::plugin::base::wrappers::PluginApi;
+    pub use crate::plugin::base::wrappers::PluginApiWithVersionOverride;
     pub use crate::plugin::base::Plugin;
     pub use crate::plugin::schema::Json;
     pub use crate::plugin::tables::ffi::InitInput as TableInitInput;
@@ -162,6 +168,10 @@ pub mod base {
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
 /// #        -> Result<Self, FailureReason> {
 /// #        Ok(MyExtractPlugin)
+/// #    }
+/// #
+/// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+/// #        Ok(())
 /// #    }
 /// }
 ///
@@ -245,6 +255,10 @@ pub mod extract {
 /// #        -> Result<Self, FailureReason> {
 /// #        Ok(MyParsePlugin)
 /// #    }
+/// #
+/// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+/// #        Ok(())
+/// #    }
 /// }
 ///
 /// impl ParsePlugin for MyParsePlugin {
@@ -322,6 +336,10 @@ pub mod parse {
 /// #            stop_request: Arc::new(Default::default()),
 /// #            thread: None,
 /// #        })
+/// #    }
+/// #
+/// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+/// #        Ok(())
 /// #    }
 /// }
 ///
@@ -428,6 +446,10 @@ pub mod async_event {
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
 /// #        -> Result<Self, FailureReason> {
 /// #        Ok(MySourcePlugin)
+/// #    }
+/// #
+/// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+/// #        Ok(())
 /// #    }
 /// }
 ///

@@ -33,6 +33,10 @@ impl Plugin for DummyAsyncPlugin {
     ) -> Result<Self, FailureReason> {
         Ok(DummyAsyncPlugin::default())
     }
+
+    fn set_config(&mut self, _config: Self::ConfigType) -> Result<(), Error> {
+        Ok(())
+    }
 }
 
 impl AsyncEventPlugin for DummyAsyncPlugin {
