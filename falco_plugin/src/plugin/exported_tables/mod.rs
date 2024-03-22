@@ -113,7 +113,7 @@ impl FieldValue for bool {
             return None;
         }
 
-        Some(if value.b != 0 { true } else { false })
+        Some(value.b != 0)
     }
 }
 
