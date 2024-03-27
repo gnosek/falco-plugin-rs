@@ -252,40 +252,40 @@ macro_rules! source_plugin {
         $crate::wrap_ffi! {
             use $crate::internals::source::wrappers: <$ty>;
             unsafe fn plugin_next_batch(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
-                instance: *mut falco_plugin_api::ss_instance_t,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
+                instance: *mut falco_plugin::api::ss_instance_t,
                 nevts: *mut u32,
-                evts: *mut *mut *mut falco_plugin_api::ss_plugin_event,
+                evts: *mut *mut *mut falco_plugin::api::ss_plugin_event,
             ) -> i32;
             unsafe fn plugin_get_progress(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
-                instance: *mut falco_plugin_api::ss_instance_t,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
+                instance: *mut falco_plugin::api::ss_instance_t,
                 progress_pct: *mut u32,
             ) -> *const ::std::ffi::c_char;
             unsafe fn plugin_get_id() -> u32;
             unsafe fn plugin_get_event_source() -> *const ::std::ffi::c_char;
             unsafe fn plugin_list_open_params(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
                 rc: *mut i32,
             ) -> *const ::std::ffi::c_char;
             unsafe fn plugin_open(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
                 params: *const ::std::ffi::c_char,
                 rc: *mut i32,
-            ) -> *mut falco_plugin_api::ss_instance_t;
+            ) -> *mut falco_plugin::api::ss_instance_t;
             unsafe fn plugin_close(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
-                instance: *mut falco_plugin_api::ss_instance_t,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
+                instance: *mut falco_plugin::api::ss_instance_t,
             ) -> ();
             unsafe fn plugin_event_to_string(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
-                event_input: *const falco_plugin_api::ss_plugin_event_input,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
+                event_input: *const falco_plugin::api::ss_plugin_event_input,
             ) -> *const std::ffi::c_char;
         }
 
         #[allow(dead_code)]
-        fn __typecheck_plugin_source_api() -> falco_plugin_api::plugin_api__bindgen_ty_1 {
-            falco_plugin_api::plugin_api__bindgen_ty_1 {
+        fn __typecheck_plugin_source_api() -> falco_plugin::api::plugin_api__bindgen_ty_1 {
+            falco_plugin::api::plugin_api__bindgen_ty_1 {
                 next_batch: Some(plugin_next_batch),
                 get_progress: Some(plugin_get_progress),
                 get_id: Some(plugin_get_id),

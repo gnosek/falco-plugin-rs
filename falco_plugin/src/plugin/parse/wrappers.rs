@@ -102,19 +102,19 @@ macro_rules! parse_plugin {
 
             unsafe fn plugin_get_parse_event_types(
                 numtypes: *mut u32,
-                plugin: *mut falco_plugin_api::ss_plugin_t,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
             ) -> *mut u16;
             unsafe fn plugin_get_parse_event_sources() -> *const ::std::ffi::c_char;
             unsafe fn plugin_parse_event(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
-                event_input: *const falco_plugin_api::ss_plugin_event_input,
-                parse_input: *const falco_plugin_api::ss_plugin_event_parse_input,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
+                event_input: *const falco_plugin::api::ss_plugin_event_input,
+                parse_input: *const falco_plugin::api::ss_plugin_event_parse_input,
             ) -> i32;
         }
 
         #[allow(dead_code)]
-        fn __typecheck_plugin_parse_api() -> falco_plugin_api::plugin_api__bindgen_ty_3 {
-            falco_plugin_api::plugin_api__bindgen_ty_3 {
+        fn __typecheck_plugin_parse_api() -> falco_plugin::api::plugin_api__bindgen_ty_3 {
+            falco_plugin::api::plugin_api__bindgen_ty_3 {
                 get_parse_event_types: Some(plugin_get_parse_event_types),
                 get_parse_event_sources: Some(plugin_get_parse_event_sources),
                 parse_event: Some(plugin_parse_event),

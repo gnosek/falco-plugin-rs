@@ -114,19 +114,19 @@ macro_rules! extract_plugin {
             unsafe fn plugin_get_extract_event_sources() -> *const ::std::ffi::c_char;
             unsafe fn plugin_get_extract_event_types(
                 numtypes: *mut u32,
-                plugin: *mut falco_plugin_api::ss_plugin_t,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
             ) -> *mut u16;
             unsafe fn plugin_get_fields() -> *const ::std::ffi::c_char;
             unsafe fn plugin_extract_fields(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
-                event_input: *const falco_plugin_api::ss_plugin_event_input,
-                extract_input: *const falco_plugin_api::ss_plugin_field_extract_input,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
+                event_input: *const falco_plugin::api::ss_plugin_event_input,
+                extract_input: *const falco_plugin::api::ss_plugin_field_extract_input,
             ) -> i32;
         }
 
         #[allow(dead_code)]
-        fn __typecheck_plugin_extract_api() -> falco_plugin_api::plugin_api__bindgen_ty_2 {
-            falco_plugin_api::plugin_api__bindgen_ty_2 {
+        fn __typecheck_plugin_extract_api() -> falco_plugin::api::plugin_api__bindgen_ty_2 {
+            falco_plugin::api::plugin_api__bindgen_ty_2 {
                 get_extract_event_sources: Some(plugin_get_extract_event_sources),
                 get_extract_event_types: Some(plugin_get_extract_event_types),
                 get_fields: Some(plugin_get_fields),

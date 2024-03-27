@@ -316,8 +316,8 @@ macro_rules! wrap_ffi {
 macro_rules! plugin {
     ($ty:ty) => {
         plugin!(
-            falco_plugin_api::PLUGIN_API_VERSION_MAJOR as usize;
-            falco_plugin_api::PLUGIN_API_VERSION_MINOR as usize;
+            falco_plugin::api::PLUGIN_API_VERSION_MAJOR as usize;
+            falco_plugin::api::PLUGIN_API_VERSION_MINOR as usize;
             0 => $ty
         );
     };
@@ -336,26 +336,26 @@ macro_rules! plugin {
             unsafe fn plugin_get_contact() -> *const std::ffi::c_char;
             unsafe fn plugin_get_init_schema(schema_type: *mut u32) -> *const std::ffi::c_char;
             unsafe fn plugin_init(
-                args: *const falco_plugin_api::ss_plugin_init_input,
+                args: *const falco_plugin::api::ss_plugin_init_input,
                 rc: *mut i32,
-            ) -> *mut falco_plugin_api::ss_plugin_t;
-            unsafe fn plugin_destroy(plugin: *mut falco_plugin_api::ss_plugin_t) -> ();
+            ) -> *mut falco_plugin::api::ss_plugin_t;
+            unsafe fn plugin_destroy(plugin: *mut falco_plugin::api::ss_plugin_t) -> ();
             unsafe fn plugin_get_last_error(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
+                plugin: *mut falco_plugin::api::ss_plugin_t,
             ) -> *const std::ffi::c_char;
             unsafe fn plugin_set_config(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
-                config_input: *const falco_plugin_api::ss_plugin_set_config_input,
-            ) -> falco_plugin_api::ss_plugin_rc;
+                plugin: *mut falco_plugin::api::ss_plugin_t,
+                config_input: *const falco_plugin::api::ss_plugin_set_config_input,
+            ) -> falco_plugin::api::ss_plugin_rc;
         }
 
         #[allow(dead_code)]
-        fn __typecheck_plugin_base_api() -> falco_plugin_api::plugin_api {
+        fn __typecheck_plugin_base_api() -> falco_plugin::api::plugin_api {
             use $crate::internals::source::wrappers::SourcePluginFallbackApi;
             use $crate::internals::extract::wrappers::ExtractPluginFallbackApi;
             use $crate::internals::parse::wrappers::ParsePluginFallbackApi;
             use $crate::internals::async_events::wrappers::AsyncPluginFallbackApi;
-            falco_plugin_api::plugin_api {
+            falco_plugin::api::plugin_api {
                 get_required_api_version: Some(plugin_get_required_api_version),
                 get_version: Some(plugin_get_version),
                 get_name: Some(plugin_get_name),

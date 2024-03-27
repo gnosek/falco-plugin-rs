@@ -109,15 +109,15 @@ macro_rules! async_event_plugin {
             unsafe fn plugin_get_async_events() -> *const ::std::ffi::c_char;
             unsafe fn plugin_get_async_event_sources() -> *const ::std::ffi::c_char;
             unsafe fn plugin_set_async_event_handler(
-                plugin: *mut falco_plugin_api::ss_plugin_t,
-                owner: *mut falco_plugin_api::ss_plugin_owner_t,
-                handler: falco_plugin_api::ss_plugin_async_event_handler_t,
-            ) -> falco_plugin_api::ss_plugin_rc;
+                plugin: *mut falco_plugin::api::ss_plugin_t,
+                owner: *mut falco_plugin::api::ss_plugin_owner_t,
+                handler: falco_plugin::api::ss_plugin_async_event_handler_t,
+            ) -> falco_plugin::api::ss_plugin_rc;
         }
 
         #[allow(dead_code)]
-        fn __typecheck_plugin_async_api() -> falco_plugin_api::plugin_api__bindgen_ty_4 {
-            falco_plugin_api::plugin_api__bindgen_ty_4 {
+        fn __typecheck_plugin_async_api() -> falco_plugin::api::plugin_api__bindgen_ty_4 {
+            falco_plugin::api::plugin_api__bindgen_ty_4 {
                 get_async_event_sources: Some(plugin_get_async_event_sources),
                 get_async_events: Some(plugin_get_async_events),
                 set_async_event_handler: Some(plugin_set_async_event_handler),
