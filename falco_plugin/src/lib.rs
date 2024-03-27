@@ -3,6 +3,7 @@
 #![deny(rustdoc::broken_intra_doc_links)]
 
 // reexport dependencies
+pub use anyhow;
 pub use falco_plugin_api as api;
 pub use schemars;
 pub use serde;
