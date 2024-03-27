@@ -116,7 +116,7 @@ macro_rules! async_event_plugin {
         }
 
         #[allow(dead_code)]
-        fn __typecheck_plugin_parse_api() -> falco_plugin_api::plugin_api__bindgen_ty_4 {
+        fn __typecheck_plugin_async_api() -> falco_plugin_api::plugin_api__bindgen_ty_4 {
             falco_plugin_api::plugin_api__bindgen_ty_4 {
                 get_async_event_sources: Some(plugin_get_async_event_sources),
                 get_async_events: Some(plugin_get_async_events),
