@@ -5,6 +5,7 @@ use crate::plugin::base::Plugin;
 use crate::plugin::tables::data::TableData;
 use crate::plugin::tables::entry::TableEntry;
 use crate::plugin::tables::table::TypedTable;
+use crate::tables::TableReader;
 
 #[doc(hidden)]
 pub mod wrappers;
@@ -56,6 +57,13 @@ pub trait EventParseInput {
     /// See [`base::TableInitInput`](`crate::base::TableInitInput`) for details
     fn table_entry<K: TableData>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry>;
 
+    /// # Build a TableReader from the parse input
+    ///
+    /// This is normally not necessary (since [`EventParseInput::table_entry`] is more powerful
+    /// as it also gives you write access) but might be useful for sharing code between
+    /// parse and extract plugins.
+    fn table_reader<K: TableData>(&self) -> TableReader;
+
     /// # Iterate over all entries in a table with mutable access
     ///
     /// The closure is called once for each table entry with a corresponding [`TableEntry`]
@@ -77,6 +85,10 @@ impl EventParseInput for ParseInput {
                     .with_writer(self.table_writer_ext.as_ref()?),
             )
         }
+    }
+
+    fn table_reader<K: TableData>(&self) -> TableReader {
+        unsafe { TableReader::new(self.table_reader_ext) }
     }
 
     fn iter_entries_mut<F, K>(&self, table: &TypedTable<K>, func: F) -> bool
