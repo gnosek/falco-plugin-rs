@@ -23,6 +23,7 @@ pub mod wrappers;
 ///
 /// **Note**: this type describes the actual argument in a particular invocation.
 /// For describing the type of arguments the extractor accepts, please see [`ExtractArgType`]`
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ExtractFieldRequestArg<'a> {
     /// no argument, the extractor was invoked as plain `field_name`
     None,
