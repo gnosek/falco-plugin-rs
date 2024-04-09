@@ -7,7 +7,7 @@ use falco_plugin::base::{Plugin, TableInitInput};
 use falco_plugin::parse::{EventParseInput, ParsePlugin};
 use falco_plugin::tables::{DynamicFieldValues, TypedTableField};
 use falco_plugin::tables::{DynamicTable, TypedTable};
-use falco_plugin::{parse_plugin, plugin, EventInput, FailureReason};
+use falco_plugin::{parse_plugin, plugin, EventInputExt, FailureReason};
 use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input, ss_plugin_init_input};
 use falco_plugin_derive::TableValues;
 

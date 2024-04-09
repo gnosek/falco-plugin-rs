@@ -62,7 +62,7 @@ pub use serde;
 pub use falco_plugin_derive::TableValues;
 
 pub use crate::plugin::error::FailureReason;
-pub use crate::plugin::event::EventInput;
+pub use crate::plugin::event::EventInputExt;
 
 /// # The common foundation for all Falco plugins
 ///
@@ -238,7 +238,7 @@ pub mod extract {
 /// use falco_event::{ };
 /// use falco_event::events::types::EventType;
 /// use falco_plugin::base::{InitInput, Plugin};
-/// use falco_plugin::{EventInput as _, FailureReason, parse_plugin, plugin};
+/// use falco_plugin::{EventInputExt, FailureReason, parse_plugin, plugin};
 /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
 /// use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input};
 ///
@@ -315,7 +315,7 @@ pub mod parse {
 /// use falco_event::events::Event;
 /// use falco_event::events::EventMetadata;
 /// use falco_plugin::base::{InitInput, Plugin};
-/// use falco_plugin::{async_event_plugin, EventInput as _, FailureReason, plugin};
+/// use falco_plugin::{async_event_plugin, EventInputExt, FailureReason, plugin};
 /// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
 ///
 /// struct MyAsyncPlugin {
@@ -425,7 +425,7 @@ pub mod async_event {
 /// use anyhow::Error;
 /// use falco_event::events::Event;
 /// use falco_plugin::base::{InitInput, Plugin};
-/// use falco_plugin::{EventInput as _, FailureReason, plugin, source_plugin};
+/// use falco_plugin::{EventInputExt, FailureReason, plugin, source_plugin};
 /// use falco_plugin::source::{
 ///     EventBatch,
 ///     EventInput,

@@ -7,7 +7,7 @@ pub use falco_plugin_api::ss_plugin_event_input;
 ///
 /// The object contains raw pointers and is not readily available for consumption
 /// in safe code. This trait provides safe accessors for the fields inside
-pub trait EventInput {
+pub trait EventInputExt {
     /// # Get the event
     ///
     /// This method parses the raw event data into a [`RawEvent`] instance,
@@ -25,7 +25,7 @@ pub trait EventInput {
     fn event_number(&self) -> usize;
 }
 
-impl EventInput for ss_plugin_event_input {
+impl EventInputExt for ss_plugin_event_input {
     fn event(&self) -> std::io::Result<RawEvent> {
         unsafe { RawEvent::from_ptr(self.evt as *const _) }
     }
