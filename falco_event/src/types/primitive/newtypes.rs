@@ -5,7 +5,7 @@ use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 macro_rules! newtype {
     ($(#[$attr:meta])* $name:ident($repr:ty)) => {
         $(#[$attr])*
-        #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
+        #[derive(Default, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
         pub struct $name(pub $repr);
 
         impl FromBytes<'_> for $name {
