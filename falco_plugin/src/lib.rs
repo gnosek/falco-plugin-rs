@@ -206,7 +206,7 @@ pub mod base {
 pub mod extract {
     /// # An event from which additional data may be extracted
     ///
-    /// The one notable thing about it is that it implements the [`EventInput`](`crate::EventInput`)
+    /// The one notable thing about it is that it implements the [`EventInputExt`](`crate::EventInputExt`)
     /// trait. You probably won't need to access any of its fields directly.
     pub use falco_plugin_api::ss_plugin_event_input as EventInput;
     pub use falco_plugin_api::ss_plugin_field_extract_input as FieldExtractInput;
