@@ -180,6 +180,8 @@ pub unsafe extern "C" fn plugin_next_batch<T: SourcePlugin>(
                 ss_plugin_rc_SS_PLUGIN_SUCCESS
             }
             Err(e) => {
+                *nevts = 0;
+                *evts = std::ptr::null_mut();
                 e.set_last_error(&mut plugin.error_buf);
                 e.status_code()
             }
