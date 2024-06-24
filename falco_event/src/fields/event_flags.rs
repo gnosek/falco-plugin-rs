@@ -41,7 +41,7 @@ type socket_families: PT_ENUMFLAGS32 !PPM_AF_LOCAL, PPM_AF_ROUTE;
 type shutdown_how: PT_ENUMFLAGS8;
 type sockopt_levels: PT_ENUMFLAGS8;
 type sockopt_options: PT_ENUMFLAGS8;
-type futex_operations: PT_ENUMFLAGS16;
+type futex_operations: PT_FLAGS16;
 type lseek_whence: PT_ENUMFLAGS8;
 type rlimit_resources: PT_ENUMFLAGS8;
 type fcntl_commands: PT_ENUMFLAGS8;
@@ -242,6 +242,7 @@ const struct ppm_name_value lseek_whence[] = {
 };
 
 const struct ppm_name_value shutdown_how[] = {
+    {"SHUT_UNKNOWN", PPM_SHUT_UNKNOWN},
     {"SHUT_RDWR", PPM_SHUT_RDWR},
     {"SHUT_WR", PPM_SHUT_WR},
     {"SHUT_RD", PPM_SHUT_RD},

@@ -2,7 +2,8 @@ use std::ffi::{c_char, CString};
 use std::sync::OnceLock;
 
 use falco_plugin_api::{
-    ss_plugin_init_input, ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS,
+    ss_plugin_init_input, ss_plugin_metric, ss_plugin_rc_SS_PLUGIN_FAILURE,
+    ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_t,
 };
 
 use crate::base::Plugin;
@@ -57,6 +58,7 @@ impl<T: Plugin, const MAJOR: usize, const MINOR: usize, const PATCH: usize>
         __bindgen_anon_3: ParsePluginApi::<T>::PARSE_API,
         __bindgen_anon_4: AsyncPluginApi::<T>::ASYNC_API,
         set_config: Some(plugin_set_config::<T>),
+        get_metrics: Some(plugin_get_metrics::<T>),
     };
 }
 
@@ -210,6 +212,29 @@ pub unsafe extern "C" fn plugin_set_config<P: Plugin>(
     }
 }
 
+pub unsafe extern "C" fn plugin_get_metrics<P: Plugin>(
+    plugin: *mut ss_plugin_t,
+    num_metrics: *mut u32,
+) -> *mut ss_plugin_metric {
+    let plugin = plugin as *mut PluginWrapper<P>;
+    let Some(plugin) = plugin.as_mut() else {
+        *num_metrics = 0;
+        return std::ptr::null_mut();
+    };
+    let Some(num_metrics) = num_metrics.as_mut() else {
+        *num_metrics = 0;
+        return std::ptr::null_mut();
+    };
+
+    plugin.metric_storage.clear();
+    for metric in plugin.plugin.get_metrics() {
+        plugin.metric_storage.push(metric.as_raw());
+    }
+
+    *num_metrics = plugin.metric_storage.len() as u32;
+    plugin.metric_storage.as_ptr().cast_mut()
+}
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! wrap_ffi {
@@ -252,6 +277,7 @@ macro_rules! wrap_ffi {
 /// # use falco_plugin::base::InitInput;
 /// # use falco_plugin::FailureReason;
 /// use falco_plugin::base::Plugin;
+/// # use falco_plugin::base::Metric;
 /// use falco_plugin::plugin;
 ///
 /// struct MyPlugin;
@@ -270,6 +296,10 @@ macro_rules! wrap_ffi {
 /// #
 /// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
 /// #        Ok(())
+/// #    }
+/// #
+/// #    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+/// #        []
 /// #    }
 /// }
 ///
@@ -284,6 +314,7 @@ macro_rules! wrap_ffi {
 /// # use falco_plugin::base::InitInput;
 /// # use falco_plugin::FailureReason;
 /// use falco_plugin::base::Plugin;
+/// # use falco_plugin::base::Metric;
 /// use falco_plugin::plugin;
 ///
 /// struct MyPlugin;
@@ -302,6 +333,10 @@ macro_rules! wrap_ffi {
 /// #
 /// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
 /// #        Ok(())
+/// #    }
+/// #
+/// #    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+/// #        []
 /// #    }
 /// }
 ///
@@ -347,6 +382,10 @@ macro_rules! plugin {
                 plugin: *mut falco_plugin::api::ss_plugin_t,
                 config_input: *const falco_plugin::api::ss_plugin_set_config_input,
             ) -> falco_plugin::api::ss_plugin_rc;
+            unsafe fn plugin_get_metrics(
+                plugin: *mut falco_plugin::api::ss_plugin_t,
+                num_metrics: *mut u32,
+            ) -> *mut falco_plugin::api::ss_plugin_metric;
         }
 
         #[allow(dead_code)]
@@ -370,6 +409,7 @@ macro_rules! plugin {
                 __bindgen_anon_3: $crate::internals::parse::wrappers::ParsePluginApi::<$ty>::PARSE_API,
                 __bindgen_anon_4: $crate::internals::async_events::wrappers::AsyncPluginApi::<$ty>::ASYNC_API,
                 set_config: Some(plugin_set_config),
+                get_metrics: Some(plugin_get_metrics),
             }
         }
     };

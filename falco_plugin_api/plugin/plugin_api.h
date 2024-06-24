@@ -30,8 +30,8 @@ extern "C" {
 //
 // todo(jasondellaluce): when/if major changes to v4, check and solve all todos
 #define PLUGIN_API_VERSION_MAJOR 3
-#define PLUGIN_API_VERSION_MINOR 4
-#define PLUGIN_API_VERSION_PATCH 1
+#define PLUGIN_API_VERSION_MINOR 6
+#define PLUGIN_API_VERSION_PATCH 0
 
 //
 // Just some not so smart defines to retrieve plugin api version as string
@@ -263,8 +263,16 @@ typedef struct
 	ss_plugin_table_fields_vtable fields;
 	//
 	// Vtable for controlling operations related to fields on the state tables
-	// registeted in the plugin's owner.
+	// registered in the plugin's owner.
 	ss_plugin_table_fields_vtable_ext* fields_ext;
+	//
+	// Vtable for controlling read operations on the state tables registered
+	// in the plugin's owner.
+	ss_plugin_table_reader_vtable_ext* reader_ext;
+	//
+	// Vtable for controlling write operations on the state tables registered
+	// in the plugin's owner.
+	ss_plugin_table_writer_vtable_ext* writer_ext;
 } ss_plugin_init_tables_input;
 
 // Function used by plugin for sending messages to the framework-provided logger
@@ -958,6 +966,17 @@ typedef struct
 	// or SS_PLUGIN_FAILURE if the config is rejected.
 	// If rejected the plugin should provide context in the string returned by get_last_error().
 	ss_plugin_rc (*set_config)(ss_plugin_t* s, const ss_plugin_set_config_input* i);
+
+	//
+	// Return an updated set of metrics provided by this plugin.
+	// Required: no
+	// - s: the plugin state, returned by init(). Can be NULL.
+	// - num_metrics: lenght of the returned metrics array.
+	//
+	// Return value: Pointer to the first element of the metrics array.
+	// 'num_metrics' must be set to the lenght of the array before returning
+	// and it can be set to 0 if no metrics are provided.
+	ss_plugin_metric* (*get_metrics)(ss_plugin_t* s, uint32_t* num_metrics);
 } plugin_api;
 
 #ifdef __cplusplus

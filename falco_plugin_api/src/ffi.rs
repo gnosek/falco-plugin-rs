@@ -254,8 +254,8 @@ pub const SCNoPTR: &[u8; 3] = b"lo\0";
 pub const SCNuPTR: &[u8; 3] = b"lu\0";
 pub const SCNxPTR: &[u8; 3] = b"lx\0";
 pub const PLUGIN_API_VERSION_MAJOR: u32 = 3;
-pub const PLUGIN_API_VERSION_MINOR: u32 = 4;
-pub const PLUGIN_API_VERSION_PATCH: u32 = 1;
+pub const PLUGIN_API_VERSION_MINOR: u32 = 6;
+pub const PLUGIN_API_VERSION_PATCH: u32 = 0;
 pub const PLUGIN_MAX_ERRLEN: u32 = 1024;
 pub type __u_char = ::std::os::raw::c_uchar;
 pub type __u_short = ::std::os::raw::c_ushort;
@@ -830,6 +830,9 @@ fn bindgen_test_layout_ss_plugin_extract_field() {
         )
     );
 }
+pub type ss_plugin_table_t = ::std::os::raw::c_void;
+pub type ss_plugin_table_entry_t = ::std::os::raw::c_void;
+pub type ss_plugin_table_field_t = ::std::os::raw::c_void;
 pub const ss_plugin_state_type_SS_PLUGIN_ST_INT8: ss_plugin_state_type = 1;
 pub const ss_plugin_state_type_SS_PLUGIN_ST_INT16: ss_plugin_state_type = 2;
 pub const ss_plugin_state_type_SS_PLUGIN_ST_INT32: ss_plugin_state_type = 3;
@@ -839,6 +842,7 @@ pub const ss_plugin_state_type_SS_PLUGIN_ST_UINT16: ss_plugin_state_type = 6;
 pub const ss_plugin_state_type_SS_PLUGIN_ST_UINT32: ss_plugin_state_type = 7;
 pub const ss_plugin_state_type_SS_PLUGIN_ST_UINT64: ss_plugin_state_type = 8;
 pub const ss_plugin_state_type_SS_PLUGIN_ST_STRING: ss_plugin_state_type = 9;
+pub const ss_plugin_state_type_SS_PLUGIN_ST_TABLE: ss_plugin_state_type = 10;
 pub const ss_plugin_state_type_SS_PLUGIN_ST_BOOL: ss_plugin_state_type = 25;
 pub type ss_plugin_state_type = ::std::os::raw::c_uint;
 #[repr(C)]
@@ -854,6 +858,7 @@ pub union ss_plugin_state_data {
     pub u64_: u64,
     pub str_: *const ::std::os::raw::c_char,
     pub b: ss_plugin_bool,
+    pub table: *mut ss_plugin_table_t,
 }
 #[test]
 fn bindgen_test_layout_ss_plugin_state_data() {
@@ -969,6 +974,16 @@ fn bindgen_test_layout_ss_plugin_state_data() {
             stringify!(b)
         )
     );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).table) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_state_data),
+            "::",
+            stringify!(table)
+        )
+    );
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -1064,9 +1079,6 @@ fn bindgen_test_layout_ss_plugin_table_fieldinfo() {
         )
     );
 }
-pub type ss_plugin_table_t = ::std::os::raw::c_void;
-pub type ss_plugin_table_entry_t = ::std::os::raw::c_void;
-pub type ss_plugin_table_field_t = ::std::os::raw::c_void;
 pub type ss_plugin_owner_t = ::std::os::raw::c_void;
 pub type ss_plugin_t = ::std::os::raw::c_void;
 pub type ss_instance_t = ::std::os::raw::c_void;
@@ -1079,6 +1091,184 @@ pub const ss_plugin_log_severity_SS_PLUGIN_LOG_SEV_INFO: ss_plugin_log_severity 
 pub const ss_plugin_log_severity_SS_PLUGIN_LOG_SEV_DEBUG: ss_plugin_log_severity = 7;
 pub const ss_plugin_log_severity_SS_PLUGIN_LOG_SEV_TRACE: ss_plugin_log_severity = 8;
 pub type ss_plugin_log_severity = ::std::os::raw::c_uint;
+pub const ss_plugin_metric_value_type_SS_PLUGIN_METRIC_VALUE_TYPE_U32: ss_plugin_metric_value_type =
+    0;
+pub const ss_plugin_metric_value_type_SS_PLUGIN_METRIC_VALUE_TYPE_S32: ss_plugin_metric_value_type =
+    1;
+pub const ss_plugin_metric_value_type_SS_PLUGIN_METRIC_VALUE_TYPE_U64: ss_plugin_metric_value_type =
+    2;
+pub const ss_plugin_metric_value_type_SS_PLUGIN_METRIC_VALUE_TYPE_S64: ss_plugin_metric_value_type =
+    3;
+pub const ss_plugin_metric_value_type_SS_PLUGIN_METRIC_VALUE_TYPE_D: ss_plugin_metric_value_type =
+    4;
+pub const ss_plugin_metric_value_type_SS_PLUGIN_METRIC_VALUE_TYPE_F: ss_plugin_metric_value_type =
+    5;
+pub const ss_plugin_metric_value_type_SS_PLUGIN_METRIC_VALUE_TYPE_I: ss_plugin_metric_value_type =
+    6;
+pub type ss_plugin_metric_value_type = ::std::os::raw::c_uint;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union ss_plugin_metric_value {
+    pub u32_: u32,
+    pub s32: i32,
+    pub u64_: u64,
+    pub s64: i64,
+    pub d: f64,
+    pub f: f32,
+    pub i: ::std::os::raw::c_int,
+}
+#[test]
+fn bindgen_test_layout_ss_plugin_metric_value() {
+    const UNINIT: ::std::mem::MaybeUninit<ss_plugin_metric_value> =
+        ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<ss_plugin_metric_value>(),
+        8usize,
+        concat!("Size of: ", stringify!(ss_plugin_metric_value))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<ss_plugin_metric_value>(),
+        8usize,
+        concat!("Alignment of ", stringify!(ss_plugin_metric_value))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).u32_) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric_value),
+            "::",
+            stringify!(u32_)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).s32) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric_value),
+            "::",
+            stringify!(s32)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).u64_) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric_value),
+            "::",
+            stringify!(u64_)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).s64) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric_value),
+            "::",
+            stringify!(s64)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).d) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric_value),
+            "::",
+            stringify!(d)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).f) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric_value),
+            "::",
+            stringify!(f)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).i) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric_value),
+            "::",
+            stringify!(i)
+        )
+    );
+}
+pub const ss_plugin_metric_type_SS_PLUGIN_METRIC_TYPE_MONOTONIC: ss_plugin_metric_type = 0;
+pub const ss_plugin_metric_type_SS_PLUGIN_METRIC_TYPE_NON_MONOTONIC: ss_plugin_metric_type = 1;
+pub type ss_plugin_metric_type = ::std::os::raw::c_uint;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct ss_plugin_metric {
+    pub name: *const ::std::os::raw::c_char,
+    pub type_: ss_plugin_metric_type,
+    pub value: ss_plugin_metric_value,
+    pub value_type: ss_plugin_metric_value_type,
+}
+#[test]
+fn bindgen_test_layout_ss_plugin_metric() {
+    const UNINIT: ::std::mem::MaybeUninit<ss_plugin_metric> = ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<ss_plugin_metric>(),
+        32usize,
+        concat!("Size of: ", stringify!(ss_plugin_metric))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<ss_plugin_metric>(),
+        8usize,
+        concat!("Alignment of ", stringify!(ss_plugin_metric))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).name) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric),
+            "::",
+            stringify!(name)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).type_) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric),
+            "::",
+            stringify!(type_)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).value) as usize - ptr as usize },
+        16usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric),
+            "::",
+            stringify!(value)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).value_type) as usize - ptr as usize },
+        24usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_metric),
+            "::",
+            stringify!(value_type)
+        )
+    );
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ss_plugin_table_fields_vtable {
@@ -1784,6 +1974,8 @@ pub struct ss_plugin_init_tables_input {
     >,
     pub fields: ss_plugin_table_fields_vtable,
     pub fields_ext: *mut ss_plugin_table_fields_vtable_ext,
+    pub reader_ext: *mut ss_plugin_table_reader_vtable_ext,
+    pub writer_ext: *mut ss_plugin_table_writer_vtable_ext,
 }
 #[test]
 fn bindgen_test_layout_ss_plugin_init_tables_input() {
@@ -1792,7 +1984,7 @@ fn bindgen_test_layout_ss_plugin_init_tables_input() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ss_plugin_init_tables_input>(),
-        56usize,
+        72usize,
         concat!("Size of: ", stringify!(ss_plugin_init_tables_input))
     );
     assert_eq!(
@@ -1848,6 +2040,26 @@ fn bindgen_test_layout_ss_plugin_init_tables_input() {
             stringify!(ss_plugin_init_tables_input),
             "::",
             stringify!(fields_ext)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).reader_ext) as usize - ptr as usize },
+        56usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_init_tables_input),
+            "::",
+            stringify!(reader_ext)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).writer_ext) as usize - ptr as usize },
+        64usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_init_tables_input),
+            "::",
+            stringify!(writer_ext)
         )
     );
 }
@@ -2183,6 +2395,9 @@ pub struct plugin_api {
             s: *mut ss_plugin_t,
             i: *const ss_plugin_set_config_input,
         ) -> ss_plugin_rc,
+    >,
+    pub get_metrics: ::std::option::Option<
+        unsafe extern "C" fn(s: *mut ss_plugin_t, num_metrics: *mut u32) -> *mut ss_plugin_metric,
     >,
 }
 #[repr(C)]
@@ -2526,7 +2741,7 @@ fn bindgen_test_layout_plugin_api() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<plugin_api>(),
-        224usize,
+        232usize,
         concat!("Size of: ", stringify!(plugin_api))
     );
     assert_eq!(
@@ -2632,6 +2847,16 @@ fn bindgen_test_layout_plugin_api() {
             stringify!(plugin_api),
             "::",
             stringify!(set_config)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).get_metrics) as usize - ptr as usize },
+        224usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(plugin_api),
+            "::",
+            stringify!(get_metrics)
         )
     );
 }

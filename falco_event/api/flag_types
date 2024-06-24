@@ -38,7 +38,7 @@ type socket_families: PT_ENUMFLAGS32 !PPM_AF_LOCAL, PPM_AF_ROUTE;
 type shutdown_how: PT_ENUMFLAGS8;
 type sockopt_levels: PT_ENUMFLAGS8;
 type sockopt_options: PT_ENUMFLAGS8;
-type futex_operations: PT_ENUMFLAGS16;
+type futex_operations: PT_FLAGS16;
 type lseek_whence: PT_ENUMFLAGS8;
 type rlimit_resources: PT_ENUMFLAGS8;
 type fcntl_commands: PT_ENUMFLAGS8;

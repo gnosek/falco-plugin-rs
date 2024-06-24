@@ -28,8 +28,8 @@ or GPL2.txt for full copies of the license.
  *
  * - Events marked with `EC_UNKNOWN` must have a name equal to `NA`.
  *
- * - All events that have the "EF_USES_FD" flag should return as first parameter a file descriptor.
- *	 "libsinsp" will try to access the first parameter and use it as a file descriptor. If the event has
+ * - All events that have the "EF_USES_FD" flag should return as one of the parameters a file descriptor.
+ *	 "libsinsp" will try to access the parameter and use it as a file descriptor. If the event has
  *	 0 parameters but has the "EF_USES_FD" flag then a runtime error will occur shutting down the process.
  *   Furthermore if an exit event has the "EF_USES_FD" then also the related enter event must have
  *   it (following the logic described above). Otherwise the exit event will not trigger "libsinsp" code
@@ -212,9 +212,9 @@ const struct ppm_event_info g_event_info[] = {
 	[PPME_SYSCALL_CLONE_16_X] = {"clone", EC_PROCESS | EC_SYSCALL, EF_MODIFIES_STATE | EF_OLD_VERSION, 16, {{"res", PT_PID, PF_DEC}, {"exe", PT_CHARBUF, PF_NA}, {"args", PT_BYTEBUF, PF_NA}, {"tid", PT_PID, PF_DEC}, {"pid", PT_PID, PF_DEC}, {"ptid", PT_PID, PF_DEC}, {"cwd", PT_CHARBUF, PF_NA}, {"fdlimit", PT_INT64, PF_DEC}, {"pgft_maj", PT_UINT64, PF_DEC}, {"pgft_min", PT_UINT64, PF_DEC}, {"vm_size", PT_UINT32, PF_DEC}, {"vm_rss", PT_UINT32, PF_DEC}, {"vm_swap", PT_UINT32, PF_DEC}, {"flags", PT_FLAGS32, PF_HEX, clone_flags}, {"uid", PT_UINT32, PF_DEC}, {"gid", PT_UINT32, PF_DEC} } },
 	[PPME_SYSCALL_BRK_4_E] = {"brk", EC_MEMORY | EC_SYSCALL, EF_NONE, 1, {{"addr", PT_UINT64, PF_HEX} } },
 	[PPME_SYSCALL_BRK_4_X] = {"brk", EC_MEMORY | EC_SYSCALL, EF_NONE, 4, {{"res", PT_UINT64, PF_HEX}, {"vm_size", PT_UINT32, PF_DEC}, {"vm_rss", PT_UINT32, PF_DEC}, {"vm_swap", PT_UINT32, PF_DEC} } },
-	[PPME_SYSCALL_MMAP_E] = {"mmap", EC_MEMORY | EC_SYSCALL, EF_NONE, 6, {{"addr", PT_UINT64, PF_HEX}, {"length", PT_UINT64, PF_DEC}, {"prot", PT_FLAGS32, PF_HEX, prot_flags}, {"flags", PT_FLAGS32, PF_HEX, mmap_flags}, {"fd", PT_FD, PF_DEC}, {"offset", PT_UINT64, PF_DEC} } },
+	[PPME_SYSCALL_MMAP_E] = {"mmap", EC_MEMORY | EC_SYSCALL, EF_USES_FD, 6, {{"addr", PT_UINT64, PF_HEX}, {"length", PT_UINT64, PF_DEC}, {"prot", PT_FLAGS32, PF_HEX, prot_flags}, {"flags", PT_FLAGS32, PF_HEX, mmap_flags}, {"fd", PT_FD, PF_DEC}, {"offset", PT_UINT64, PF_DEC} } },
 	[PPME_SYSCALL_MMAP_X] = {"mmap", EC_MEMORY | EC_SYSCALL, EF_NONE, 4, {{"res", PT_ERRNO, PF_HEX}, {"vm_size", PT_UINT32, PF_DEC}, {"vm_rss", PT_UINT32, PF_DEC}, {"vm_swap", PT_UINT32, PF_DEC} } },
-	[PPME_SYSCALL_MMAP2_E] = {"mmap2", EC_MEMORY | EC_SYSCALL, EF_NONE, 6, {{"addr", PT_UINT64, PF_HEX}, {"length", PT_UINT64, PF_DEC}, {"prot", PT_FLAGS32, PF_HEX, prot_flags}, {"flags", PT_FLAGS32, PF_HEX, mmap_flags}, {"fd", PT_FD, PF_DEC}, {"pgoffset", PT_UINT64, PF_DEC} } },
+	[PPME_SYSCALL_MMAP2_E] = {"mmap2", EC_MEMORY | EC_SYSCALL, EF_USES_FD, 6, {{"addr", PT_UINT64, PF_HEX}, {"length", PT_UINT64, PF_DEC}, {"prot", PT_FLAGS32, PF_HEX, prot_flags}, {"flags", PT_FLAGS32, PF_HEX, mmap_flags}, {"fd", PT_FD, PF_DEC}, {"pgoffset", PT_UINT64, PF_DEC} } },
 	[PPME_SYSCALL_MMAP2_X] = {"mmap2", EC_MEMORY | EC_SYSCALL, EF_NONE, 4, {{"res", PT_ERRNO, PF_HEX}, {"vm_size", PT_UINT32, PF_DEC}, {"vm_rss", PT_UINT32, PF_DEC}, {"vm_swap", PT_UINT32, PF_DEC} } },
 	[PPME_SYSCALL_MUNMAP_E] = {"munmap", EC_MEMORY | EC_SYSCALL, EF_NONE, 2, {{"addr", PT_UINT64, PF_HEX}, {"length", PT_UINT64, PF_DEC} } },
 	[PPME_SYSCALL_MUNMAP_X] = {"munmap", EC_MEMORY | EC_SYSCALL, EF_NONE, 4, {{"res", PT_ERRNO, PF_DEC}, {"vm_size", PT_UINT32, PF_DEC}, {"vm_rss", PT_UINT32, PF_DEC}, {"vm_swap", PT_UINT32, PF_DEC} } },
@@ -379,7 +379,7 @@ const struct ppm_event_info g_event_info[] = {
 	[PPME_CONTAINER_JSON_2_E] = {"container", EC_PROCESS | EC_METAEVENT, EF_MODIFIES_STATE | EF_LARGE_PAYLOAD, 1, {{"json", PT_CHARBUF, PF_NA} } }, /// TODO: do we need SKIPPARSERESET flag?
 	[PPME_CONTAINER_JSON_2_X] = {"NA", EC_UNKNOWN, EF_UNUSED, 0},
 	[PPME_SYSCALL_OPENAT2_E] = {"openat2", EC_FILE | EC_SYSCALL, EF_CREATES_FD | EF_MODIFIES_STATE, 5, {{"dirfd", PT_FD, PF_DEC}, {"name", PT_FSRELPATH, PF_NA, DIRFD_PARAM(1)}, {"flags", PT_FLAGS32, PF_HEX, file_flags}, {"mode", PT_UINT32, PF_OCT}, {"resolve", PT_FLAGS32, PF_HEX, openat2_flags} } },
-	[PPME_SYSCALL_OPENAT2_X] = {"openat2", EC_FILE | EC_SYSCALL, EF_CREATES_FD | EF_MODIFIES_STATE, 6, {{"fd", PT_FD, PF_DEC}, {"dirfd", PT_FD, PF_DEC}, {"name", PT_FSRELPATH, PF_NA, DIRFD_PARAM(1)}, {"flags", PT_FLAGS32, PF_HEX, file_flags}, {"mode", PT_UINT32, PF_OCT}, {"resolve", PT_FLAGS32, PF_HEX, openat2_flags} } },
+	[PPME_SYSCALL_OPENAT2_X] = {"openat2", EC_FILE | EC_SYSCALL, EF_CREATES_FD | EF_MODIFIES_STATE, 8, {{"fd", PT_FD, PF_DEC}, {"dirfd", PT_FD, PF_DEC}, {"name", PT_FSRELPATH, PF_NA, DIRFD_PARAM(1)}, {"flags", PT_FLAGS32, PF_HEX, file_flags}, {"mode", PT_UINT32, PF_OCT}, {"resolve", PT_FLAGS32, PF_HEX, openat2_flags}, {"dev", PT_UINT32, PF_HEX}, {"ino", PT_UINT64, PF_DEC} } },
 	[PPME_SYSCALL_MPROTECT_E] = {"mprotect", EC_MEMORY | EC_SYSCALL, EF_NONE, 3, {{"addr", PT_UINT64, PF_HEX}, {"length", PT_UINT64, PF_DEC}, {"prot", PT_FLAGS32, PF_HEX, prot_flags} } },
 	[PPME_SYSCALL_MPROTECT_X] = {"mprotect", EC_MEMORY | EC_SYSCALL, EF_NONE, 1, {{"res", PT_ERRNO, PF_DEC} } },
 	[PPME_SYSCALL_EXECVEAT_E] = {"execveat", EC_PROCESS | EC_SYSCALL, EF_MODIFIES_STATE, 3, {{"dirfd", PT_FD, PF_DEC}, {"pathname", PT_FSRELPATH, PF_NA, DIRFD_PARAM(0)}, {"flags", PT_FLAGS32, PF_HEX, execveat_flags} } },
@@ -389,7 +389,7 @@ const struct ppm_event_info g_event_info[] = {
 	[PPME_SYSCALL_CLONE3_E] = {"clone3", EC_PROCESS | EC_SYSCALL, EF_MODIFIES_STATE, 0},
 	[PPME_SYSCALL_CLONE3_X] = {"clone3", EC_PROCESS | EC_SYSCALL, EF_MODIFIES_STATE, 21, {{"res", PT_PID, PF_DEC}, {"exe", PT_CHARBUF, PF_NA}, {"args", PT_BYTEBUF, PF_NA}, {"tid", PT_PID, PF_DEC}, {"pid", PT_PID, PF_DEC}, {"ptid", PT_PID, PF_DEC}, {"cwd", PT_CHARBUF, PF_NA}, {"fdlimit", PT_INT64, PF_DEC}, {"pgft_maj", PT_UINT64, PF_DEC}, {"pgft_min", PT_UINT64, PF_DEC}, {"vm_size", PT_UINT32, PF_DEC}, {"vm_rss", PT_UINT32, PF_DEC}, {"vm_swap", PT_UINT32, PF_DEC}, {"comm", PT_CHARBUF, PF_NA}, {"cgroups", PT_BYTEBUF, PF_NA}, {"flags", PT_FLAGS32, PF_HEX, clone_flags}, {"uid", PT_UINT32, PF_DEC}, {"gid", PT_UINT32, PF_DEC}, {"vtid", PT_PID, PF_DEC}, {"vpid", PT_PID, PF_DEC}, {"pidns_init_start_ts", PT_UINT64, PF_DEC} } },
 	[PPME_SYSCALL_OPEN_BY_HANDLE_AT_E] = {"open_by_handle_at", EC_FILE | EC_SYSCALL, EF_CREATES_FD | EF_MODIFIES_STATE, 0},
-	[PPME_SYSCALL_OPEN_BY_HANDLE_AT_X] = {"open_by_handle_at", EC_FILE | EC_SYSCALL, EF_CREATES_FD | EF_MODIFIES_STATE, 4, {{"fd", PT_FD, PF_DEC}, {"mountfd", PT_FD, PF_DEC}, {"flags", PT_FLAGS32, PF_HEX, file_flags}, {"path", PT_FSPATH, PF_NA} } },
+	[PPME_SYSCALL_OPEN_BY_HANDLE_AT_X] = {"open_by_handle_at", EC_FILE | EC_SYSCALL, EF_CREATES_FD | EF_MODIFIES_STATE, 6, {{"fd", PT_FD, PF_DEC}, {"mountfd", PT_FD, PF_DEC}, {"flags", PT_FLAGS32, PF_HEX, file_flags}, {"path", PT_FSPATH, PF_NA}, {"dev", PT_UINT32, PF_HEX}, {"ino", PT_UINT64, PF_DEC} } },
 	[PPME_SYSCALL_IO_URING_SETUP_E] = {"io_uring_setup", EC_IO_OTHER | EC_SYSCALL, EF_CREATES_FD | EF_MODIFIES_STATE, 0},
 	[PPME_SYSCALL_IO_URING_SETUP_X] = {"io_uring_setup", EC_IO_OTHER | EC_SYSCALL, EF_CREATES_FD | EF_MODIFIES_STATE, 8, {{"res", PT_ERRNO, PF_DEC},  {"entries", PT_UINT32, PF_DEC}, {"sq_entries", PT_UINT32, PF_DEC},{"cq_entries", PT_UINT32, PF_DEC},{"flags", PT_FLAGS32, PF_HEX, io_uring_setup_flags},{"sq_thread_cpu", PT_UINT32, PF_DEC}, {"sq_thread_idle", PT_UINT32, PF_DEC},{"features", PT_FLAGS32, PF_HEX, io_uring_setup_feats}}},
 	[PPME_SYSCALL_IO_URING_ENTER_E] = {"io_uring_enter", EC_IO_OTHER | EC_SYSCALL, EF_NONE, 0},

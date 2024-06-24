@@ -31,7 +31,7 @@ For a statically linked plugin, you need to:
 
 ```
 use std::ffi::CStr;
-use falco_plugin::base::{InitInput, Plugin};
+use falco_plugin::base::{InitInput, Metric, Plugin};
 use falco_plugin::base::PluginApi;
 use falco_plugin::FailureReason;
 
@@ -53,6 +53,10 @@ impl Plugin for DummyPlugin {
 
     fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
         Ok(())
+    }
+
+    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+        []
     }
 }
 

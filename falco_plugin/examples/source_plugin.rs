@@ -3,7 +3,7 @@ use std::io::Write;
 
 use anyhow::{anyhow, Error};
 
-use falco_plugin::base::{Json, Plugin};
+use falco_plugin::base::{Json, Metric, Plugin};
 use falco_plugin::schemars::JsonSchema;
 use falco_plugin::serde::Deserialize;
 use falco_plugin::source::{
@@ -42,6 +42,10 @@ impl Plugin for DummyPlugin {
     fn set_config(&mut self, config: Self::ConfigType) -> Result<(), Error> {
         self.config = config.into_inner();
         Ok(())
+    }
+
+    fn get_metrics(&mut self) -> impl IntoIterator<Item = Metric> {
+        []
     }
 }
 

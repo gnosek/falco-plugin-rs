@@ -1,10 +1,13 @@
 use crate::base::InitInput;
 use crate::extract::FieldStorage;
+use crate::plugin::base::metrics::Metric;
 use crate::plugin::schema::ConfigSchema;
 use crate::FailureReason;
+use falco_plugin_api::ss_plugin_metric;
 use std::ffi::{CStr, CString};
 
 mod logger;
+pub mod metrics;
 #[doc(hidden)]
 pub mod wrappers;
 
@@ -17,6 +20,7 @@ pub struct PluginWrapper<P: Plugin> {
     pub(crate) error_buf: CString,
     pub(crate) field_storage: FieldStorage,
     pub(crate) string_storage: CString,
+    pub(crate) metric_storage: Vec<ss_plugin_metric>,
 }
 
 impl<P: Plugin> PluginWrapper<P> {
@@ -26,6 +30,7 @@ impl<P: Plugin> PluginWrapper<P> {
             error_buf: Default::default(),
             field_storage: Default::default(),
             string_storage: Default::default(),
+            metric_storage: Default::default(),
         }
     }
 }
@@ -79,4 +84,7 @@ pub trait Plugin: Sized {
 
     /// Update the configuration of a running plugin
     fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error>;
+
+    /// Return the plugin metrics
+    fn get_metrics(&mut self) -> impl IntoIterator<Item = Metric>;
 }

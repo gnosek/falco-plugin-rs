@@ -73,7 +73,7 @@ pub use crate::plugin::event::EventInputExt;
 ///
 /// ```
 /// use std::ffi::CStr;
-/// use falco_plugin::base::{InitInput, Plugin};
+/// use falco_plugin::base::{InitInput, Metric, Plugin};
 /// use falco_plugin::plugin;
 /// use falco_plugin::FailureReason;
 ///
@@ -96,6 +96,10 @@ pub use crate::plugin::event::EventInputExt;
 ///     fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
 ///         Ok(())
 ///     }
+///
+///     fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+///         []
+///     }
 /// }
 ///
 /// // generate the actual plugin wrapper code
@@ -110,6 +114,7 @@ pub mod base {
     /// need to access its fields directly.
     pub use falco_plugin_api::ss_plugin_init_input as InitInput;
 
+    pub use crate::plugin::base::metrics::{Metric, MetricLabel, MetricType, MetricValue};
     pub use crate::plugin::base::wrappers::PluginApi;
     pub use crate::plugin::base::wrappers::PluginApiWithVersionOverride;
     pub use crate::plugin::base::Plugin;
@@ -147,7 +152,7 @@ pub mod base {
 /// use std::ffi::{CStr, CString};
 /// use anyhow::Error;
 /// use falco_event::events::types::EventType;
-/// use falco_plugin::base::{InitInput, Plugin};
+/// use falco_plugin::base::{InitInput, Metric, Plugin};
 /// use falco_plugin::{extract_plugin, FailureReason, plugin};
 /// use falco_plugin::extract::{
 ///     EventInput,
@@ -173,6 +178,10 @@ pub mod base {
 /// #
 /// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
 /// #        Ok(())
+/// #    }
+/// #
+/// #    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+/// #        []
 /// #    }
 /// }
 ///
@@ -237,7 +246,7 @@ pub mod extract {
 /// use anyhow::Error;
 /// use falco_event::{ };
 /// use falco_event::events::types::EventType;
-/// use falco_plugin::base::{InitInput, Plugin};
+/// use falco_plugin::base::{InitInput, Metric, Plugin};
 /// use falco_plugin::{EventInputExt, FailureReason, parse_plugin, plugin};
 /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
 /// use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input};
@@ -259,6 +268,10 @@ pub mod extract {
 /// #
 /// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
 /// #        Ok(())
+/// #    }
+/// #
+/// #    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+/// #        []
 /// #    }
 /// }
 ///
@@ -314,7 +327,7 @@ pub mod parse {
 /// use anyhow::Error;
 /// use falco_event::events::Event;
 /// use falco_event::events::EventMetadata;
-/// use falco_plugin::base::{InitInput, Plugin};
+/// use falco_plugin::base::{InitInput, Metric, Plugin};
 /// use falco_plugin::{async_event_plugin, EventInputExt, FailureReason, plugin};
 /// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
 ///
@@ -341,6 +354,10 @@ pub mod parse {
 /// #
 /// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
 /// #        Ok(())
+/// #    }
+/// #
+/// #    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+/// #        []
 /// #    }
 /// }
 ///
@@ -424,7 +441,7 @@ pub mod async_event {
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
 /// use falco_event::events::Event;
-/// use falco_plugin::base::{InitInput, Plugin};
+/// use falco_plugin::base::{InitInput, Metric, Plugin};
 /// use falco_plugin::{EventInputExt, FailureReason, plugin, source_plugin};
 /// use falco_plugin::source::{
 ///     EventBatch,
@@ -451,6 +468,10 @@ pub mod async_event {
 /// #
 /// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
 /// #        Ok(())
+/// #    }
+/// #
+/// #    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+/// #        []
 /// #    }
 /// }
 ///

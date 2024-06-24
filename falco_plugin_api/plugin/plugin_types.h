@@ -197,6 +197,16 @@ typedef struct ss_plugin_extract_field
 	ss_plugin_bool flist;
 } ss_plugin_extract_field;
 
+// Opaque a pointer to a state table. The falcosecurity libs define stateful
+// components in the form of tables.
+typedef void ss_plugin_table_t;
+
+// Opaque a pointer to an entry of a state table.
+typedef void ss_plugin_table_entry_t;
+
+// Opaque accessor to a data field available in the entries of a state table.
+typedef void ss_plugin_table_field_t;
+
 // Types supported by entry fields of state tables.
 // The noncontinguous numbers are to maintain equality with underlying
 // falcosecurity libs types.
@@ -212,6 +222,7 @@ typedef enum ss_plugin_state_type
 	SS_PLUGIN_ST_UINT32 = 7,
 	SS_PLUGIN_ST_UINT64 = 8,
 	SS_PLUGIN_ST_STRING = 9,
+	SS_PLUGIN_ST_TABLE = 10,
 	SS_PLUGIN_ST_BOOL = 25
 } ss_plugin_state_type;
 
@@ -229,6 +240,7 @@ typedef union ss_plugin_state_data
 	uint64_t u64;
 	const char* str;
 	ss_plugin_bool b;
+	ss_plugin_table_t* table;
 } ss_plugin_state_data;
 
 // Info about a state table.
@@ -245,16 +257,6 @@ typedef struct ss_plugin_table_fieldinfo
 	ss_plugin_state_type field_type;
 	ss_plugin_bool read_only;
 } ss_plugin_table_fieldinfo;
-
-// Opaque a pointer to a state table. The falcosecurity libs define stateful
-// components in the form of tables.
-typedef void ss_plugin_table_t;
-
-// Opaque a pointer to an entry of a state table.
-typedef void ss_plugin_table_entry_t;
-
-// Opaque accessor to a data field available in the entries of a state table.
-typedef void ss_plugin_table_field_t;
 
 // Opaque pointer to the owner of a plugin. It can be used to invert the
 // control and invoke functions of the plugin's owner from within the plugin.
@@ -292,6 +294,55 @@ typedef enum ss_plugin_log_severity
 	SS_PLUGIN_LOG_SEV_DEBUG = 7,
 	SS_PLUGIN_LOG_SEV_TRACE = 8,
 } ss_plugin_log_severity;
+
+// Types supported by the by the metric values
+typedef enum ss_plugin_metric_value_type
+{
+	SS_PLUGIN_METRIC_VALUE_TYPE_U32 = 0,
+	SS_PLUGIN_METRIC_VALUE_TYPE_S32 = 1,
+	SS_PLUGIN_METRIC_VALUE_TYPE_U64 = 2,
+	SS_PLUGIN_METRIC_VALUE_TYPE_S64 = 3,
+	SS_PLUGIN_METRIC_VALUE_TYPE_D = 4,
+	SS_PLUGIN_METRIC_VALUE_TYPE_F = 5,
+	SS_PLUGIN_METRIC_VALUE_TYPE_I = 6,
+} ss_plugin_metric_value_type;
+
+// Data representation of metric values
+typedef union ss_plugin_metric_value 
+{
+	uint32_t u32;
+	int32_t s32;
+	uint64_t u64;
+	int64_t s64;
+	double d;
+	float f;
+	int i;
+} ss_plugin_metric_value;
+
+// Metric types
+typedef enum ss_plugin_metric_type
+{
+	SS_PLUGIN_METRIC_TYPE_MONOTONIC = 0,
+	SS_PLUGIN_METRIC_TYPE_NON_MONOTONIC = 1,
+} ss_plugin_metric_type;
+
+//
+// Struct representing a metric to be provided to the plugin framework
+typedef struct ss_plugin_metric
+{
+	//
+	// Opaque string representing the metric name
+	const char* name;
+	//
+	// Metric type
+	ss_plugin_metric_type type;
+	//
+	// Metric numeric value
+	ss_plugin_metric_value value;
+	//
+	// Metric value data type
+	ss_plugin_metric_value_type value_type;
+} ss_plugin_metric;
 
 #ifdef __cplusplus
 }

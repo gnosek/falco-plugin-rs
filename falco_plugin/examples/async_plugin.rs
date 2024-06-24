@@ -10,7 +10,7 @@ use anyhow::Error;
 use falco_event::events::Event;
 use falco_event::events::EventMetadata;
 use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
-use falco_plugin::base::Plugin;
+use falco_plugin::base::{Metric, Plugin};
 use falco_plugin::{async_event_plugin, plugin, FailureReason};
 use falco_plugin_api::ss_plugin_init_input;
 
@@ -36,6 +36,10 @@ impl Plugin for DummyAsyncPlugin {
 
     fn set_config(&mut self, _config: Self::ConfigType) -> Result<(), Error> {
         Ok(())
+    }
+
+    fn get_metrics(&mut self) -> impl IntoIterator<Item = Metric> {
+        []
     }
 }
 
