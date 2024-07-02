@@ -3,7 +3,6 @@ use std::rc::Rc;
 
 use num_traits::FromPrimitive;
 
-use falco_event::fields::TypeId;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_rc, ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS,
     ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_entry_t, ss_plugin_table_field_t,
@@ -14,7 +13,7 @@ use falco_plugin_api::{
 
 use crate::plugin::error::FfiResult;
 use crate::plugin::exported_tables::ExportedTable;
-use crate::plugin::tables::data::TableData;
+use crate::plugin::tables::data::{FieldTypeId, TableData};
 
 // SAFETY: `table` must be a valid pointer to T
 unsafe extern "C" fn get_table_name<T: ExportedTable>(
@@ -233,7 +232,7 @@ unsafe extern "C" fn get_table_field<T: ExportedTable>(
         let Some(table) = (table as *mut T).as_mut() else {
             return std::ptr::null_mut();
         };
-        let Some(data_type) = TypeId::from_usize(data_type as usize) else {
+        let Some(data_type) = FieldTypeId::from_usize(data_type as usize) else {
             return std::ptr::null_mut();
         };
         let name = if name.is_null() {
@@ -258,7 +257,7 @@ unsafe extern "C" fn add_table_field<T: ExportedTable>(
         let Some(table) = (table as *mut T).as_mut() else {
             return std::ptr::null_mut();
         };
-        let Some(data_type) = TypeId::from_usize(data_type as usize) else {
+        let Some(data_type) = FieldTypeId::from_usize(data_type as usize) else {
             return std::ptr::null_mut();
         };
         let name = if name.is_null() {

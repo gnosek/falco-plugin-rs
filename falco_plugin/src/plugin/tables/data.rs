@@ -1,19 +1,54 @@
-use falco_event::fields::TypeId;
+use num_derive::FromPrimitive;
 use std::ffi::CStr;
 use std::marker::PhantomData;
 
 use falco_plugin_api::{
-    ss_plugin_bool, ss_plugin_state_data, ss_plugin_table_field_t, ss_plugin_table_t,
+    ss_plugin_bool, ss_plugin_field_type_FTYPE_UINT64, ss_plugin_state_data,
+    ss_plugin_state_type_SS_PLUGIN_ST_BOOL, ss_plugin_state_type_SS_PLUGIN_ST_INT16,
+    ss_plugin_state_type_SS_PLUGIN_ST_INT32, ss_plugin_state_type_SS_PLUGIN_ST_INT64,
+    ss_plugin_state_type_SS_PLUGIN_ST_INT8, ss_plugin_state_type_SS_PLUGIN_ST_STRING,
+    ss_plugin_state_type_SS_PLUGIN_ST_TABLE, ss_plugin_state_type_SS_PLUGIN_ST_UINT16,
+    ss_plugin_state_type_SS_PLUGIN_ST_UINT32, ss_plugin_state_type_SS_PLUGIN_ST_UINT8,
+    ss_plugin_table_field_t, ss_plugin_table_t,
 };
 
 mod seal {
     pub trait Sealed {}
 }
 
+/// Types usable as table keys and values
+#[non_exhaustive]
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive)]
+pub enum FieldTypeId {
+    /// 8-bit signed int
+    I8 = ss_plugin_state_type_SS_PLUGIN_ST_INT8,
+    /// 16-bit signed int
+    I16 = ss_plugin_state_type_SS_PLUGIN_ST_INT16,
+    /// 32-bit signed int
+    I32 = ss_plugin_state_type_SS_PLUGIN_ST_INT32,
+    /// 64-bit signed int
+    I64 = ss_plugin_state_type_SS_PLUGIN_ST_INT64,
+    /// 8-bit unsigned int
+    U8 = ss_plugin_state_type_SS_PLUGIN_ST_UINT8,
+    /// 16-bit unsigned int
+    U16 = ss_plugin_state_type_SS_PLUGIN_ST_UINT16,
+    /// 32-bit unsigned int
+    U32 = ss_plugin_state_type_SS_PLUGIN_ST_UINT32,
+    /// 64-bit unsigned int
+    U64 = ss_plugin_field_type_FTYPE_UINT64,
+    /// A printable buffer of bytes, NULL terminated
+    String = ss_plugin_state_type_SS_PLUGIN_ST_STRING,
+    /// A table
+    Table = ss_plugin_state_type_SS_PLUGIN_ST_TABLE,
+    /// A boolean value, 4 bytes.
+    Bool = ss_plugin_state_type_SS_PLUGIN_ST_BOOL,
+}
+
 /// # A trait describing types usable as table keys and values
 pub trait TableData: seal::Sealed {
     /// The Falco plugin type id of the data
-    const TYPE_ID: TypeId;
+    const TYPE_ID: FieldTypeId;
 
     /// # Borrow from the raw FFI representation
     ///
@@ -32,11 +67,11 @@ pub trait TableData: seal::Sealed {
     fn to_data(&self) -> ss_plugin_state_data;
 }
 
-macro_rules! impl_table_data_for_numeric_type {
+macro_rules! impl_table_data_direct {
     ($ty:ty => $field:ident: $type_id:expr) => {
         impl seal::Sealed for $ty {}
         impl TableData for $ty {
-            const TYPE_ID: TypeId = $type_id;
+            const TYPE_ID: FieldTypeId = $type_id;
 
             unsafe fn from_data(data: &ss_plugin_state_data) -> &Self {
                 unsafe { &data.$field }
@@ -49,14 +84,15 @@ macro_rules! impl_table_data_for_numeric_type {
     };
 }
 
-impl_table_data_for_numeric_type!(u8 => u8_: TypeId::U8);
-impl_table_data_for_numeric_type!(i8 => s8: TypeId::I8);
-impl_table_data_for_numeric_type!(u16 => u16_: TypeId::U16);
-impl_table_data_for_numeric_type!(i16 => s16: TypeId::I16);
-impl_table_data_for_numeric_type!(u32 => u32_: TypeId::U32);
-impl_table_data_for_numeric_type!(i32 => s32: TypeId::I32);
-impl_table_data_for_numeric_type!(u64 => u64_: TypeId::U64);
-impl_table_data_for_numeric_type!(i64 => s64: TypeId::I64);
+impl_table_data_direct!(u8 => u8_: FieldTypeId::U8);
+impl_table_data_direct!(i8 => s8: FieldTypeId::I8);
+impl_table_data_direct!(u16 => u16_: FieldTypeId::U16);
+impl_table_data_direct!(i16 => s16: FieldTypeId::I16);
+impl_table_data_direct!(u32 => u32_: FieldTypeId::U32);
+impl_table_data_direct!(i32 => s32: FieldTypeId::I32);
+impl_table_data_direct!(u64 => u64_: FieldTypeId::U64);
+impl_table_data_direct!(i64 => s64: FieldTypeId::I64);
+impl_table_data_direct!(*mut ss_plugin_table_t => table: FieldTypeId::Table);
 
 /// # A boolean value to use in tables
 ///
@@ -83,7 +119,7 @@ impl From<Bool> for bool {
 impl seal::Sealed for Bool {}
 
 impl TableData for Bool {
-    const TYPE_ID: TypeId = TypeId::Bool;
+    const TYPE_ID: FieldTypeId = FieldTypeId::Bool;
 
     unsafe fn from_data(data: &ss_plugin_state_data) -> &Self {
         unsafe { std::mem::transmute(&data.b) }
@@ -97,7 +133,7 @@ impl TableData for Bool {
 impl seal::Sealed for CStr {}
 
 impl TableData for CStr {
-    const TYPE_ID: TypeId = TypeId::CharBuf;
+    const TYPE_ID: FieldTypeId = FieldTypeId::String;
 
     unsafe fn from_data(data: &ss_plugin_state_data) -> &CStr {
         unsafe { CStr::from_ptr(data.str_) }

@@ -107,7 +107,7 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
     let has_dynamic_fields = !static_only;
     quote!(
         impl ::falco_plugin::tables::TableValues for #name {
-            const STATIC_FIELDS: &'static [(&'static ::std::ffi::CStr, ::falco_plugin::tables::TypeId, bool)] = &[
+            const STATIC_FIELDS: &'static [(&'static ::std::ffi::CStr, ::falco_plugin::tables::FieldTypeId, bool)] = &[
                 #(#static_fields,)*
             ];
             const HAS_DYNAMIC_FIELDS: bool = #has_dynamic_fields;
@@ -115,7 +115,7 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
             fn get(
                 &self,
                 key: usize,
-                type_id: ::falco_plugin::tables::TypeId,
+                type_id: ::falco_plugin::tables::FieldTypeId,
                 out: &mut ::falco_plugin::api::ss_plugin_state_data,
             ) -> Result<(), ::falco_plugin::FailureReason> {
                 use ::falco_plugin::tables::TableValues;

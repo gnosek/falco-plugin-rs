@@ -529,13 +529,13 @@ pub mod tables {
     pub use crate::plugin::exported_tables::StaticField;
     pub use crate::plugin::exported_tables::TableValues;
     pub use crate::plugin::tables::data::Bool;
+    pub use crate::plugin::tables::data::FieldTypeId;
     pub use crate::plugin::tables::data::TableData;
     pub use crate::plugin::tables::data::TypedTableField;
     pub use crate::plugin::tables::entry::TableEntry;
     pub use crate::plugin::tables::entry::TableEntryReader;
     pub use crate::plugin::tables::table::TypedTable;
     pub use crate::plugin::tables::table_reader::TableReader;
-    pub use falco_event::fields::TypeId;
 }
 
 mod plugin;

@@ -3,10 +3,9 @@ use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
 use std::rc::Rc;
 
-use falco_event::fields::TypeId;
 use falco_plugin_api::{ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo};
 
-use crate::plugin::tables::data::TableData;
+use crate::plugin::tables::data::{FieldTypeId, TableData};
 use crate::tables::Bool;
 use crate::FailureReason;
 
@@ -24,18 +23,18 @@ pub trait FieldValue: seal::Sealed + Sized {
     /// Store a C representation of `&self` in `out`
     ///
     /// This method must return `None` (and do nothing) if `&self` cannot be represented
-    /// as a value of type [`TypeId`].
-    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: TypeId) -> Option<()>;
+    /// as a value of type [`FieldTypeId`].
+    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: FieldTypeId) -> Option<()>;
 
     /// Load value from a C representation in `value`
     ///
     /// This method must return `None` (and do nothing) if `Self` cannot represent
-    /// a value of type [`TypeId`].
+    /// a value of type [`FieldTypeId`].
     ///
     /// # Safety
-    /// `value` must be a valid reference with the union member described by [`TypeId`] filled
+    /// `value` must be a valid reference with the union member described by [`FieldTypeId`] filled
     /// with valid data.
-    unsafe fn from_data(value: &ss_plugin_state_data, type_id: TypeId) -> Option<Self>;
+    unsafe fn from_data(value: &ss_plugin_state_data, type_id: FieldTypeId) -> Option<Self>;
 }
 
 /// Trait implemented for types that can be static table fields
@@ -44,7 +43,7 @@ pub trait FieldValue: seal::Sealed + Sized {
 /// by the Falco plugin API)
 pub trait StaticField: FieldValue {
     /// The type id corresponding to the implementing type
-    const TYPE_ID: TypeId;
+    const TYPE_ID: FieldTypeId;
 }
 
 macro_rules! impl_field_value {
@@ -52,7 +51,7 @@ macro_rules! impl_field_value {
         impl seal::Sealed for $ty {}
 
         impl FieldValue for $ty {
-            fn to_data(&self, out: &mut ss_plugin_state_data, type_id: TypeId) -> Option<()> {
+            fn to_data(&self, out: &mut ss_plugin_state_data, type_id: FieldTypeId) -> Option<()> {
                 if type_id != $type_id {
                     return None;
                 }
@@ -61,7 +60,10 @@ macro_rules! impl_field_value {
                 Some(())
             }
 
-            unsafe fn from_data(value: &ss_plugin_state_data, type_id: TypeId) -> Option<Self> {
+            unsafe fn from_data(
+                value: &ss_plugin_state_data,
+                type_id: FieldTypeId,
+            ) -> Option<Self> {
                 if type_id != $type_id {
                     return None;
                 }
@@ -71,7 +73,7 @@ macro_rules! impl_field_value {
         }
 
         impl StaticField for $ty {
-            const TYPE_ID: TypeId = $type_id;
+            const TYPE_ID: FieldTypeId = $type_id;
         }
 
         impl TryFrom<DynamicFieldValue> for $ty {
@@ -88,19 +90,19 @@ macro_rules! impl_field_value {
     };
 }
 
-impl_field_value!(u8 => u8_ => TypeId::U8 => U8);
-impl_field_value!(i8 => s8 => TypeId::I8 => I8);
-impl_field_value!(u16 => u16_ => TypeId::U16 => U16);
-impl_field_value!(i16 => s16 => TypeId::I16 => I16);
-impl_field_value!(u32 => u32_ => TypeId::U32 => U32);
-impl_field_value!(i32 => s32 => TypeId::I32 => I32);
-impl_field_value!(u64 => u64_ => TypeId::U64 => U64);
-impl_field_value!(i64 => s64 => TypeId::I64 => I64);
+impl_field_value!(u8 => u8_ => FieldTypeId::U8 => U8);
+impl_field_value!(i8 => s8 => FieldTypeId::I8 => I8);
+impl_field_value!(u16 => u16_ => FieldTypeId::U16 => U16);
+impl_field_value!(i16 => s16 => FieldTypeId::I16 => I16);
+impl_field_value!(u32 => u32_ => FieldTypeId::U32 => U32);
+impl_field_value!(i32 => s32 => FieldTypeId::I32 => I32);
+impl_field_value!(u64 => u64_ => FieldTypeId::U64 => U64);
+impl_field_value!(i64 => s64 => FieldTypeId::I64 => I64);
 
 impl seal::Sealed for bool {}
 impl FieldValue for bool {
-    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: TypeId) -> Option<()> {
-        if type_id != TypeId::Bool {
+    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: FieldTypeId) -> Option<()> {
+        if type_id != FieldTypeId::Bool {
             return None;
         }
 
@@ -108,8 +110,8 @@ impl FieldValue for bool {
         Some(())
     }
 
-    unsafe fn from_data(value: &ss_plugin_state_data, type_id: TypeId) -> Option<Self> {
-        if type_id != TypeId::Bool {
+    unsafe fn from_data(value: &ss_plugin_state_data, type_id: FieldTypeId) -> Option<Self> {
+        if type_id != FieldTypeId::Bool {
             return None;
         }
 
@@ -118,7 +120,7 @@ impl FieldValue for bool {
 }
 
 impl StaticField for bool {
-    const TYPE_ID: TypeId = TypeId::Bool;
+    const TYPE_ID: FieldTypeId = FieldTypeId::Bool;
 }
 
 impl TryFrom<DynamicFieldValue> for bool {
@@ -135,8 +137,8 @@ impl TryFrom<DynamicFieldValue> for bool {
 
 impl seal::Sealed for CString {}
 impl FieldValue for CString {
-    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: TypeId) -> Option<()> {
-        if type_id != TypeId::CharBuf {
+    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: FieldTypeId) -> Option<()> {
+        if type_id != FieldTypeId::String {
             return None;
         }
 
@@ -144,8 +146,8 @@ impl FieldValue for CString {
         Some(())
     }
 
-    unsafe fn from_data(value: &ss_plugin_state_data, type_id: TypeId) -> Option<Self> {
-        if type_id != TypeId::CharBuf {
+    unsafe fn from_data(value: &ss_plugin_state_data, type_id: FieldTypeId) -> Option<Self> {
+        if type_id != FieldTypeId::String {
             return None;
         }
 
@@ -154,7 +156,7 @@ impl FieldValue for CString {
 }
 
 impl StaticField for CString {
-    const TYPE_ID: TypeId = TypeId::CharBuf;
+    const TYPE_ID: FieldTypeId = FieldTypeId::String;
 }
 
 impl TryFrom<DynamicFieldValue> for CString {
@@ -188,18 +190,20 @@ pub enum DynamicFieldValue {
 
 impl seal::Sealed for DynamicFieldValue {}
 impl FieldValue for DynamicFieldValue {
-    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: TypeId) -> Option<()> {
+    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: FieldTypeId) -> Option<()> {
         match self {
-            DynamicFieldValue::U8(v) if type_id == TypeId::U8 => out.u8_ = *v,
-            DynamicFieldValue::I8(v) if type_id == TypeId::I8 => out.s8 = *v,
-            DynamicFieldValue::U16(v) if type_id == TypeId::U16 => out.u16_ = *v,
-            DynamicFieldValue::I16(v) if type_id == TypeId::I16 => out.s16 = *v,
-            DynamicFieldValue::U32(v) if type_id == TypeId::U32 => out.u32_ = *v,
-            DynamicFieldValue::I32(v) if type_id == TypeId::I32 => out.s32 = *v,
-            DynamicFieldValue::U64(v) if type_id == TypeId::U64 => out.u64_ = *v,
-            DynamicFieldValue::I64(v) if type_id == TypeId::I64 => out.s64 = *v,
-            DynamicFieldValue::Bool(v) if type_id == TypeId::Bool => out.b = if *v { 1 } else { 0 },
-            DynamicFieldValue::String(v) if type_id == TypeId::CharBuf => {
+            DynamicFieldValue::U8(v) if type_id == FieldTypeId::U8 => out.u8_ = *v,
+            DynamicFieldValue::I8(v) if type_id == FieldTypeId::I8 => out.s8 = *v,
+            DynamicFieldValue::U16(v) if type_id == FieldTypeId::U16 => out.u16_ = *v,
+            DynamicFieldValue::I16(v) if type_id == FieldTypeId::I16 => out.s16 = *v,
+            DynamicFieldValue::U32(v) if type_id == FieldTypeId::U32 => out.u32_ = *v,
+            DynamicFieldValue::I32(v) if type_id == FieldTypeId::I32 => out.s32 = *v,
+            DynamicFieldValue::U64(v) if type_id == FieldTypeId::U64 => out.u64_ = *v,
+            DynamicFieldValue::I64(v) if type_id == FieldTypeId::I64 => out.s64 = *v,
+            DynamicFieldValue::Bool(v) if type_id == FieldTypeId::Bool => {
+                out.b = if *v { 1 } else { 0 }
+            }
+            DynamicFieldValue::String(v) if type_id == FieldTypeId::String => {
                 out.str_ = v.as_c_str().as_ptr()
             }
             _ => return None,
@@ -208,18 +212,18 @@ impl FieldValue for DynamicFieldValue {
         Some(())
     }
 
-    unsafe fn from_data(value: &ss_plugin_state_data, type_id: TypeId) -> Option<Self> {
+    unsafe fn from_data(value: &ss_plugin_state_data, type_id: FieldTypeId) -> Option<Self> {
         match type_id {
-            TypeId::I8 => Some(Self::I8(value.s8)),
-            TypeId::I16 => Some(Self::I16(value.s16)),
-            TypeId::I32 => Some(Self::I32(value.s32)),
-            TypeId::I64 => Some(Self::I64(value.s64)),
-            TypeId::U8 => Some(Self::U8(value.u8_)),
-            TypeId::U16 => Some(Self::U16(value.u16_)),
-            TypeId::U32 => Some(Self::U32(value.u32_)),
-            TypeId::U64 => Some(Self::U64(value.u64_)),
-            TypeId::CharBuf => Some(Self::String(CStr::from_ptr(value.str_).to_owned())),
-            TypeId::Bool => Some(Self::Bool(value.b != 0)),
+            FieldTypeId::I8 => Some(Self::I8(value.s8)),
+            FieldTypeId::I16 => Some(Self::I16(value.s16)),
+            FieldTypeId::I32 => Some(Self::I32(value.s32)),
+            FieldTypeId::I64 => Some(Self::I64(value.s64)),
+            FieldTypeId::U8 => Some(Self::U8(value.u8_)),
+            FieldTypeId::U16 => Some(Self::U16(value.u16_)),
+            FieldTypeId::U32 => Some(Self::U32(value.u32_)),
+            FieldTypeId::U64 => Some(Self::U64(value.u64_)),
+            FieldTypeId::String => Some(Self::String(CStr::from_ptr(value.str_).to_owned())),
+            FieldTypeId::Bool => Some(Self::Bool(value.b != 0)),
             _ => None,
         }
     }
@@ -234,7 +238,7 @@ impl FieldValue for DynamicFieldValue {
 /// the defined type on all incoming data.
 pub struct DynamicField {
     index: usize,
-    type_id: TypeId,
+    type_id: FieldTypeId,
     read_only: bool,
 }
 
@@ -247,7 +251,7 @@ pub type DynamicFieldValues = BTreeMap<usize, DynamicFieldValue>;
 /// directly, for other types, you'll probably want to use the [`crate::TableValues`] derive macro.
 pub trait TableValues: Default {
     /// A list of all static fields in this table
-    const STATIC_FIELDS: &'static [(&'static CStr, TypeId, bool)];
+    const STATIC_FIELDS: &'static [(&'static CStr, FieldTypeId, bool)];
 
     /// True if this table supports adding custom fields, false otherwise
     const HAS_DYNAMIC_FIELDS: bool;
@@ -262,7 +266,7 @@ pub trait TableValues: Default {
     fn get(
         &self,
         key: usize,
-        type_id: TypeId,
+        type_id: FieldTypeId,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), FailureReason>;
 
@@ -277,13 +281,13 @@ pub trait TableValues: Default {
 }
 
 impl TableValues for DynamicFieldValues {
-    const STATIC_FIELDS: &'static [(&'static CStr, TypeId, bool)] = &[];
+    const STATIC_FIELDS: &'static [(&'static CStr, FieldTypeId, bool)] = &[];
     const HAS_DYNAMIC_FIELDS: bool = true;
 
     fn get(
         &self,
         key: usize,
-        type_id: TypeId,
+        type_id: FieldTypeId,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), FailureReason> {
         let Some((_, actual_type_id, _)) = Self::STATIC_FIELDS.get(key) else {
@@ -386,13 +390,13 @@ pub trait ExportedTable {
     /// Return a field descriptor for a particular field
     ///
     /// The requested `field_type` must match the actual type of the field
-    fn get_field(&self, name: &CStr, field_type: TypeId) -> Option<Rc<Self::Field>>;
+    fn get_field(&self, name: &CStr, field_type: FieldTypeId) -> Option<Rc<Self::Field>>;
 
     /// Add a new field to the table
     fn add_field(
         &mut self,
         name: &CStr,
-        field_type: TypeId,
+        field_type: FieldTypeId,
         read_only: bool,
     ) -> Option<Rc<Self::Field>>;
 }
@@ -497,7 +501,7 @@ impl<K: TableData + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<
         self.field_descriptors.as_slice()
     }
 
-    fn get_field(&self, name: &CStr, field_type: TypeId) -> Option<Rc<Self::Field>> {
+    fn get_field(&self, name: &CStr, field_type: FieldTypeId) -> Option<Rc<Self::Field>> {
         let field = self.fields.get(name)?;
         if field.type_id != field_type {
             return None;
@@ -508,7 +512,7 @@ impl<K: TableData + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<
     fn add_field(
         &mut self,
         name: &CStr,
-        field_type: TypeId,
+        field_type: FieldTypeId,
         read_only: bool,
     ) -> Option<Rc<Self::Field>> {
         if let Some(existing_field) = self.fields.get(name) {

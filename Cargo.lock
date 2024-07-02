@@ -137,6 +137,7 @@ dependencies = [
  "falco_plugin_derive",
  "log",
  "memchr",
+ "num-derive",
  "num-traits",
  "schemars",
  "serde",
