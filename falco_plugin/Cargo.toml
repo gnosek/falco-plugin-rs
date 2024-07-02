@@ -12,27 +12,27 @@ categories = ["api-bindings"]
 
 [[example]]
 name = "source_plugin"
-crate_type = ["dylib"]
+crate-type = ["dylib"]
 
 [[example]]
 name = "static_source_plugin"
-crate_type = ["staticlib"]
+crate-type = ["staticlib"]
 
 [[example]]
 name = "extract_plugin"
-crate_type = ["dylib"]
+crate-type = ["dylib"]
 
 [[example]]
 name = "parse_plugin"
-crate_type = ["dylib"]
+crate-type = ["dylib"]
 
 [[example]]
 name = "extract2_plugin"
-crate_type = ["dylib"]
+crate-type = ["dylib"]
 
 [[example]]
 name = "async_plugin"
-crate_type = ["dylib"]
+crate-type = ["dylib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
