@@ -1,12 +1,11 @@
 use anyhow::Error;
-use falco_event::fields::TypeId;
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 
 use falco_plugin_api::{ss_plugin_event_input, ss_plugin_extract_field};
 
 use crate::extract::ExtractFieldRequestArg;
-use crate::plugin::extract::fields::Extract;
+use crate::plugin::extract::fields::{Extract, ExtractFieldTypeId};
 use crate::plugin::extract::{ExtractField, ExtractPlugin};
 use crate::plugin::storage::FieldStorageSession;
 use crate::plugin::tables::table_reader::TableReader;
@@ -63,16 +62,18 @@ impl Serialize for ExtractArgType {
     }
 }
 
-pub fn serialize_field_type<S: Serializer>(f: &TypeId, serializer: S) -> Result<S::Ok, S::Error> {
+pub fn serialize_field_type<S: Serializer>(
+    f: &ExtractFieldTypeId,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
     match f {
-        TypeId::U64 => serializer.serialize_str("uint64"),
-        TypeId::CharBuf => serializer.serialize_str("string"),
-        TypeId::RelTime => serializer.serialize_str("reltime"),
-        TypeId::AbsTime => serializer.serialize_str("abstime"),
-        TypeId::Bool => serializer.serialize_str("bool"),
-        TypeId::IPAddr => serializer.serialize_str("ipaddr"),
-        TypeId::IPNet => serializer.serialize_str("ipnet"),
-        _ => serializer.serialize_none(),
+        ExtractFieldTypeId::U64 => serializer.serialize_str("uint64"),
+        ExtractFieldTypeId::String => serializer.serialize_str("string"),
+        ExtractFieldTypeId::RelTime => serializer.serialize_str("reltime"),
+        ExtractFieldTypeId::AbsTime => serializer.serialize_str("abstime"),
+        ExtractFieldTypeId::Bool => serializer.serialize_str("bool"),
+        ExtractFieldTypeId::IpAddr => serializer.serialize_str("ipaddr"),
+        ExtractFieldTypeId::IpNet => serializer.serialize_str("ipnet"),
     }
 }
 
@@ -134,7 +135,7 @@ pub struct ExtractFieldInfo<P: ExtractPlugin> {
     #[serde(rename = "type")]
     #[serde(serialize_with = "serialize_field_type")]
     /// the type of the extracted field
-    pub field_type: TypeId,
+    pub field_type: ExtractFieldTypeId,
     #[serde(rename = "isList")]
     /// if true, the extract function returns a [`Vec`] of values, not a single one
     pub is_list: bool,

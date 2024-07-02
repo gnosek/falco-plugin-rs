@@ -1,14 +1,41 @@
+use num_derive::FromPrimitive;
 use std::ffi::{c_void, CString};
 
 use falco_event::fields::ToBytes;
-use falco_event::fields::TypeId;
-use falco_plugin_api::ss_plugin_extract_field;
+use falco_plugin_api::{
+    ss_plugin_extract_field, ss_plugin_field_type_FTYPE_ABSTIME, ss_plugin_field_type_FTYPE_BOOL,
+    ss_plugin_field_type_FTYPE_IPADDR, ss_plugin_field_type_FTYPE_IPNET,
+    ss_plugin_field_type_FTYPE_RELTIME, ss_plugin_field_type_FTYPE_STRING,
+    ss_plugin_field_type_FTYPE_UINT64,
+};
 
 use crate::plugin::storage::FieldStorageSession;
 
+#[non_exhaustive]
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive)]
+pub enum ExtractFieldTypeId {
+    /// A 64bit unsigned integer.
+    U64 = ss_plugin_field_type_FTYPE_UINT64,
+    /// A printable buffer of bytes, NULL terminated
+    String = ss_plugin_field_type_FTYPE_STRING,
+    /// A relative time. Seconds * 10^9  + nanoseconds. 64bit.
+    RelTime = ss_plugin_field_type_FTYPE_RELTIME,
+    /// An absolute time interval. Seconds from epoch * 10^9  + nanoseconds. 64bit.
+    AbsTime = ss_plugin_field_type_FTYPE_ABSTIME,
+    /// A boolean value, 4 bytes.
+    Bool = ss_plugin_field_type_FTYPE_BOOL,
+    /// Either an IPv4 or IPv6 address. The length indicates which one it is.
+    IpAddr = ss_plugin_field_type_FTYPE_IPADDR,
+    /// Either an IPv4 or IPv6 network. The length indicates which one it is.
+    /// The field encodes only the IP address, so this differs from IPADDR,
+    /// from the way the framework perform runtime checks and comparisons.
+    IpNet = ss_plugin_field_type_FTYPE_IPNET,
+}
+
 pub trait Extract {
     const IS_LIST: bool;
-    const TYPE_ID: TypeId;
+    const TYPE_ID: ExtractFieldTypeId;
 
     fn extract_to(
         &self,
@@ -71,7 +98,7 @@ macro_rules! extract_direct {
     ($ty:ty => $type_id:expr) => {
         impl Extract for $ty {
             const IS_LIST: bool = false;
-            const TYPE_ID: TypeId = $type_id;
+            const TYPE_ID: ExtractFieldTypeId = $type_id;
 
             fn extract_to(
                 &self,
@@ -87,7 +114,7 @@ macro_rules! extract_direct {
 
         impl Extract for Vec<$ty> {
             const IS_LIST: bool = true;
-            const TYPE_ID: TypeId = $type_id;
+            const TYPE_ID: ExtractFieldTypeId = $type_id;
 
             fn extract_to(
                 &self,
@@ -103,12 +130,11 @@ macro_rules! extract_direct {
     };
 }
 
-extract_direct!(u32 => TypeId::U32);
-extract_direct!(u64 => TypeId::U64);
+extract_direct!(u64 => ExtractFieldTypeId::U64);
 
 impl Extract for CString {
     const IS_LIST: bool = false;
-    const TYPE_ID: TypeId = TypeId::CharBuf;
+    const TYPE_ID: ExtractFieldTypeId = ExtractFieldTypeId::String;
 
     fn extract_to(
         &self,
@@ -123,7 +149,7 @@ impl Extract for CString {
 }
 impl Extract for Vec<CString> {
     const IS_LIST: bool = true;
-    const TYPE_ID: TypeId = TypeId::CharBuf;
+    const TYPE_ID: ExtractFieldTypeId = ExtractFieldTypeId::String;
 
     fn extract_to(
         &self,
