@@ -1,61 +1,12 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::io::Write;
-use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::Path;
 
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
-use crate::types::Port;
-
-type EndpointV4 = (Ipv4Addr, Port);
-
-impl ToBytes for EndpointV4 {
-    fn binary_size(&self) -> usize {
-        self.0.binary_size() + self.1.binary_size()
-    }
-
-    //noinspection DuplicatedCode
-    fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
-        self.0.write(&mut writer)?;
-        self.1.write(writer)
-    }
-
-    fn default_repr() -> impl ToBytes {
-        (Ipv4Addr::from(0), Port(0))
-    }
-}
-
-impl FromBytes<'_> for EndpointV4 {
-    fn from_bytes(buf: &mut &'_ [u8]) -> FromBytesResult<Self> {
-        Ok((FromBytes::from_bytes(buf)?, FromBytes::from_bytes(buf)?))
-    }
-}
-
-type EndpointV6 = (Ipv6Addr, Port);
-
-impl ToBytes for EndpointV6 {
-    fn binary_size(&self) -> usize {
-        self.0.binary_size() + self.1.binary_size()
-    }
-
-    //noinspection DuplicatedCode
-    fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
-        self.0.write(&mut writer)?;
-        self.1.write(writer)
-    }
-
-    fn default_repr() -> impl ToBytes {
-        (Ipv6Addr::from(0), Port(0))
-    }
-}
-
-impl FromBytes<'_> for EndpointV6 {
-    fn from_bytes(buf: &mut &'_ [u8]) -> FromBytesResult<Self> {
-        Ok((FromBytes::from_bytes(buf)?, FromBytes::from_bytes(buf)?))
-    }
-}
+use crate::types::net::endpoint::{EndpointV4, EndpointV6};
 
 /// Socket tuple: describing both endpoints of a connection
 #[derive(Debug, Eq, PartialEq)]
@@ -195,10 +146,11 @@ impl<'a> FromBytes<'a> for SockTuple<'a> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::types::Port;
+    use std::net::{Ipv4Addr, Ipv6Addr};
     use std::os::unix::ffi::OsStrExt;
     use std::str::FromStr;
-
-    use super::*;
 
     #[test]
     fn test_socktuple_ipv4() {

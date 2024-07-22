@@ -1,9 +1,9 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL, PPM_AF_UNSPEC};
+use crate::types::{EndpointV4, EndpointV6};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::ffi::OsStr;
 use std::io::Write;
-use std::net::{Ipv4Addr, Ipv6Addr};
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
@@ -14,10 +14,10 @@ pub enum SockAddr<'a> {
     Unix(&'a Path),
 
     /// IPv4 sockets
-    V4(Ipv4Addr),
+    V4(EndpointV4),
 
     /// IPv6 socket
-    V6(Ipv6Addr),
+    V6(EndpointV6),
 
     /// any other address family is represented as the number (`PPM_AF_*` constant) and the raw data
     Other(u8, &'a [u8]),
@@ -69,11 +69,11 @@ impl<'a> FromBytes<'a> for SockAddr<'a> {
                 Ok(Self::Unix(Path::new(path)))
             }
             PPM_AF_INET => {
-                let addr = Ipv4Addr::from_bytes(buf)?;
+                let addr = EndpointV4::from_bytes(buf)?;
                 Ok(Self::V4(addr))
             }
             PPM_AF_INET6 => {
-                let addr = Ipv6Addr::from_bytes(buf)?;
+                let addr = EndpointV6::from_bytes(buf)?;
                 Ok(Self::V6(addr))
             }
             _ => Ok(Self::Other(variant, buf)),
