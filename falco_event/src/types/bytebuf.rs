@@ -3,7 +3,7 @@ use std::io::Write;
 
 impl<'a> FromBytes<'a> for &'a [u8] {
     fn from_bytes(buf: &mut &'a [u8]) -> FromBytesResult<Self> {
-        Ok(buf)
+        Ok(std::mem::take(buf))
     }
 }
 

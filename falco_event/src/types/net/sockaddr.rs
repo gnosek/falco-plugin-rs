@@ -65,6 +65,7 @@ impl<'a> FromBytes<'a> for SockAddr<'a> {
         match variant as u32 {
             PPM_AF_LOCAL => {
                 let path = <OsStr as OsStrExt>::from_bytes(buf);
+                *buf = &[];
                 Ok(Self::Unix(Path::new(path)))
             }
             PPM_AF_INET => {
