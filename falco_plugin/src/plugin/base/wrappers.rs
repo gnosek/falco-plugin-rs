@@ -1,5 +1,6 @@
+use std::collections::BTreeMap;
 use std::ffi::{c_char, CString};
-use std::sync::OnceLock;
+use std::sync::Mutex;
 
 use falco_plugin_api::{
     ss_plugin_init_input, ss_plugin_metric, ss_plugin_rc_SS_PLUGIN_FAILURE,
@@ -78,9 +79,14 @@ pub extern "C" fn plugin_get_required_api_version<
     const MINOR: usize,
     const PATCH: usize,
 >() -> *const c_char {
-    static REQUIRED_API_VERSION: OnceLock<CString> = OnceLock::new();
-    REQUIRED_API_VERSION
-        .get_or_init(|| {
+    static VERSIONS: Mutex<BTreeMap<(usize, usize, usize), CString>> = Mutex::new(BTreeMap::new());
+
+    let mut version = VERSIONS.lock().unwrap();
+    // we only generate the string once and never change or delete it
+    // so the pointer should remain valid for the static lifetime
+    version
+        .entry((MAJOR, MINOR, PATCH))
+        .or_insert_with(|| {
             let version = format!("{}.{}.{}", MAJOR, MINOR, PATCH);
             CString::new(version).unwrap()
         })

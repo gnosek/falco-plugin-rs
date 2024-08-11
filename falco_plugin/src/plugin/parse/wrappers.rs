@@ -1,5 +1,7 @@
+use std::any::TypeId;
+use std::collections::BTreeMap;
 use std::ffi::{c_char, CString};
-use std::sync::OnceLock;
+use std::sync::Mutex;
 
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::FfiResult;
@@ -20,7 +22,7 @@ pub trait ParsePluginFallbackApi {
 impl<T> ParsePluginFallbackApi for T {}
 
 pub struct ParsePluginApi<T>(std::marker::PhantomData<T>);
-impl<T: ParsePlugin> ParsePluginApi<T> {
+impl<T: ParsePlugin + 'static> ParsePluginApi<T> {
     pub const PARSE_API: parse_plugin_api = parse_plugin_api {
         get_parse_event_types: Some(plugin_get_parse_event_types::<T>),
         get_parse_event_sources: Some(plugin_get_parse_event_sources::<T>),
@@ -45,19 +47,21 @@ pub unsafe extern "C" fn plugin_get_parse_event_types<T: ParsePlugin>(
 }
 
 //noinspection DuplicatedCode
-pub extern "C" fn plugin_get_parse_event_sources<T: ParsePlugin>() -> *const c_char {
-    static SOURCES: OnceLock<CString> = OnceLock::new();
-    if SOURCES.get().is_none() {
-        let sources = serde_json::to_string(T::EVENT_SOURCES)
-            .expect("failed to serialize event source array");
-        let sources =
-            CString::new(sources.into_bytes()).expect("failed to add NUL to event source array");
-        SOURCES
-            .set(sources)
-            .expect("multiple plugins not supported in a single crate");
-    }
+pub extern "C" fn plugin_get_parse_event_sources<T: ParsePlugin + 'static>() -> *const c_char {
+    static SOURCES: Mutex<BTreeMap<TypeId, CString>> = Mutex::new(BTreeMap::new());
 
-    SOURCES.get().unwrap().as_ptr()
+    let ty = TypeId::of::<T>();
+    let mut sources_map = SOURCES.lock().unwrap();
+    // we only generate the string once and never change or delete it
+    // so the pointer should remain valid for the static lifetime
+    sources_map
+        .entry(ty)
+        .or_insert_with(|| {
+            let sources = serde_json::to_string(T::EVENT_SOURCES)
+                .expect("failed to serialize event source array");
+            CString::new(sources.into_bytes()).expect("failed to add NUL to event source array")
+        })
+        .as_ptr()
 }
 
 /// # Safety

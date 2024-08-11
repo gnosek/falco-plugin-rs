@@ -7,8 +7,10 @@ use falco_plugin_api::{
     ss_plugin_async_event_handler_t, ss_plugin_owner_t, ss_plugin_rc,
     ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_t,
 };
+use std::any::TypeId;
+use std::collections::BTreeMap;
 use std::ffi::{c_char, CString};
-use std::sync::OnceLock;
+use std::sync::Mutex;
 
 pub trait AsyncPluginFallbackApi {
     const ASYNC_API: async_plugin_api = async_plugin_api {
@@ -20,7 +22,7 @@ pub trait AsyncPluginFallbackApi {
 impl<T> AsyncPluginFallbackApi for T {}
 
 pub struct AsyncPluginApi<T>(std::marker::PhantomData<T>);
-impl<T: AsyncEventPlugin> AsyncPluginApi<T> {
+impl<T: AsyncEventPlugin + 'static> AsyncPluginApi<T> {
     pub const ASYNC_API: async_plugin_api = async_plugin_api {
         get_async_event_sources: Some(plugin_get_async_event_sources::<T>),
         get_async_events: Some(plugin_get_async_events::<T>),
@@ -28,36 +30,38 @@ impl<T: AsyncEventPlugin> AsyncPluginApi<T> {
     };
 }
 
-//noinspection DuplicatedCode
-pub extern "C" fn plugin_get_async_event_sources<T: AsyncEventPlugin>() -> *const c_char {
-    static SOURCES: OnceLock<CString> = OnceLock::new();
-    if SOURCES.get().is_none() {
-        let sources = serde_json::to_string(T::EVENT_SOURCES)
-            .expect("failed to serialize event source array");
-        let sources =
-            CString::new(sources.into_bytes()).expect("failed to add NUL to event source array");
-        SOURCES
-            .set(sources)
-            .expect("multiple plugins not supported in a single crate");
-    }
+pub extern "C" fn plugin_get_async_event_sources<T: AsyncEventPlugin + 'static>() -> *const c_char {
+    static SOURCES: Mutex<BTreeMap<TypeId, CString>> = Mutex::new(BTreeMap::new());
 
-    SOURCES.get().unwrap().as_ptr()
+    let ty = TypeId::of::<T>();
+    let mut sources_map = SOURCES.lock().unwrap();
+    // we only generate the string once and never change or delete it
+    // so the pointer should remain valid for the static lifetime
+    sources_map
+        .entry(ty)
+        .or_insert_with(|| {
+            let sources = serde_json::to_string(T::EVENT_SOURCES)
+                .expect("failed to serialize event source array");
+            CString::new(sources.into_bytes()).expect("failed to add NUL to event source array")
+        })
+        .as_ptr()
 }
 
-//noinspection DuplicatedCode
-pub extern "C" fn plugin_get_async_events<T: AsyncEventPlugin>() -> *const c_char {
-    static EVENTS: OnceLock<CString> = OnceLock::new();
-    if EVENTS.get().is_none() {
-        let sources =
-            serde_json::to_string(T::ASYNC_EVENTS).expect("failed to serialize event name array");
-        let sources =
-            CString::new(sources.into_bytes()).expect("failed to add NUL to event name array");
-        EVENTS
-            .set(sources)
-            .expect("multiple plugins not supported in a single crate");
-    }
+pub extern "C" fn plugin_get_async_events<T: AsyncEventPlugin + 'static>() -> *const c_char {
+    static EVENTS: Mutex<BTreeMap<TypeId, CString>> = Mutex::new(BTreeMap::new());
 
-    EVENTS.get().unwrap().as_ptr()
+    let ty = TypeId::of::<T>();
+    let mut event_map = EVENTS.lock().unwrap();
+    // we only generate the string once and never change or delete it
+    // so the pointer should remain valid for the static lifetime
+    event_map
+        .entry(ty)
+        .or_insert_with(|| {
+            let sources = serde_json::to_string(T::ASYNC_EVENTS)
+                .expect("failed to serialize event name array");
+            CString::new(sources.into_bytes()).expect("failed to add NUL to event name array")
+        })
+        .as_ptr()
 }
 
 /// # Safety

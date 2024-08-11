@@ -1,5 +1,7 @@
+use std::any::TypeId;
+use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
-
+use std::sync::Mutex;
 use thiserror::Error;
 
 use falco_event::events::types::EventType;
@@ -169,16 +171,29 @@ where
     /// The default implementation inspects all fields from [`Self::EXTRACT_FIELDS`] and generates
     /// a JSON description in the format expected by the framework.
     fn get_fields() -> &'static CStr {
-        static FIELD_SCHEMA: std::sync::OnceLock<CString> = std::sync::OnceLock::new();
-        if FIELD_SCHEMA.get().is_none() {
-            let schema = serde_json::to_string_pretty(&Self::EXTRACT_FIELDS).unwrap();
-            let schema =
-                CString::new(schema.into_bytes()).expect("failed to add NUL to field schema");
-            FIELD_SCHEMA
-                .set(schema)
-                .expect("multiple plugins not supported in a single crate");
+        static FIELD_SCHEMA: Mutex<BTreeMap<TypeId, CString>> = Mutex::new(BTreeMap::new());
+
+        let ty = TypeId::of::<Self>();
+        let mut schema_map = FIELD_SCHEMA.lock().unwrap();
+        // Safety:
+        //
+        // we only generate the string once and never change or delete it
+        // so the pointer should remain valid for the static lifetime
+        // hence the dance of converting a reference to a raw pointer and back
+        // to erase the lifetime
+        unsafe {
+            CStr::from_ptr(
+                schema_map
+                    .entry(ty)
+                    .or_insert_with(|| {
+                        let schema = serde_json::to_string_pretty(&Self::EXTRACT_FIELDS)
+                            .expect("failed to serialize extraction schema");
+                        CString::new(schema.into_bytes())
+                            .expect("failed to add NUL to extraction schema")
+                    })
+                    .as_ptr(),
+            )
         }
-        FIELD_SCHEMA.get().unwrap().as_c_str()
     }
 
     /// Perform the actual field extraction

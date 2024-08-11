@@ -1,8 +1,10 @@
 use schemars::{schema_for, JsonSchema};
 use serde::de::DeserializeOwned;
+use std::any::TypeId;
+use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
 use std::ops::{Deref, DerefMut};
-use std::sync::OnceLock;
+use std::sync::Mutex;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -52,19 +54,34 @@ pub trait ConfigSchema: Sized {
     fn from_str(s: &str) -> SchemaResult<Self>;
 }
 
-impl<T: JsonSchema + DeserializeOwned> ConfigSchema for Json<T> {
+impl<T: JsonSchema + DeserializeOwned + 'static> ConfigSchema for Json<T> {
     fn get_schema() -> ConfigSchemaType {
-        static SCHEMA: OnceLock<CString> = OnceLock::new();
-        if SCHEMA.get().is_none() {
-            let schema = schema_for!(T);
-            let schema = serde_json::to_string_pretty(&schema).unwrap();
-            let schema = CString::new(schema.into_bytes()).unwrap();
-            SCHEMA
-                .set(schema)
-                .expect("multiple plugins not supported in a single crate");
-        }
+        static CONFIG_SCHEMA: Mutex<BTreeMap<TypeId, CString>> = Mutex::new(BTreeMap::new());
 
-        ConfigSchemaType::Json(SCHEMA.get().unwrap().as_c_str())
+        let ty = TypeId::of::<Self>();
+        let mut schema_map = CONFIG_SCHEMA.lock().unwrap();
+        // Safety:
+        //
+        // we only generate the string once and never change or delete it
+        // so the pointer should remain valid for the static lifetime
+        // hence the dance of converting a reference to a raw pointer and back
+        // to erase the lifetime
+        let ptr = unsafe {
+            CStr::from_ptr(
+                schema_map
+                    .entry(ty)
+                    .or_insert_with(|| {
+                        let schema = schema_for!(T);
+                        let schema = serde_json::to_string_pretty(&schema)
+                            .expect("failed to serialize config schema");
+                        CString::new(schema.into_bytes())
+                            .expect("failed to add NUL to config schema")
+                    })
+                    .as_ptr(),
+            )
+        };
+
+        ConfigSchemaType::Json(ptr)
     }
 
     fn from_str(s: &str) -> SchemaResult<Self> {

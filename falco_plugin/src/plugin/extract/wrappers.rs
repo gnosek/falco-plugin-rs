@@ -6,8 +6,10 @@ use falco_plugin_api::plugin_api__bindgen_ty_2 as extract_plugin_api;
 use falco_plugin_api::ss_plugin_rc;
 use falco_plugin_api::{ss_plugin_event_input, ss_plugin_rc_SS_PLUGIN_FAILURE};
 use falco_plugin_api::{ss_plugin_field_extract_input, ss_plugin_t};
+use std::any::TypeId;
+use std::collections::BTreeMap;
 use std::ffi::{c_char, CString};
-use std::sync::OnceLock;
+use std::sync::Mutex;
 
 pub trait ExtractPluginFallbackApi {
     const EXTRACT_API: extract_plugin_api = extract_plugin_api {
@@ -48,18 +50,20 @@ pub unsafe extern "C" fn plugin_get_extract_event_types<T: ExtractPlugin>(
 
 //noinspection DuplicatedCode
 pub extern "C" fn plugin_get_extract_event_sources<T: ExtractPlugin>() -> *const c_char {
-    static SOURCES: OnceLock<CString> = OnceLock::new();
-    if SOURCES.get().is_none() {
-        let sources = serde_json::to_string(T::EVENT_SOURCES)
-            .expect("failed to serialize event source array");
-        let sources =
-            CString::new(sources.into_bytes()).expect("failed to add NUL to event source array");
-        SOURCES
-            .set(sources)
-            .expect("multiple plugins not supported in a single crate");
-    }
+    static SOURCES: Mutex<BTreeMap<TypeId, CString>> = Mutex::new(BTreeMap::new());
 
-    SOURCES.get().unwrap().as_ptr()
+    let ty = TypeId::of::<T>();
+    let mut sources_map = SOURCES.lock().unwrap();
+    // we only generate the string once and never change or delete it
+    // so the pointer should remain valid for the static lifetime
+    sources_map
+        .entry(ty)
+        .or_insert_with(|| {
+            let sources = serde_json::to_string(T::EVENT_SOURCES)
+                .expect("failed to serialize event source array");
+            CString::new(sources.into_bytes()).expect("failed to add NUL to event source array")
+        })
+        .as_ptr()
 }
 
 /// # Safety
