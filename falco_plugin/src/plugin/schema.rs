@@ -3,7 +3,6 @@ use serde::de::DeserializeOwned;
 use std::any::TypeId;
 use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
-use std::ops::{Deref, DerefMut};
 use std::sync::Mutex;
 use thiserror::Error;
 
@@ -25,28 +24,7 @@ pub enum ConfigSchemaType {
 /// Using this type as the configuration type in your plugin automatically generates
 /// the schema describing the configuration format.
 #[derive(Debug)]
-pub struct Json<T: JsonSchema + DeserializeOwned>(T);
-
-impl<T: JsonSchema + DeserializeOwned> Json<T> {
-    /// Extract the parsed configuration object from the JSON wrapper
-    pub fn into_inner(self) -> T {
-        self.0
-    }
-}
-
-impl<T: JsonSchema + DeserializeOwned> Deref for Json<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T: JsonSchema + DeserializeOwned> DerefMut for Json<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
+pub struct Json<T: JsonSchema + DeserializeOwned>(pub T);
 
 pub trait ConfigSchema: Sized {
     fn get_schema() -> ConfigSchemaType;

@@ -33,14 +33,15 @@ impl Plugin for DummyPlugin {
     const CONTACT: &'static CStr = c"rust@localdomain.pl";
     type ConfigType = Json<Config>;
 
-    fn new(_input: &ss_plugin_init_input, config: Self::ConfigType) -> Result<Self, FailureReason> {
-        Ok(DummyPlugin {
-            config: config.into_inner(),
-        })
+    fn new(
+        _input: &ss_plugin_init_input,
+        Json(config): Self::ConfigType,
+    ) -> Result<Self, FailureReason> {
+        Ok(DummyPlugin { config })
     }
 
-    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), Error> {
-        self.config = config.into_inner();
+    fn set_config(&mut self, Json(config): Self::ConfigType) -> Result<(), Error> {
+        self.config = config;
         Ok(())
     }
 }
