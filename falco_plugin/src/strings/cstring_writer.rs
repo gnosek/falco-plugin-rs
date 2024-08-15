@@ -93,3 +93,45 @@ impl WriteIntoCString for CString {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_valid_store() {
+        let mut buf = CString::default();
+
+        let mut writer = CStringWriter::default();
+        write!(writer, "hello").unwrap();
+        #[allow(clippy::write_literal)]
+        write!(writer, ", {}", "world").unwrap();
+        writer.flush().unwrap();
+
+        writer.store(&mut buf);
+
+        assert_eq!(buf.as_c_str(), c"hello, world");
+    }
+
+    #[test]
+    fn test_invalid_store() {
+        let mut writer = CStringWriter::default();
+        write!(writer, "hell\0o").unwrap_err();
+    }
+
+    #[test]
+    fn test_valid_write_into() {
+        let mut buf = CString::default();
+
+        buf.write_into(|w| write!(w, "hello")).unwrap();
+
+        assert_eq!(buf.as_c_str(), c"hello");
+    }
+
+    #[test]
+    fn test_invalid_write_into() {
+        let mut buf = CString::default();
+
+        buf.write_into(|w| write!(w, "hell\0o")).unwrap_err();
+    }
+}
