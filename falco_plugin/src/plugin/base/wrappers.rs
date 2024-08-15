@@ -61,8 +61,8 @@ pub unsafe extern "C" fn plugin_init<P: Plugin>(
         let init_input =
             unsafe { init_input.as_ref() }.ok_or(anyhow::anyhow!("Got empty init_input"))?;
 
-        let init_config = try_str_from_ptr(init_input.config, &init_input)
-            .context("Failed to get config string")?;
+        let init_config =
+            try_str_from_ptr(&init_input.config).context("Failed to get config string")?;
 
         let config = P::ConfigType::from_str(init_config).context("Failed to parse config")?;
         if let Some(log_fn) = init_input.log_fn {
@@ -165,8 +165,8 @@ pub unsafe extern "C" fn plugin_set_config<P: Plugin>(
     let res = (|| -> Result<(), anyhow::Error> {
         let config_input = unsafe { config_input.as_ref() }.context("Got NULL config")?;
 
-        let updated_config = try_str_from_ptr(config_input.config, &config_input)
-            .context("Failed to get config string")?;
+        let updated_config =
+            try_str_from_ptr(&config_input.config).context("Failed to get config string")?;
         let config = P::ConfigType::from_str(updated_config).context("Failed to parse config")?;
 
         actual_plugin.plugin.set_config(config)

@@ -33,7 +33,7 @@ impl LastError {
         if err.is_null() {
             None
         } else {
-            let msg = match try_str_from_ptr(err, self) {
+            let msg = match try_str_from_ptr(&err) {
                 Ok(msg) => String::from(msg),
                 Err(e) => e.to_string(),
             };

@@ -5,7 +5,7 @@ use crate::plugin::tables::field::raw::RawField;
 use crate::plugin::tables::traits::TableMetadata;
 use crate::plugin::tables::vtable::TableFields;
 use crate::plugin::tables::vtable::{TableReader, TableWriter, TablesInput};
-use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
+use crate::strings::from_ptr::{try_str_from_ptr_with_lifetime, FromPtrError};
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_state_data, ss_plugin_state_type,
     ss_plugin_table_entry_t, ss_plugin_table_field_t, ss_plugin_table_fieldinfo,
@@ -189,7 +189,7 @@ impl RawTable {
     ///
     /// This method returns an error if the name cannot be represented as UTF-8
     pub fn get_name(&self, reader_vtable: &TableReader) -> Result<&str, FromPtrError> {
-        try_str_from_ptr(unsafe { (reader_vtable.get_table_name)(self.table) }, self)
+        unsafe { try_str_from_ptr_with_lifetime((reader_vtable.get_table_name)(self.table), self) }
     }
 
     /// # Get the table size

@@ -31,8 +31,9 @@ impl AsyncHandler {
     /// This method returns an error if and only if the asynchronous handler
     /// returns an error.
     pub fn emit(&self, event: Event<AsyncEvent>) -> Result<(), anyhow::Error> {
-        let mut err = [0i8; PLUGIN_MAX_ERRLEN as usize];
+        let mut err = [0 as c_char; PLUGIN_MAX_ERRLEN as usize];
         let mut buf = Vec::new();
+        let err_ptr = &err as *const [c_char] as *const c_char;
 
         event.write(&mut buf)?;
         match unsafe {
@@ -40,7 +41,7 @@ impl AsyncHandler {
         } {
             Ok(()) => Ok(()),
             Err(e) => {
-                let msg = try_str_from_ptr(err.as_ptr(), &err)?;
+                let msg = try_str_from_ptr(&err_ptr)?;
                 Err(e).context(msg.to_string())
             }
         }

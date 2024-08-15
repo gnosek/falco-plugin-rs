@@ -105,7 +105,7 @@ pub unsafe extern "C" fn plugin_open<T: SourcePlugin>(
         let params = if params.is_null() {
             None
         } else {
-            match try_str_from_ptr(params, &()) {
+            match try_str_from_ptr(&params) {
                 Ok(params) => Some(params),
                 Err(e) => {
                     plugin
