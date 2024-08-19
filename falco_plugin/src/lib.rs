@@ -204,8 +204,6 @@ pub mod base {
 ///
 /// See the [`extract::ExtractPlugin`] trait documentation for details.
 pub mod extract {
-    pub use falco_plugin_api::ss_plugin_field_extract_input as FieldExtractInput;
-
     pub use crate::plugin::event::EventInput;
     pub use crate::plugin::extract::schema::field;
     pub use crate::plugin::extract::schema::{ExtractArgType, ExtractFieldInfo};
