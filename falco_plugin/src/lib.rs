@@ -4,6 +4,7 @@
 
 // reexport dependencies
 pub use anyhow;
+pub use falco_event as event;
 pub use falco_plugin_api as api;
 pub use schemars;
 pub use serde;
