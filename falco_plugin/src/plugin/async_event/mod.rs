@@ -2,6 +2,7 @@ use crate::base::Plugin;
 use crate::plugin::async_event::async_handler::AsyncHandler;
 
 pub mod async_handler;
+pub mod background_task;
 #[doc(hidden)]
 pub mod wrappers;
 

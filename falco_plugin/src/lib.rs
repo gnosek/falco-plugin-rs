@@ -205,18 +205,21 @@ pub mod parse {
 /// ```
 /// use std::ffi::{CStr, CString};
 /// use std::sync::Arc;
-/// use std::sync::atomic::{AtomicBool, Ordering};
 /// use std::thread::JoinHandle;
 /// use falco_plugin::anyhow::Error;
 /// use falco_plugin::event::events::Event;
 /// use falco_plugin::event::events::EventMetadata;
 /// use falco_plugin::base::Plugin;
 /// use falco_plugin::{async_event_plugin, plugin};
-/// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
+/// use falco_plugin::async_event::{
+///     AsyncEvent,
+///     AsyncEventPlugin,
+///     AsyncHandler,
+///     BackgroundTask};
 /// use falco_plugin::tables::TablesInput;
 ///
 /// struct MyAsyncPlugin {
-///     stop_request: Arc<AtomicBool>,
+///     task: Arc<BackgroundTask>,
 ///     thread: Option<JoinHandle<Result<(), Error>>>,
 /// }
 ///
@@ -231,7 +234,7 @@ pub mod parse {
 /// #    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
 /// #        -> Result<Self, Error> {
 /// #        Ok(MyAsyncPlugin {
-/// #            stop_request: Arc::new(Default::default()),
+/// #            task: Arc::new(Default::default()),
 /// #            thread: None,
 /// #        })
 /// #    }
@@ -248,36 +251,31 @@ pub mod parse {
 ///         }
 ///
 ///         // start a new thread
-///         self.stop_request.store(false, Ordering::Relaxed);
-///         let stop_request = Arc::clone(&self.stop_request);
-///         self.thread = Some(std::thread::spawn(move || {
-///             // check the stop flag periodically: we must stop the thread
-///             // when requested
-///             while !stop_request.load(Ordering::Relaxed) {
-///                 // build an event
-///                 let event = AsyncEvent {
-///                     plugin_id: Some(0),
-///                     name: Some(c"sample_async"),
-///                     data: Some(b"hello"),
-///                 };
+///         // waiting up to 100ms between events for the stop request
+///         self.thread = Some(self.task.spawn(std::time::Duration::from_millis(100), move || {
+///             // build an event
+///             let event = AsyncEvent {
+///                 plugin_id: Some(0),
+///                 name: Some(c"sample_async"),
+///                 data: Some(b"hello"),
+///             };
 ///
-///                 let metadata = EventMetadata::default();
+///             let metadata = EventMetadata::default();
 ///
-///                 let event = Event {
-///                     metadata,
-///                     params: event,
-///                 };
+///             let event = Event {
+///                 metadata,
+///                 params: event,
+///             };
 ///
-///                 // submit it to the main event loop
-///                 handler.emit(event)?;
-///             }
+///             // submit it to the main event loop
+///             handler.emit(event)?;
 ///             Ok(())
-///         }));
+///         })?);
 ///         Ok(())
 ///     }
 ///
 ///     fn stop_async(&mut self) -> Result<(), Error> {
-///         self.stop_request.store(true, Ordering::Relaxed);
+///         self.task.request_stop_and_notify()?;
 ///         let Some(handle) = self.thread.take() else {
 ///             return Ok(());
 ///         };
@@ -299,6 +297,8 @@ pub mod async_event {
 
     pub use crate::plugin::async_event::async_handler::AsyncHandler;
     pub use crate::plugin::async_event::AsyncEventPlugin;
+
+    pub use crate::plugin::async_event::background_task::BackgroundTask;
 }
 
 /// # Event sourcing support

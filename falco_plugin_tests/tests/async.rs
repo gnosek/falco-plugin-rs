@@ -1,5 +1,5 @@
 use falco_plugin::anyhow::{self, Error};
-use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
+use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler, BackgroundTask};
 use falco_plugin::base::Plugin;
 use falco_plugin::event::events::{Event, EventMetadata};
 use falco_plugin::extract::EventInput;
@@ -8,14 +8,13 @@ use falco_plugin::tables::TablesInput;
 use falco_plugin::{static_plugin, FailureReason};
 use std::ffi::{CStr, CString};
 use std::panic;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Duration;
 
 #[derive(Default)]
 struct DummyPlugin {
-    stop_request: Arc<AtomicBool>,
+    task: Arc<BackgroundTask>,
     thread: Option<JoinHandle<Result<(), Error>>>,
 }
 
@@ -68,33 +67,31 @@ impl AsyncEventPlugin for DummyPlugin {
         if self.thread.is_some() {
             self.stop_async()?;
         }
-        self.stop_request.store(false, Ordering::Relaxed);
-        let stop_request = Arc::clone(&self.stop_request);
-        self.thread = Some(std::thread::spawn(move || {
-            while !stop_request.load(Ordering::Relaxed) {
-                std::thread::sleep(Duration::from_millis(100));
 
-                let event = AsyncEvent {
-                    plugin_id: Some(0),
-                    name: Some(c"dummy_async"),
-                    data: Some(b"hello"),
-                };
+        self.thread = Some(self.task.spawn(Duration::from_millis(100), move || {
+            dbg!("emitting event");
+            let event = AsyncEvent {
+                plugin_id: Some(0),
+                name: Some(c"dummy_async"),
+                data: Some(b"hello"),
+            };
 
-                let metadata = EventMetadata::default();
+            let metadata = EventMetadata::default();
 
-                let event = Event {
-                    metadata,
-                    params: event,
-                };
-                handler.emit(event)?;
-            }
-            Ok(())
-        }));
+            let event = Event {
+                metadata,
+                params: event,
+            };
+            handler.emit(event)
+        })?);
+
         Ok(())
     }
 
     fn stop_async(&mut self) -> Result<(), Error> {
-        self.stop_request.store(true, Ordering::Relaxed);
+        dbg!("requesting shutdown");
+        self.task.request_stop_and_notify()?;
+
         let Some(handle) = self.thread.take() else {
             return Ok(());
         };
