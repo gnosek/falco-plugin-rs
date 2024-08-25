@@ -77,6 +77,10 @@ where
     }
 
     fn from_maybe_bytes(buf: Option<&mut &'a [u8]>) -> FromBytesResult<Self> {
-        buf.map(T::from_bytes).transpose()
+        match buf {
+            Some([]) => Ok(None),
+            Some(buf) => Self::from_bytes(buf),
+            None => Ok(None),
+        }
     }
 }
