@@ -4,7 +4,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum FromBytesError {
     /// I/O error
-    #[error("I/O error: {0}")]
+    #[error("I/O error")]
     IoError(#[from] std::io::Error),
 
     /// Required field not found
@@ -19,13 +19,14 @@ pub enum FromBytesError {
     #[error("missing NUL terminator")]
     MissingNul,
 
-    /// Truncated event
-    #[error("truncated event")]
-    TruncatedEvent,
-
-    /// Type mismatch
-    #[error("type mismatch")]
-    TypeMismatch,
+    /// Truncated field
+    #[error("truncated field (wanted {wanted}, got {got})")]
+    TruncatedField {
+        /// the size we wanted
+        wanted: usize,
+        /// the size we got
+        got: usize,
+    },
 
     /// Invalid length
     #[error("invalid length")]
@@ -38,10 +39,6 @@ pub enum FromBytesError {
     /// Odd item count in pair array
     #[error("odd item count in pair array")]
     OddPairItemCount,
-
-    /// Unsupported event type
-    #[error("unsupported event type")]
-    UnsupportedEventType,
 }
 
 /// The result of a deserialization

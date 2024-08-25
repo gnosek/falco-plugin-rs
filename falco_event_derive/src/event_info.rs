@@ -418,10 +418,10 @@ pub fn event_info(input: TokenStream) -> TokenStream {
         }
 
         impl RawEvent<'_> {
-            pub fn load_any(&self) -> crate::event_derive::FromBytesResult<crate::event_derive::Event<AnyEvent>> {
+            pub fn load_any(&self) -> crate::event_derive::PayloadFromBytesResult<crate::event_derive::Event<AnyEvent>> {
                 let any: AnyEvent = match self.event_type as u32 {
                     #(#matches,)*
-                    _ => return Err(crate::event_derive::FromBytesError::UnsupportedEventType),
+                    other => return Err(crate::event_derive::PayloadFromBytesError::UnsupportedEventType(other)),
                 };
 
                 Ok(crate::event_derive::Event {

@@ -24,6 +24,8 @@ mod event_derive {
     pub use byteorder::ReadBytesExt;
     pub use byteorder::WriteBytesExt;
 
+    pub use crate::events::payload::PayloadFromBytesError;
+    pub use crate::events::payload::PayloadFromBytesResult;
     pub use crate::events::Event;
     pub use crate::events::EventDirection;
     pub use crate::events::EventMetadata;

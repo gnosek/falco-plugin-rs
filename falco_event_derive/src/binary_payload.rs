@@ -24,9 +24,12 @@ pub fn derive_payload(input: TokenStream) -> TokenStream {
 
             let field_reads = fields.named.iter().map(|field| {
                 let name = &field.ident;
+                let name_str = name.as_ref().map(|i| i.to_string());
                 quote!(
-                    let mut maybe_next_field = params.next().transpose()?;
-                    let #name = FromBytes::from_maybe_bytes(maybe_next_field.as_mut())?;
+                    let mut maybe_next_field = params.next().transpose()
+                        .map_err(|e| PayloadFromBytesError::NamedField(#name_str, e))?;
+                    let #name = FromBytes::from_maybe_bytes(maybe_next_field.as_mut())
+                        .map_err(|e| PayloadFromBytesError::NamedField(#name_str, e))?;
                     if let Some(buf) = maybe_next_field {
                         debug_assert!(buf.is_empty());
                     }
@@ -73,7 +76,7 @@ pub fn derive_payload(input: TokenStream) -> TokenStream {
             }
 
             impl<'a> #crate_path::PayloadFromBytes<'a> for #name #ty_generics #where_clause {
-                fn read(mut params: impl Iterator<Item=#crate_path::FromBytesResult<&'a [u8]>>) -> #crate_path::FromBytesResult<Self> {
+                fn read(mut params: impl Iterator<Item=#crate_path::FromBytesResult<&'a [u8]>>) -> #crate_path::PayloadFromBytesResult<Self> {
                     use #crate_path::*;
                     #(#field_reads)*
 

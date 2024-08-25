@@ -2,9 +2,11 @@ use std::io::Write;
 
 use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 
-use crate::events::payload::{EventPayload, PayloadFromBytes};
+use crate::events::payload::{
+    EventPayload, PayloadFromBytes, PayloadFromBytesError, PayloadFromBytesResult,
+};
 use crate::events::{Event, EventMetadata, EventToBytes};
-use crate::fields::{FromBytesError, FromBytesResult};
+use crate::fields::FromBytesError;
 
 #[derive(Debug)]
 pub struct RawEvent<'a> {
@@ -47,9 +49,11 @@ impl RawEvent<'_> {
         Self::from(buf)
     }
 
-    pub fn load<'a, T: PayloadFromBytes<'a> + EventPayload>(&'a self) -> FromBytesResult<Event<T>> {
+    pub fn load<'a, T: PayloadFromBytes<'a> + EventPayload>(
+        &'a self,
+    ) -> PayloadFromBytesResult<Event<T>> {
         if self.event_type != T::ID as u16 {
-            return Err(FromBytesError::TypeMismatch);
+            return Err(PayloadFromBytesError::TypeMismatch);
         }
         let params = unsafe {
             if T::LARGE {
@@ -80,11 +84,14 @@ impl RawEvent<'_> {
     /// `T` must correspond to the type of the length field (u16 or u32, depending on event type)
     pub unsafe fn params<T>(
         &self,
-    ) -> Result<impl Iterator<Item = Result<&[u8], FromBytesError>>, FromBytesError> {
+    ) -> Result<impl Iterator<Item = Result<&[u8], FromBytesError>>, PayloadFromBytesError> {
         let ll = self.lengths_length::<T>();
 
         if self.payload.len() < ll {
-            return Err(FromBytesError::TruncatedEvent);
+            return Err(PayloadFromBytesError::TruncatedEvent {
+                wanted: ll,
+                got: self.payload.len(),
+            });
         }
 
         let (lengths, mut params) = self.payload.split_at(ll);
@@ -94,7 +101,10 @@ impl RawEvent<'_> {
             let len = lengths.next()?;
             if len > params.len() {
                 // truncated event, do not return the param fragment, if any
-                return Some(Err(FromBytesError::TruncatedEvent));
+                return Some(Err(FromBytesError::TruncatedField {
+                    wanted: len,
+                    got: params.len(),
+                }));
             }
             let (param, tail) = params.split_at(len);
             params = tail;

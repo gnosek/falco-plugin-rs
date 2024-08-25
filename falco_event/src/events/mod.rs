@@ -9,7 +9,7 @@ pub use to_bytes::EventToBytes;
 
 mod event;
 mod metadata;
-mod payload;
+pub(crate) mod payload;
 mod raw_event;
 mod to_bytes;
 pub mod types;
