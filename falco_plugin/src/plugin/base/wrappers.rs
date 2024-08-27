@@ -13,7 +13,6 @@ use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::FfiResult;
 use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
 use crate::strings::from_ptr::try_str_from_ptr;
-use crate::FailureReason;
 
 pub extern "C" fn plugin_get_required_api_version<
     const MAJOR: usize,
@@ -144,11 +143,11 @@ pub unsafe extern "C" fn plugin_set_config<P: Plugin>(
     };
 
     let res = (|| -> Result<(), anyhow::Error> {
-        let config_input = unsafe { config_input.as_ref() }.ok_or(FailureReason::Failure)?;
+        let config_input = unsafe { config_input.as_ref() }.context("Got NULL config")?;
 
         let updated_config = try_str_from_ptr(config_input.config, &config_input)
-            .map_err(|_| FailureReason::Failure)?;
-        let config = P::ConfigType::from_str(updated_config).map_err(|_| FailureReason::Failure)?;
+            .context("Failed to get config string")?;
+        let config = P::ConfigType::from_str(updated_config).context("Failed to parse config")?;
 
         plugin.plugin.set_config(config)
     })();
