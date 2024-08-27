@@ -58,7 +58,7 @@ impl EventBatch<'_> {
     /// helper method.
     pub fn add(&mut self, event: impl EventToBytes) -> std::io::Result<()> {
         let pos = self.buf.len();
-        event.write(&mut self.buf)?;
+        event.write(&mut *self.buf)?;
 
         self.offsets.push(pos);
         Ok(())

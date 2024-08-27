@@ -46,8 +46,8 @@ fn extract_direct_one<T: ToBytes>(
     val: &T,
     mut storage: FieldStorageSession<'_>,
 ) -> Result<(*mut c_void, u64), std::io::Error> {
-    let mut buf = storage.get_byte_storage();
-    val.write(&mut buf)?;
+    let buf = storage.get_byte_storage();
+    val.write(&mut *buf)?;
     Ok((buf.as_mut_ptr().cast(), 1))
 }
 
@@ -55,9 +55,9 @@ fn extract_direct_many<T: ToBytes>(
     val: &[T],
     mut storage: FieldStorageSession<'_>,
 ) -> Result<(*mut c_void, u64), std::io::Error> {
-    let mut buf = storage.get_byte_storage();
+    let buf = storage.get_byte_storage();
     for item in val.iter() {
-        item.write(&mut buf)?;
+        item.write(&mut *buf)?;
     }
     Ok((buf.as_mut_ptr().cast(), val.len() as u64))
 }
@@ -66,8 +66,8 @@ fn extract_indirect_one<T: ToBytes>(
     val: &T,
     mut storage: FieldStorageSession<'_>,
 ) -> Result<(*mut c_void, u64), std::io::Error> {
-    let (mut buf, ptr_buf) = storage.get_byte_and_pointer_storage();
-    val.write(&mut buf)?;
+    let (buf, ptr_buf) = storage.get_byte_and_pointer_storage();
+    val.write(&mut *buf)?;
 
     ptr_buf.push(buf.as_ptr());
     Ok((ptr_buf.as_mut_ptr().cast(), 1))
@@ -78,9 +78,9 @@ fn extract_indirect_many<T: ToBytes>(
     mut storage: FieldStorageSession<'_>,
 ) -> Result<(*mut c_void, u64), std::io::Error> {
     let mut sizes = Vec::new();
-    let (mut buf, ptr_buf) = storage.get_byte_and_pointer_storage();
+    let (buf, ptr_buf) = storage.get_byte_and_pointer_storage();
     for item in val.iter() {
-        item.write(&mut buf)?;
+        item.write(&mut *buf)?;
         sizes.push(item.binary_size());
     }
 
