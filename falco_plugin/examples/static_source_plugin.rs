@@ -36,7 +36,7 @@ impl Plugin for DummyPlugin {
     fn new(
         _input: &ss_plugin_init_input,
         Json(config): Self::ConfigType,
-    ) -> Result<Self, FailureReason> {
+    ) -> Result<Self, anyhow::Error> {
         Ok(DummyPlugin { config })
     }
 

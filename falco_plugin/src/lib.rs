@@ -62,6 +62,7 @@ pub use serde;
 /// ```
 pub use falco_plugin_derive::TableValues;
 
+
 pub use crate::plugin::error::FailureReason;
 pub use crate::plugin::event::EventInputExt;
 
@@ -76,7 +77,6 @@ pub use crate::plugin::event::EventInputExt;
 /// use std::ffi::CStr;
 /// use falco_plugin::base::{InitInput, Metric, Plugin};
 /// use falco_plugin::plugin;
-/// use falco_plugin::FailureReason;
 ///
 /// // define the type holding the plugin state
 /// struct NoOpPlugin;
@@ -90,7 +90,7 @@ pub use crate::plugin::event::EventInputExt;
 ///     type ConfigType = ();
 ///
 ///     fn new(input: &InitInput, config: Self::ConfigType)
-///         -> Result<Self, FailureReason> {
+///         -> Result<Self, anyhow::Error> {
 ///         Ok(NoOpPlugin)
 ///     }
 ///
@@ -114,6 +114,7 @@ pub mod base {
     /// The notable thing about this type is that it implements [`TableInitInput`]. You should not
     /// need to access its fields directly.
     pub use falco_plugin_api::ss_plugin_init_input as InitInput;
+
 
     pub use crate::plugin::base::metrics::{Metric, MetricLabel, MetricType, MetricValue};
     pub use crate::plugin::base::Plugin;
@@ -152,7 +153,7 @@ pub mod base {
 /// use anyhow::Error;
 /// use falco_event::events::types::EventType;
 /// use falco_plugin::base::{InitInput, Metric, Plugin};
-/// use falco_plugin::{extract_plugin, FailureReason, plugin};
+/// use falco_plugin::{extract_plugin, plugin};
 /// use falco_plugin::extract::{
 ///     EventInput,
 ///     ExtractFieldInfo,
@@ -171,7 +172,7 @@ pub mod base {
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
-/// #        -> Result<Self, FailureReason> {
+/// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MyExtractPlugin)
 /// #    }
 /// #
@@ -219,6 +220,7 @@ pub mod extract {
     pub use falco_plugin_api::ss_plugin_event_input as EventInput;
     pub use falco_plugin_api::ss_plugin_field_extract_input as FieldExtractInput;
 
+
     pub use crate::plugin::extract::schema::field;
     pub use crate::plugin::extract::schema::{ExtractArgType, ExtractFieldInfo};
     pub use crate::plugin::extract::ExtractFieldRequestArg;
@@ -246,7 +248,7 @@ pub mod extract {
 /// use falco_event::{ };
 /// use falco_event::events::types::EventType;
 /// use falco_plugin::base::{InitInput, Metric, Plugin};
-/// use falco_plugin::{EventInputExt, FailureReason, parse_plugin, plugin};
+/// use falco_plugin::{EventInputExt, parse_plugin, plugin};
 /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
 /// use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input};
 ///
@@ -261,7 +263,7 @@ pub mod extract {
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
-/// #        -> Result<Self, FailureReason> {
+/// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MyParsePlugin)
 /// #    }
 /// }
@@ -319,7 +321,7 @@ pub mod parse {
 /// use falco_event::events::Event;
 /// use falco_event::events::EventMetadata;
 /// use falco_plugin::base::{InitInput, Metric, Plugin};
-/// use falco_plugin::{async_event_plugin, EventInputExt, FailureReason, plugin};
+/// use falco_plugin::{async_event_plugin, EventInputExt, plugin};
 /// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
 ///
 /// struct MyAsyncPlugin {
@@ -336,7 +338,7 @@ pub mod parse {
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
-/// #        -> Result<Self, FailureReason> {
+/// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MyAsyncPlugin {
 /// #            stop_request: Arc::new(Default::default()),
 /// #            thread: None,
@@ -425,7 +427,7 @@ pub mod async_event {
 /// use anyhow::Error;
 /// use falco_event::events::Event;
 /// use falco_plugin::base::{InitInput, Metric, Plugin};
-/// use falco_plugin::{EventInputExt, FailureReason, plugin, source_plugin};
+/// use falco_plugin::{EventInputExt, plugin, source_plugin};
 /// use falco_plugin::source::{
 ///     EventBatch,
 ///     EventInput,
@@ -445,7 +447,7 @@ pub mod async_event {
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
-/// #        -> Result<Self, FailureReason> {
+/// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MySourcePlugin)
 /// #    }
 /// #

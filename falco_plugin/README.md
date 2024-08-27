@@ -33,7 +33,6 @@ For a statically linked plugin, you need to:
 use std::ffi::CStr;
 use falco_plugin::base::{InitInput, Metric, Plugin};
 use falco_plugin::static_plugin;
-use falco_plugin::FailureReason;
 
 // define the type holding the plugin state
 struct DummyPlugin;
@@ -47,7 +46,7 @@ impl Plugin for DummyPlugin {
     type ConfigType = ();
 
     fn new(input: &InitInput, config: Self::ConfigType)
-        -> Result<Self, FailureReason> {
+        -> Result<Self, anyhow::Error> {
         Ok(DummyPlugin)
     }
 

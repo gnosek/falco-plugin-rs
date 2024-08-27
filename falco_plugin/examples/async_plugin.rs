@@ -11,7 +11,7 @@ use falco_event::events::Event;
 use falco_event::events::EventMetadata;
 use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
 use falco_plugin::base::Plugin;
-use falco_plugin::{async_event_plugin, plugin, FailureReason};
+use falco_plugin::{async_event_plugin, plugin};
 use falco_plugin_api::ss_plugin_init_input;
 
 #[derive(Default)]
@@ -30,7 +30,7 @@ impl Plugin for DummyAsyncPlugin {
     fn new(
         _input: &ss_plugin_init_input,
         _config: Self::ConfigType,
-    ) -> Result<Self, FailureReason> {
+    ) -> Result<Self, anyhow::Error> {
         Ok(DummyAsyncPlugin::default())
     }
 }

@@ -7,7 +7,7 @@ use falco_plugin::base::{Plugin, TableInitInput};
 use falco_plugin::parse::{EventParseInput, ParsePlugin};
 use falco_plugin::tables::{DynamicFieldValues, TypedTableField};
 use falco_plugin::tables::{DynamicTable, TypedTable};
-use falco_plugin::{parse_plugin, plugin, EventInputExt, FailureReason};
+use falco_plugin::{parse_plugin, plugin, EventInputExt};
 use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input, ss_plugin_init_input};
 use falco_plugin_derive::TableValues;
 
@@ -50,7 +50,7 @@ impl Plugin for DummyPlugin {
     const CONTACT: &'static CStr = c"rust@localdomain.pl";
     type ConfigType = ();
 
-    fn new(input: &ss_plugin_init_input, _config: Self::ConfigType) -> Result<Self, FailureReason> {
+    fn new(input: &ss_plugin_init_input, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
         let thread_table = input.get_table::<i64>(c"threads")?;
         let sample_field = thread_table.add_field::<u64>(c"sample")?;
 

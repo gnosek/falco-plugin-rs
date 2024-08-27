@@ -7,7 +7,7 @@ use falco_plugin::base::{Plugin, TableInitInput};
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin};
 use falco_plugin::tables::TypedTableField;
 use falco_plugin::tables::{TableReader, TypedTable};
-use falco_plugin::{extract_plugin, plugin, FailureReason};
+use falco_plugin::{extract_plugin, plugin};
 use falco_plugin_api::{ss_plugin_event_input, ss_plugin_init_input};
 
 pub struct DummyPlugin {
@@ -22,7 +22,7 @@ impl Plugin for DummyPlugin {
     const CONTACT: &'static CStr = c"rust@localdomain.pl";
     type ConfigType = ();
 
-    fn new(input: &ss_plugin_init_input, _config: Self::ConfigType) -> Result<Self, FailureReason> {
+    fn new(input: &ss_plugin_init_input, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
         let thread_table = input.get_table::<i64>(c"threads")?;
         let comm_field = thread_table.get_field::<CStr>(c"comm")?;
 

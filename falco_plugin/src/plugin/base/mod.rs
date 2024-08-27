@@ -2,7 +2,6 @@ use crate::base::InitInput;
 use crate::extract::FieldStorage;
 use crate::plugin::base::metrics::Metric;
 use crate::plugin::schema::ConfigSchema;
-use crate::FailureReason;
 use falco_plugin_api::ss_plugin_metric;
 use std::ffi::{CStr, CString};
 
@@ -80,7 +79,7 @@ pub trait Plugin: Sized {
     /// exposed by other plugins (and Falco core).
     ///
     /// It should return a new instance of `Self`
-    fn new(input: &InitInput, config: Self::ConfigType) -> Result<Self, FailureReason>;
+    fn new(input: &InitInput, config: Self::ConfigType) -> Result<Self, anyhow::Error>;
 
     /// Update the configuration of a running plugin
     ///

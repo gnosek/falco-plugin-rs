@@ -1,11 +1,11 @@
-use std::collections::BTreeMap;
-use std::ffi::{c_char, CString};
-use std::sync::Mutex;
-
+use anyhow::Context;
 use falco_plugin_api::{
     ss_plugin_init_input, ss_plugin_metric, ss_plugin_rc_SS_PLUGIN_FAILURE,
     ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_t,
 };
+use std::collections::BTreeMap;
+use std::ffi::{c_char, CString};
+use std::sync::Mutex;
 
 use crate::base::Plugin;
 use crate::plugin::base::logger::FalcoPluginLogger;
@@ -57,13 +57,14 @@ pub unsafe extern "C" fn plugin_init<P: Plugin>(
     init_input: *const ss_plugin_init_input,
     rc: *mut i32,
 ) -> *mut falco_plugin_api::ss_plugin_t {
-    let res = (|| -> Result<*mut PluginWrapper<P>, FailureReason> {
-        let init_input = unsafe { init_input.as_ref() }.ok_or(FailureReason::Failure)?;
+    let res = (|| -> Result<*mut PluginWrapper<P>, anyhow::Error> {
+        let init_input =
+            unsafe { init_input.as_ref() }.ok_or(anyhow::anyhow!("Got empty init_input"))?;
 
-        let init_config =
-            try_str_from_ptr(init_input.config, &init_input).map_err(|_| FailureReason::Failure)?;
+        let init_config = try_str_from_ptr(init_input.config, &init_input)
+            .context("Failed to get config string")?;
 
-        let config = P::ConfigType::from_str(init_config).map_err(|_| FailureReason::Failure)?;
+        let config = P::ConfigType::from_str(init_config).context("Failed to parse config")?;
         if let Some(log_fn) = init_input.log_fn {
             let logger = Box::new(FalcoPluginLogger {
                 owner: init_input.owner,
@@ -81,7 +82,8 @@ pub unsafe extern "C" fn plugin_init<P: Plugin>(
             plugin.cast()
         }
         Err(e) => {
-            *rc = e as i32;
+            *rc = e.status_code() as i32;
+            log::warn!("Failed to initialize plugin: {}", e);
 
             std::ptr::null_mut()
         }
@@ -211,7 +213,6 @@ macro_rules! wrap_ffi {
 /// ```
 /// # use std::ffi::CStr;
 /// # use falco_plugin::base::InitInput;
-/// # use falco_plugin::FailureReason;
 /// use falco_plugin::base::Plugin;
 /// # use falco_plugin::base::Metric;
 /// use falco_plugin::plugin;
@@ -226,7 +227,7 @@ macro_rules! wrap_ffi {
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
-/// #        -> Result<Self, FailureReason> {
+/// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MyPlugin)
 /// #    }
 /// #
@@ -248,7 +249,6 @@ macro_rules! wrap_ffi {
 /// ```
 /// # use std::ffi::CStr;
 /// # use falco_plugin::base::InitInput;
-/// # use falco_plugin::FailureReason;
 /// use falco_plugin::base::Plugin;
 /// # use falco_plugin::base::Metric;
 /// use falco_plugin::plugin;
@@ -263,7 +263,7 @@ macro_rules! wrap_ffi {
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: &InitInput, config: Self::ConfigType)
-/// #        -> Result<Self, FailureReason> {
+/// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MyPlugin)
 /// #    }
 /// #
