@@ -25,7 +25,13 @@ impl LastError {
         if err.is_null() {
             None
         } else {
-            try_str_from_ptr(err, self).ok().map(String::from)
+            let msg = match try_str_from_ptr(err, self) {
+                Ok(msg) => String::from(msg),
+                Err(e) => e.to_string(),
+            };
+
+            log::warn!("Got error from API: {}", msg);
+            Some(msg)
         }
     }
 }

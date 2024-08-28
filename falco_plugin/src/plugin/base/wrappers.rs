@@ -81,10 +81,11 @@ pub unsafe extern "C" fn plugin_init<P: Plugin>(
             plugin.cast()
         }
         Err(e) => {
-            *rc = e.status_code() as i32;
-            log::warn!("Failed to initialize plugin: {}", e);
-
-            std::ptr::null_mut()
+            let error_str = format!("{:#}", &e);
+            log::error!("Failed to initialize plugin: {}", error_str);
+            let plugin = Box::new(PluginWrapper::<P>::new_error(error_str));
+            *rc = e.status_code();
+            Box::into_raw(plugin).cast()
         }
     }
 }
@@ -142,6 +143,10 @@ pub unsafe extern "C" fn plugin_set_config<P: Plugin>(
         return ss_plugin_rc_SS_PLUGIN_FAILURE;
     };
 
+    let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+        return ss_plugin_rc_SS_PLUGIN_FAILURE;
+    };
+
     let res = (|| -> Result<(), anyhow::Error> {
         let config_input = unsafe { config_input.as_ref() }.context("Got NULL config")?;
 
@@ -149,7 +154,7 @@ pub unsafe extern "C" fn plugin_set_config<P: Plugin>(
             .context("Failed to get config string")?;
         let config = P::ConfigType::from_str(updated_config).context("Failed to parse config")?;
 
-        plugin.plugin.set_config(config)
+        actual_plugin.set_config(config)
     })();
 
     res.rc(&mut plugin.error_buf)
@@ -164,13 +169,17 @@ pub unsafe extern "C" fn plugin_get_metrics<P: Plugin>(
         *num_metrics = 0;
         return std::ptr::null_mut();
     };
+    let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+        *num_metrics = 0;
+        return std::ptr::null_mut();
+    };
     let Some(num_metrics) = num_metrics.as_mut() else {
         *num_metrics = 0;
         return std::ptr::null_mut();
     };
 
     plugin.metric_storage.clear();
-    for metric in plugin.plugin.get_metrics() {
+    for metric in actual_plugin.get_metrics() {
         plugin.metric_storage.push(metric.as_raw());
     }
 

@@ -77,6 +77,10 @@ pub unsafe extern "C" fn plugin_parse_event<T: ParsePlugin>(
         let Some(plugin) = plugin.as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
+        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+
         let Some(event) = event.as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
@@ -84,8 +88,7 @@ pub unsafe extern "C" fn plugin_parse_event<T: ParsePlugin>(
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 
-        plugin
-            .plugin
+        actual_plugin
             .parse_event(&event, &parse_input)
             .rc(&mut plugin.error_buf)
     }

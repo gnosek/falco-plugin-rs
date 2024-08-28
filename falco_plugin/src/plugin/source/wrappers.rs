@@ -58,23 +58,27 @@ pub unsafe extern "C" fn plugin_list_open_params<T: SourcePlugin>(
     rc: *mut i32,
 ) -> *const c_char {
     let plugin = plugin as *mut PluginWrapper<T>;
-    match unsafe { plugin.as_mut() } {
-        Some(plugin) => match plugin.plugin.list_open_params() {
-            Ok(s) => {
-                unsafe {
-                    *rc = ss_plugin_rc_SS_PLUGIN_SUCCESS;
-                }
-                s.as_ptr()
+    let Some(plugin) = plugin.as_mut() else {
+        return std::ptr::null();
+    };
+    let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+        return std::ptr::null();
+    };
+
+    match actual_plugin.list_open_params() {
+        Ok(s) => {
+            unsafe {
+                *rc = ss_plugin_rc_SS_PLUGIN_SUCCESS;
             }
-            Err(e) => {
-                unsafe {
-                    *rc = e.status_code();
-                }
-                e.set_last_error(&mut plugin.error_buf);
-                std::ptr::null()
+            s.as_ptr()
+        }
+        Err(e) => {
+            unsafe {
+                *rc = e.status_code();
             }
-        },
-        None => std::ptr::null(),
+            e.set_last_error(&mut plugin.error_buf);
+            std::ptr::null()
+        }
     }
 }
 
@@ -88,47 +92,46 @@ pub unsafe extern "C" fn plugin_open<T: SourcePlugin>(
 ) -> *mut ss_instance_t {
     let plugin = plugin as *mut PluginWrapper<T>;
     unsafe {
+        let Some(plugin) = plugin.as_mut() else {
+            return std::ptr::null_mut();
+        };
+        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+            return std::ptr::null_mut();
+        };
+
         let Some(rc) = rc.as_mut() else {
             return std::ptr::null_mut();
         };
 
-        match plugin.as_mut() {
-            Some(plugin) => {
-                let params = if params.is_null() {
-                    None
-                } else {
-                    match try_str_from_ptr(params, &()) {
-                        Ok(params) => Some(params),
-                        Err(e) => {
-                            plugin
-                                .error_buf
-                                .write_into(|w| w.write_all(e.to_string().as_bytes()))
-                                .ok();
-                            *rc = ss_plugin_rc_SS_PLUGIN_FAILURE;
+        let params = if params.is_null() {
+            None
+        } else {
+            match try_str_from_ptr(params, &()) {
+                Ok(params) => Some(params),
+                Err(e) => {
+                    plugin
+                        .error_buf
+                        .write_into(|w| w.write_all(e.to_string().as_bytes()))
+                        .ok();
+                    *rc = ss_plugin_rc_SS_PLUGIN_FAILURE;
 
-                            return std::ptr::null_mut();
-                        }
-                    }
-                };
-
-                match plugin.plugin.open(params) {
-                    Ok(instance) => {
-                        *rc = ss_plugin_rc_SS_PLUGIN_SUCCESS;
-                        Box::into_raw(Box::new(SourcePluginInstanceWrapper {
-                            instance,
-                            batch: Default::default(),
-                        }))
-                        .cast()
-                    }
-                    Err(e) => {
-                        e.set_last_error(&mut plugin.error_buf);
-                        *rc = e.status_code();
-                        std::ptr::null_mut()
-                    }
+                    return std::ptr::null_mut();
                 }
             }
-            None => {
-                *rc = ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+
+        match actual_plugin.open(params) {
+            Ok(instance) => {
+                *rc = ss_plugin_rc_SS_PLUGIN_SUCCESS;
+                Box::into_raw(Box::new(SourcePluginInstanceWrapper {
+                    instance,
+                    batch: Default::default(),
+                }))
+                .cast()
+            }
+            Err(e) => {
+                e.set_last_error(&mut plugin.error_buf);
+                *rc = e.status_code();
                 std::ptr::null_mut()
             }
         }
@@ -143,12 +146,17 @@ pub unsafe extern "C" fn plugin_close<T: SourcePlugin>(
     instance: *mut ss_instance_t,
 ) {
     let plugin = plugin as *mut PluginWrapper<T>;
+    let Some(plugin) = plugin.as_mut() else {
+        return;
+    };
+    let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+        return;
+    };
+
     let instance = instance as *mut SourcePluginInstanceWrapper<T::Instance>;
     unsafe {
-        if let Some(plugin) = plugin.as_mut() {
-            let mut inst = Box::from_raw(instance);
-            plugin.plugin.close(&mut inst.instance);
-        }
+        let mut inst = Box::from_raw(instance);
+        actual_plugin.close(&mut inst.instance);
     }
 }
 
@@ -167,12 +175,16 @@ pub unsafe extern "C" fn plugin_next_batch<T: SourcePlugin>(
         let Some(plugin) = plugin.as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
+        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+
         let Some(instance) = instance.as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 
         let mut batch = instance.batch.start();
-        match instance.instance.next_batch(&mut plugin.plugin, &mut batch) {
+        match instance.instance.next_batch(actual_plugin, &mut batch) {
             Ok(()) => {
                 let (batch_evts, batch_nevts) = instance.batch.get_raw_pointers();
                 *nevts = batch_nevts as u32;
@@ -230,11 +242,15 @@ pub unsafe extern "C" fn plugin_event_to_string<T: SourcePlugin>(
         let Some(plugin) = plugin.as_mut() else {
             return std::ptr::null_mut();
         };
+        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+            return std::ptr::null_mut();
+        };
+
         let Some(event) = event.as_ref() else {
             return std::ptr::null_mut();
         };
 
-        match plugin.plugin.event_to_string(event) {
+        match actual_plugin.event_to_string(event) {
             Ok(s) => {
                 plugin.string_storage = s;
                 plugin.string_storage.as_ptr()

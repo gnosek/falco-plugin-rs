@@ -1,9 +1,13 @@
+use falco_plugin_api::ss_plugin_metric;
+use std::ffi::{CStr, CString};
+use std::fmt::Display;
+use std::io::Write;
+
 use crate::base::InitInput;
 use crate::extract::FieldStorage;
 use crate::plugin::base::metrics::Metric;
 use crate::plugin::schema::ConfigSchema;
-use falco_plugin_api::ss_plugin_metric;
-use std::ffi::{CStr, CString};
+use crate::strings::cstring_writer::WriteIntoCString;
 
 mod logger;
 pub mod metrics;
@@ -15,7 +19,7 @@ pub mod wrappers;
 //       (will end up with multiple mutable references)
 #[doc(hidden)]
 pub struct PluginWrapper<P: Plugin> {
-    pub(crate) plugin: P,
+    pub(crate) plugin: Option<P>,
     pub(crate) error_buf: CString,
     pub(crate) field_storage: FieldStorage,
     pub(crate) string_storage: CString,
@@ -25,12 +29,29 @@ pub struct PluginWrapper<P: Plugin> {
 impl<P: Plugin> PluginWrapper<P> {
     pub fn new(plugin: P) -> Self {
         Self {
-            plugin,
+            plugin: Some(plugin),
             error_buf: Default::default(),
             field_storage: Default::default(),
             string_storage: Default::default(),
             metric_storage: Default::default(),
         }
+    }
+
+    pub fn new_error(err: impl Display) -> Self {
+        let mut plugin = Self {
+            plugin: None,
+            error_buf: Default::default(),
+            field_storage: Default::default(),
+            string_storage: Default::default(),
+            metric_storage: vec![],
+        };
+
+        plugin
+            .error_buf
+            .write_into(|buf| write!(buf, "{}", err))
+            .unwrap_or_else(|err| panic!("Failed to write error message (was: {})", err));
+
+        plugin
     }
 }
 

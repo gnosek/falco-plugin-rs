@@ -77,7 +77,11 @@ pub unsafe extern "C" fn plugin_set_async_event_handler<T: AsyncEventPlugin>(
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 
-        if let Err(e) = plugin.plugin.stop_async() {
+        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+
+        if let Err(e) = actual_plugin.stop_async() {
             e.set_last_error(&mut plugin.error_buf);
             return e.status_code();
         }
@@ -90,7 +94,7 @@ pub unsafe extern "C" fn plugin_set_async_event_handler<T: AsyncEventPlugin>(
             owner,
             raw_handler: *raw_handler,
         };
-        if let Err(e) = plugin.plugin.start_async(handler) {
+        if let Err(e) = actual_plugin.start_async(handler) {
             e.set_last_error(&mut plugin.error_buf);
             return e.status_code();
         }

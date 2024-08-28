@@ -78,6 +78,10 @@ pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
         let Some(plugin) = plugin.as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
+        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+
         let Some(event_input) = event_input.as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
@@ -90,8 +94,7 @@ pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
 
         let table_reader = TableReader::new(extract_input.table_reader_ext);
 
-        plugin
-            .plugin
+        actual_plugin
             .extract_fields(
                 &event_input,
                 table_reader,
