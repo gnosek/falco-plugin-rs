@@ -12,10 +12,10 @@ use falco_plugin::tables::TablesInput;
 use std::collections::BTreeMap;
 use std::ffi::CStr;
 use std::ops::ControlFlow;
-use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
-type Fd = Entry<Rc<FdMetadata>>;
+type Fd = Entry<Arc<FdMetadata>>;
 type FdTable = Table<i64, Fd>;
 
 #[derive(TableMetadata)]
@@ -27,7 +27,7 @@ struct FdMetadata {
     fd_type: Field<u8, Fd>,
 }
 
-type Thread = Entry<Rc<ThreadMetadata>>;
+type Thread = Entry<Arc<ThreadMetadata>>;
 type ThreadTable = Table<i64, Thread>;
 
 #[derive(TableMetadata)]

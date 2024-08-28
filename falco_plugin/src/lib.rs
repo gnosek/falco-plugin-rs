@@ -296,6 +296,7 @@ pub mod async_event {
     /// The event type that can be emitted from async event plugins
     pub use falco_event::events::types::PPME_ASYNCEVENT_E as AsyncEvent;
 
+
     pub use crate::plugin::async_event::async_handler::AsyncHandler;
     pub use crate::plugin::async_event::AsyncEventPlugin;
 }
@@ -521,6 +522,13 @@ pub mod source {
 /// These fields behave just like fields defined statically in the table and can be used by plugins
 /// loaded after the current one. This can be used to e.g. add some data to an existing table
 /// in a parse plugin and expose it in an extract plugin.
+///
+/// # Thread safety
+///
+/// Tables in the Falco plugin API are explicitly *not* thread safe. However, when you enable
+/// the `thread-safe-tables` feature, tables exported from your plugin become thread-safe, so you
+/// can use them from your plugin (e.g. in a separate thread) concurrently to other plugins
+/// (in the main thread).
 pub mod tables {
     pub use crate::plugin::tables::vtable::TableReader;
     pub use crate::plugin::tables::vtable::TableWriter;
@@ -607,10 +615,10 @@ pub mod tables {
     ///
     /// ```
     /// # use std::ffi::CStr;
-    /// # use std::rc::Rc;
+    /// # use std::sync::Arc;
     /// # use falco_plugin::tables::import::{Entry, Field, Table, TableMetadata};
     /// #
-    /// type ImportedThing = Entry<Rc<ImportedThingMetadata>>;
+    /// type ImportedThing = Entry<Arc<ImportedThingMetadata>>;
     /// type ImportedThingTable = Table<u64, ImportedThing>;
     ///
     /// #[derive(TableMetadata)]
@@ -676,7 +684,7 @@ pub mod tables {
     ///
     /// ```
     /// use std::ffi::CStr;
-    /// use std::rc::Rc;
+    /// use std::sync::Arc;
     /// use falco_plugin::anyhow::Error;
     /// use falco_plugin::base::Plugin;
     /// use falco_plugin::event::events::types::EventType;
@@ -696,7 +704,7 @@ pub mod tables {
     ///     added: Field<CStr, ImportedThing>,
     /// }
     ///
-    /// type ImportedThing = Entry<Rc<ImportedThingMetadata>>;
+    /// type ImportedThing = Entry<Arc<ImportedThingMetadata>>;
     /// type ImportedThingTable = Table<u64, ImportedThing>;
     ///
     /// struct MyPlugin {
@@ -766,7 +774,6 @@ pub mod tables {
     ///
     /// ```
     /// use std::ffi::CStr;
-    /// use std::rc::Rc;
     /// use falco_plugin::anyhow::Error;
     /// use falco_plugin::base::Plugin;
     /// use falco_plugin::event::events::types::EventType;

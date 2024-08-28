@@ -16,7 +16,7 @@ use falco_plugin::tables::TablesInput;
 use falco_plugin::{anyhow, static_plugin, FailureReason};
 use std::ffi::{CStr, CString};
 use std::io::Write;
-use std::rc::Rc;
+use std::sync::Arc;
 
 type RemainingEntryTable = export::Table<u64, RemainingCounter>;
 
@@ -135,7 +135,7 @@ impl ParsePlugin for DummyPlugin {
 }
 
 type RemainingCounterImportTable = import::Table<u64, RemainingCounterImport>;
-type RemainingCounterImport = import::Entry<Rc<RemainingCounterImportMetadata>>;
+type RemainingCounterImport = import::Entry<Arc<RemainingCounterImportMetadata>>;
 
 #[derive(import::TableMetadata)]
 #[entry_type(RemainingCounterImport)]

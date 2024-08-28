@@ -6,12 +6,12 @@ use crate::plugin::tables::data::FieldTypeId;
 use falco_plugin_api::{ss_plugin_bool, ss_plugin_state_type, ss_plugin_table_fieldinfo};
 use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// A struct to hold the descriptors for dynamically added fields
 #[derive(Debug)]
 pub struct DynamicFieldsOnly {
-    pub(crate) fields: BTreeMap<CString, Rc<FieldDescriptor>>,
+    pub(crate) fields: BTreeMap<CString, Arc<FieldDescriptor>>,
 }
 
 impl Metadata for DynamicFieldsOnly {
@@ -25,7 +25,7 @@ impl Metadata for DynamicFieldsOnly {
 impl TableMetadata for DynamicFieldsOnly {
     fn get_field(&self, name: &CStr) -> Option<FieldRef> {
         let field = self.fields.get(name)?;
-        Some(FieldRef::Dynamic(Rc::clone(field)))
+        Some(FieldRef::Dynamic(Arc::clone(field)))
     }
 
     fn add_field(
@@ -37,7 +37,7 @@ impl TableMetadata for DynamicFieldsOnly {
         let index = {
             if let Some(existing_field) = self.fields.get(name) {
                 if existing_field.type_id == field_type && existing_field.read_only == read_only {
-                    return Some(FieldRef::Dynamic(Rc::clone(existing_field)));
+                    return Some(FieldRef::Dynamic(Arc::clone(existing_field)));
                 }
                 return None;
             }
@@ -46,12 +46,12 @@ impl TableMetadata for DynamicFieldsOnly {
 
         let name = name.to_owned();
 
-        let field = Rc::new(FieldDescriptor {
+        let field = Arc::new(FieldDescriptor {
             index: FieldId::Dynamic(index),
             type_id: field_type,
             read_only,
         });
-        self.fields.insert(name.clone(), Rc::clone(&field));
+        self.fields.insert(name.clone(), Arc::clone(&field));
 
         Some(FieldRef::Dynamic(field))
     }

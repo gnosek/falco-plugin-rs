@@ -119,7 +119,7 @@ macro_rules! impl_import_table_accessor_impls {
                 E: $getter<'a>,
                 E::TableValue: Value<AssocData = ()>,
                 E: EntryWrite<&'a $field_ty, E::TableValue>,
-                E: Entry<Metadata = std::rc::Rc<$meta_ty>>,
+                E: Entry<Metadata = std::sync::Arc<$meta_ty>>,
             {
                 type ScalarValue = E::TableValue;
 
@@ -142,14 +142,14 @@ mod tests {
     use crate::plugin::tables::field::Field;
     use crate::plugin::tables::Entry;
     use std::ffi::CStr;
-    use std::rc::Rc;
+    use std::sync::Arc;
 
     struct ImportedMeta {
         u64_field: Field<u64, ImportedEntry>,
         string_field: Field<CStr, ImportedEntry>,
     }
 
-    type ImportedEntry = Entry<Rc<ImportedMeta>>;
+    type ImportedEntry = Entry<Arc<ImportedMeta>>;
 
     impl_import_table_metadata!(for ImportedMeta => {
         get_field(u64_field, c"u64_field");

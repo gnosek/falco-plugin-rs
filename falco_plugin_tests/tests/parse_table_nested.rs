@@ -17,7 +17,7 @@ use falco_plugin::{anyhow, static_plugin, FailureReason};
 use std::ffi::{CStr, CString};
 use std::io::Write;
 use std::ops::ControlFlow;
-use std::rc::Rc;
+use std::sync::Arc;
 
 // exporting a table with a nested table inside
 type RemainingEntryTable = export::Table<u64, RemainingCounter>;
@@ -163,7 +163,7 @@ impl ParsePlugin for DummyPlugin {
 type RemainingCounterImportTableWithExtraFields =
     import::Table<u64, RemainingCounterImportWithExtraFields>;
 type RemainingCounterImportWithExtraFields =
-    import::Entry<Rc<RemainingCounterImportMetadataWithExtraFields>>;
+    import::Entry<Arc<RemainingCounterImportMetadataWithExtraFields>>;
 
 #[derive(import::TableMetadata)]
 #[entry_type(RemainingCounterImportWithExtraFields)]
@@ -179,7 +179,7 @@ struct RemainingCounterImportMetadataWithExtraFields {
 }
 
 type CountdownImportTableWithExtraFields = import::Table<u64, CountdownImportWithExtraFields>;
-type CountdownImportWithExtraFields = import::Entry<Rc<CountdownImportMetadataWithExtraFields>>;
+type CountdownImportWithExtraFields = import::Entry<Arc<CountdownImportMetadataWithExtraFields>>;
 
 #[derive(import::TableMetadata)]
 #[entry_type(CountdownImportWithExtraFields)]

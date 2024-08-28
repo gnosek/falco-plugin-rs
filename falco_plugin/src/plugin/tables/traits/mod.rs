@@ -3,7 +3,7 @@ use crate::plugin::tables::entry::raw::RawEntry;
 use crate::plugin::tables::table::raw::RawTable;
 use crate::plugin::tables::vtable::{TableReader, TableWriter, TablesInput};
 use falco_plugin_api::ss_plugin_table_t;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Metadata for tables
 ///
@@ -17,9 +17,9 @@ pub trait TableMetadata: Sized {
     fn new(raw_table: &RawTable, tables_input: &TablesInput) -> Result<Self, anyhow::Error>;
 }
 
-impl<M: TableMetadata> TableMetadata for Rc<M> {
+impl<M: TableMetadata> TableMetadata for Arc<M> {
     fn new(raw_table: &RawTable, tables_input: &TablesInput) -> Result<Self, anyhow::Error> {
-        Ok(Rc::new(M::new(raw_table, tables_input)?))
+        Ok(Arc::new(M::new(raw_table, tables_input)?))
     }
 }
 

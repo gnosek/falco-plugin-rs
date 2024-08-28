@@ -1,6 +1,6 @@
 use crate::plugin::tables::data::FieldTypeId;
 use falco_plugin_api::{ss_plugin_field_type, ss_plugin_table_fieldinfo};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// An opaque id describing a particular field
 ///
@@ -22,7 +22,7 @@ pub enum FieldId {
 #[derive(Debug)]
 pub enum FieldRef {
     Static(&'static FieldDescriptor),
-    Dynamic(Rc<FieldDescriptor>),
+    Dynamic(Arc<FieldDescriptor>),
 }
 
 impl AsRef<FieldDescriptor> for FieldRef {
