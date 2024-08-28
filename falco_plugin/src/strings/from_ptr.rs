@@ -7,8 +7,8 @@ pub enum FromPtrError {
     #[error("NULL pointer")]
     NullPointer,
 
-    #[error("UTF-8 error")]
-    Utf8Error,
+    #[error("UTF-8 error (raw string: {0})")]
+    Utf8Error(String),
 }
 
 pub(crate) fn try_str_from_ptr<T>(
@@ -20,5 +20,6 @@ pub(crate) fn try_str_from_ptr<T>(
     }
 
     let cstr = unsafe { CStr::from_ptr(ptr.cast()) };
-    cstr.to_str().map_err(|_| FromPtrError::Utf8Error)
+    cstr.to_str()
+        .map_err(|_| FromPtrError::Utf8Error(cstr.to_string_lossy().to_string()))
 }
