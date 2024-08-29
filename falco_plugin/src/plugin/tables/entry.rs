@@ -11,8 +11,6 @@ use std::mem::ManuallyDrop;
 /// # A read-only accessor to a table entry
 ///
 /// This type corresponds to a particular entry in a table.
-///
-/// See the [`TableInitInput` trait](`crate::base::TableInitInput`) for more details.
 pub struct TableEntryReader {
     pub(crate) table: *mut ss_plugin_table_t,
     pub(crate) entry: *mut ss_plugin_table_entry_t,
@@ -83,8 +81,6 @@ impl Drop for TableEntryReader {
 /// # A read-write accessor to a table entry
 ///
 /// This type corresponds to a particular entry in a table.
-///
-/// See the [`TableInitInput` trait](`crate::base::TableInitInput`) for more details.
 pub struct TableEntry {
     reader: ManuallyDrop<TableEntryReader>,
     writer_vtable: *const ss_plugin_table_writer_vtable_ext,

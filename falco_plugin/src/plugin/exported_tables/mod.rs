@@ -352,7 +352,7 @@ impl TableValues for DynamicFieldValues {
 /// # A table with dynamic fields only by default
 ///
 /// An instance of this type can be exposed to other plugins via
-/// [`base::TableInitInput::add_table`](`crate::base::TableInitInput::add_table`)
+/// [`crate::tables::TablesInput::add_table`]
 ///
 /// To create a table that includes static fields, pass a type that implements
 /// [`TableValues`] as the second generic parameter.

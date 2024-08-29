@@ -12,6 +12,7 @@ use crate::plugin::base::logger::{FalcoPluginLoggerImpl, FALCO_LOGGER};
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
+use crate::plugin::tables::vtable::TablesInput;
 use crate::strings::from_ptr::try_str_from_ptr;
 
 pub extern "C" fn plugin_get_required_api_version<
@@ -80,7 +81,11 @@ pub unsafe extern "C" fn plugin_init<P: Plugin>(
             log::set_max_level(log::LevelFilter::Info);
         }
 
-        P::new(init_input, config).map(|plugin| Box::into_raw(Box::new(PluginWrapper::new(plugin))))
+        let tables_input =
+            TablesInput::try_from(init_input).context("Failed to build tables input")?;
+
+        P::new(tables_input.as_ref(), config)
+            .map(|plugin| Box::into_raw(Box::new(PluginWrapper::new(plugin))))
     })();
 
     match res {
@@ -222,10 +227,10 @@ macro_rules! wrap_ffi {
 ///
 /// ```
 /// # use std::ffi::CStr;
-/// # use falco_plugin::base::InitInput;
 /// use falco_plugin::base::Plugin;
 /// # use falco_plugin::base::Metric;
 /// use falco_plugin::plugin;
+/// use falco_plugin::tables::TablesInput;
 ///
 /// struct MyPlugin;
 /// impl Plugin for MyPlugin {
@@ -236,7 +241,7 @@ macro_rules! wrap_ffi {
 /// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
-/// #    fn new(input: &InitInput, config: Self::ConfigType)
+/// #    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
 /// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MyPlugin)
 /// #    }
@@ -258,10 +263,10 @@ macro_rules! wrap_ffi {
 ///
 /// ```
 /// # use std::ffi::CStr;
-/// # use falco_plugin::base::InitInput;
 /// use falco_plugin::base::Plugin;
 /// # use falco_plugin::base::Metric;
 /// use falco_plugin::plugin;
+/// use falco_plugin::tables::TablesInput;
 ///
 /// struct MyPlugin;
 /// impl Plugin for MyPlugin {
@@ -272,7 +277,7 @@ macro_rules! wrap_ffi {
 /// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
-/// #    fn new(input: &InitInput, config: Self::ConfigType)
+/// #    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
 /// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MyPlugin)
 /// #    }

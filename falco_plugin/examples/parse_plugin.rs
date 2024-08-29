@@ -3,12 +3,12 @@ use std::ffi::{CStr, CString};
 use anyhow::anyhow;
 
 use falco_event::events::types::EventType;
-use falco_plugin::base::{Plugin, TableInitInput};
+use falco_plugin::base::Plugin;
 use falco_plugin::parse::{EventInput, EventParseInput, ParsePlugin};
-use falco_plugin::tables::{DynamicFieldValues, TypedTableField};
+use falco_plugin::tables::{DynamicFieldValues, TablesInput, TypedTableField};
 use falco_plugin::tables::{DynamicTable, TypedTable};
 use falco_plugin::{parse_plugin, plugin};
-use falco_plugin_api::{ss_plugin_event_parse_input, ss_plugin_init_input};
+use falco_plugin_api::ss_plugin_event_parse_input;
 use falco_plugin_derive::TableValues;
 
 #[derive(TableValues, Default)]
@@ -50,9 +50,11 @@ impl Plugin for DummyPlugin {
     const CONTACT: &'static CStr = c"rust@localdomain.pl";
     type ConfigType = ();
 
-    fn new(input: &ss_plugin_init_input, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
+    fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
+        let input = input.ok_or_else(|| anyhow::anyhow!("did not get tables input"))?;
+
         let thread_table = input.get_table::<i64>(c"threads")?;
-        let sample_field = thread_table.add_field::<u64>(c"sample")?;
+        let sample_field = thread_table.add_field::<u64>(&input, c"sample")?;
 
         let new_table = input.add_table(DynamicTable::new(c"sample"))?;
         let another_table = input.add_table(DynamicTable::new(c"another"))?;

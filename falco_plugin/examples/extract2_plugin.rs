@@ -3,14 +3,13 @@ use std::ffi::{CStr, CString};
 use anyhow::{anyhow, Error};
 
 use falco_event::events::types::EventType;
-use falco_plugin::base::{Plugin, TableInitInput};
+use falco_plugin::base::Plugin;
 use falco_plugin::extract::{
     field, EventInput, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin,
 };
-use falco_plugin::tables::TypedTableField;
 use falco_plugin::tables::{TableReader, TypedTable};
+use falco_plugin::tables::{TablesInput, TypedTableField};
 use falco_plugin::{extract_plugin, plugin};
-use falco_plugin_api::ss_plugin_init_input;
 
 pub struct DummyPlugin {
     thread_table: TypedTable<i64>,
@@ -24,9 +23,11 @@ impl Plugin for DummyPlugin {
     const CONTACT: &'static CStr = c"rust@localdomain.pl";
     type ConfigType = ();
 
-    fn new(input: &ss_plugin_init_input, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
+    fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
+        let input = input.ok_or_else(|| anyhow::anyhow!("did not get tables input"))?;
+
         let thread_table = input.get_table::<i64>(c"threads")?;
-        let sample_field = thread_table.get_field::<u64>(c"sample")?;
+        let sample_field = thread_table.get_field::<u64>(&input, c"sample")?;
 
         Ok(DummyPlugin {
             thread_table,

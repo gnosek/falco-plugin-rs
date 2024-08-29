@@ -11,8 +11,8 @@ use falco_event::events::Event;
 use falco_event::events::EventMetadata;
 use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
 use falco_plugin::base::Plugin;
+use falco_plugin::tables::TablesInput;
 use falco_plugin::{async_event_plugin, plugin};
-use falco_plugin_api::ss_plugin_init_input;
 
 #[derive(Default)]
 struct DummyAsyncPlugin {
@@ -27,10 +27,7 @@ impl Plugin for DummyAsyncPlugin {
     const CONTACT: &'static CStr = c"rust@localdomain.pl";
     type ConfigType = ();
 
-    fn new(
-        _input: &ss_plugin_init_input,
-        _config: Self::ConfigType,
-    ) -> Result<Self, anyhow::Error> {
+    fn new(_input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
         Ok(DummyAsyncPlugin::default())
     }
 }

@@ -50,11 +50,11 @@ pub trait ParsePlugin: Plugin {
 
 /// # Allow table access during event parsing
 ///
-/// See [`base::TableInitInput`](`crate::base::TableInitInput`) for details
+/// See [`crate::tables::TablesInput`] for details
 pub trait EventParseInput {
     /// # Look up an entry in `table` corresponding to `key`
     ///
-    /// See [`base::TableInitInput`](`crate::base::TableInitInput`) for details
+    /// See [`crate::tables::TablesInput`] for details
     fn table_entry<K: TableData>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry>;
 
     /// # Build a TableReader from the parse input

@@ -74,8 +74,9 @@ pub use crate::plugin::error::FailureReason;
 ///
 /// ```
 /// use std::ffi::CStr;
-/// use falco_plugin::base::{InitInput, Metric, Plugin};
+/// use falco_plugin::base::{Metric, Plugin};
 /// use falco_plugin::plugin;
+/// use falco_plugin::tables::TablesInput;
 ///
 /// // define the type holding the plugin state
 /// struct NoOpPlugin;
@@ -88,7 +89,7 @@ pub use crate::plugin::error::FailureReason;
 ///     const CONTACT: &'static CStr = c"you@example.com";
 ///     type ConfigType = ();
 ///
-///     fn new(input: &InitInput, config: Self::ConfigType)
+///     fn new(input: Option<&TablesInput>, config: Self::ConfigType)
 ///         -> Result<Self, anyhow::Error> {
 ///         Ok(NoOpPlugin)
 ///     }
@@ -108,17 +109,9 @@ pub use crate::plugin::error::FailureReason;
 ///
 /// See the [`base::Plugin`] trait documentation for details.
 pub mod base {
-    /// The plugin init input from the Falco plugin framework
-    ///
-    /// The notable thing about this type is that it implements [`TableInitInput`]. You should not
-    /// need to access its fields directly.
-    pub use falco_plugin_api::ss_plugin_init_input as InitInput;
-
-
     pub use crate::plugin::base::metrics::{Metric, MetricLabel, MetricType, MetricValue};
     pub use crate::plugin::base::Plugin;
     pub use crate::plugin::schema::Json;
-    pub use crate::plugin::tables::ffi::InitInput as TableInitInput;
 }
 
 /// # Field extraction plugin support
@@ -151,7 +144,7 @@ pub mod base {
 /// use std::ffi::{CStr, CString};
 /// use anyhow::Error;
 /// use falco_event::events::types::EventType;
-/// use falco_plugin::base::{InitInput, Metric, Plugin};
+/// use falco_plugin::base::{Metric, Plugin};
 /// use falco_plugin::{extract_plugin, plugin};
 /// use falco_plugin::extract::{
 ///     EventInput,
@@ -159,7 +152,7 @@ pub mod base {
 ///     ExtractFieldRequestArg,
 ///     ExtractPlugin,
 ///     field};
-/// use falco_plugin::tables::TableReader;
+/// use falco_plugin::tables::{TableReader, TablesInput};
 ///
 /// struct MyExtractPlugin;
 /// impl Plugin for MyExtractPlugin {
@@ -170,7 +163,7 @@ pub mod base {
 /// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
-/// #    fn new(input: &InitInput, config: Self::ConfigType)
+/// #    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
 /// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MyExtractPlugin)
 /// #    }
@@ -241,9 +234,10 @@ pub mod extract {
 /// use anyhow::Error;
 /// use falco_event::{ };
 /// use falco_event::events::types::EventType;
-/// use falco_plugin::base::{InitInput, Metric, Plugin};
+/// use falco_plugin::base::{Metric, Plugin};
 /// use falco_plugin::{parse_plugin, plugin};
 /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
+/// use falco_plugin::tables::TablesInput;
 /// use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input};
 ///
 /// struct MyParsePlugin;
@@ -256,7 +250,7 @@ pub mod extract {
 /// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
-/// #    fn new(input: &InitInput, config: Self::ConfigType)
+/// #    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
 /// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MyParsePlugin)
 /// #    }
@@ -314,9 +308,10 @@ pub mod parse {
 /// use anyhow::Error;
 /// use falco_event::events::Event;
 /// use falco_event::events::EventMetadata;
-/// use falco_plugin::base::{InitInput, Metric, Plugin};
+/// use falco_plugin::base::{Metric, Plugin};
 /// use falco_plugin::{async_event_plugin, plugin};
-/// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
+/// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};///
+/// use falco_plugin::tables::TablesInput;
 ///
 /// struct MyAsyncPlugin {
 ///     stop_request: Arc<AtomicBool>,
@@ -331,7 +326,7 @@ pub mod parse {
 /// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
-/// #    fn new(input: &InitInput, config: Self::ConfigType)
+/// #    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
 /// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MyAsyncPlugin {
 /// #            stop_request: Arc::new(Default::default()),
@@ -420,7 +415,7 @@ pub mod async_event {
 /// use std::thread::JoinHandle;
 /// use anyhow::Error;
 /// use falco_event::events::Event;
-/// use falco_plugin::base::{InitInput, Metric, Plugin};
+/// use falco_plugin::base::{Metric, Plugin};
 /// use falco_plugin::{plugin, source_plugin};
 /// use falco_plugin::source::{
 ///     EventBatch,
@@ -428,6 +423,7 @@ pub mod async_event {
 ///     PluginEvent,
 ///     SourcePlugin,
 ///     SourcePluginInstance};
+/// use falco_plugin::tables::TablesInput;
 /// use falco_plugin_api::ss_plugin_event_input;
 ///
 /// struct MySourcePlugin;
@@ -440,7 +436,7 @@ pub mod async_event {
 /// #    const CONTACT: &'static CStr = c"you@example.com";
 /// #    type ConfigType = ();
 /// #
-/// #    fn new(input: &InitInput, config: Self::ConfigType)
+/// #    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
 /// #        -> Result<Self, anyhow::Error> {
 /// #        Ok(MySourcePlugin)
 /// #    }
@@ -512,8 +508,6 @@ pub mod source {
 /// # Creating and accessing tables
 ///
 /// Tables are a mechanism to share data between plugins (and Falco core).
-///
-/// The main interface to this module is the [`base::TableInitInput`] trait.
 pub mod tables {
     pub use crate::plugin::exported_tables::DynamicField;
     pub use crate::plugin::exported_tables::DynamicFieldValue;
@@ -531,6 +525,7 @@ pub mod tables {
     pub use crate::plugin::tables::entry::TableEntryReader;
     pub use crate::plugin::tables::table::TypedTable;
     pub use crate::plugin::tables::table_reader::TableReader;
+    pub use crate::plugin::tables::vtable::TablesInput;
 }
 
 mod plugin;

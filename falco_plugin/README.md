@@ -31,7 +31,8 @@ For a statically linked plugin, you need to:
 
 ```
 use std::ffi::CStr;
-use falco_plugin::base::{InitInput, Metric, Plugin};
+use falco_plugin::base::{Plugin, Metric};
+use falco_plugin::tables::TablesInput;
 use falco_plugin::static_plugin;
 
 // define the type holding the plugin state
@@ -45,7 +46,7 @@ impl Plugin for DummyPlugin {
     const CONTACT: &'static CStr = c"you@example.com";
     type ConfigType = ();
 
-    fn new(input: &InitInput, config: Self::ConfigType)
+    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
         -> Result<Self, anyhow::Error> {
         Ok(DummyPlugin)
     }

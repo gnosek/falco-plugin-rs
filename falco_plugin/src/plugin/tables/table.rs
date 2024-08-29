@@ -6,24 +6,22 @@ use thiserror::Error;
 
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_owner_t, ss_plugin_state_data, ss_plugin_state_type,
-    ss_plugin_table_entry_t, ss_plugin_table_fieldinfo, ss_plugin_table_fields_vtable_ext,
-    ss_plugin_table_iterator_func_t, ss_plugin_table_iterator_state_t,
-    ss_plugin_table_reader_vtable_ext, ss_plugin_table_t, ss_plugin_table_writer_vtable_ext,
+    ss_plugin_table_entry_t, ss_plugin_table_fieldinfo, ss_plugin_table_iterator_func_t,
+    ss_plugin_table_iterator_state_t, ss_plugin_table_reader_vtable_ext, ss_plugin_table_t,
+    ss_plugin_table_writer_vtable_ext,
 };
 
 use crate::plugin::error::last_error::LastError;
 use crate::plugin::tables::data::TableData;
 use crate::plugin::tables::entry::{TableEntry, TableEntryReader};
+use crate::plugin::tables::vtable::{TableFields, TableReader};
 use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
-use crate::tables::TypedTableField;
+use crate::tables::{TablesInput, TypedTableField};
 use crate::FailureReason;
 
 /// # A handle for a specific table
-///
-/// See [`base::TableInitInput`](`crate::base::TableInitInput`) for details.
 pub struct TypedTable<K: TableData> {
     table: *mut ss_plugin_table_t,
-    fields_vtable: *const ss_plugin_table_fields_vtable_ext,
     last_error: LastError,
     key_type: PhantomData<K>,
 }
@@ -40,15 +38,11 @@ pub enum TableError {
 impl<K: TableData> TypedTable<K> {
     pub(crate) unsafe fn new(
         table: *mut ss_plugin_table_t,
-        fields_vtable: *const ss_plugin_table_fields_vtable_ext,
         owner: *mut ss_plugin_owner_t,
-        get_owner_last_error: Option<
-            unsafe extern "C" fn(o: *mut ss_plugin_owner_t) -> *const c_char,
-        >,
+        get_owner_last_error: unsafe extern "C" fn(o: *mut ss_plugin_owner_t) -> *const c_char,
     ) -> TypedTable<K> {
         TypedTable {
             table,
-            fields_vtable,
             key_type: PhantomData,
             last_error: LastError::new(owner, get_owner_last_error),
         }
@@ -59,18 +53,14 @@ impl<K: TableData> TypedTable<K> {
     /// **Note**: this method is of limited utility in actual plugin code (you know the fields you
     /// want to access), so it returns the unmodified structure from the plugin API, including
     /// raw pointers to C-style strings. This may change later.
-    pub fn list_fields(
-        &self,
-        fields_vtable: &ss_plugin_table_fields_vtable_ext,
-    ) -> &[ss_plugin_table_fieldinfo] {
-        match fields_vtable.list_table_fields {
-            Some(list_table_fields) => {
-                let mut num_fields = 0u32;
-                let fields = unsafe { list_table_fields(self.table, &mut num_fields as *mut _) };
-
-                unsafe { std::slice::from_raw_parts(fields, num_fields as usize) }
-            }
-            None => &[],
+    pub fn list_fields(&self, fields_vtable: &TableFields) -> &[ss_plugin_table_fieldinfo] {
+        let mut num_fields = 0u32;
+        let fields =
+            unsafe { (fields_vtable.list_table_fields)(self.table, &mut num_fields as *mut _) };
+        if fields.is_null() {
+            &[]
+        } else {
+            unsafe { std::slice::from_raw_parts(fields, num_fields as usize) }
         }
     }
 
@@ -83,14 +73,11 @@ impl<K: TableData> TypedTable<K> {
     /// an entry from a different table will cause an error at runtime.
     pub fn get_field<V: TableData + ?Sized>(
         &self,
+        tables_input: &TablesInput,
         name: &CStr,
     ) -> Result<TypedTableField<V>, FailureReason> {
-        let fields_vtable = unsafe { self.fields_vtable.as_ref() }.ok_or(FailureReason::Failure)?;
-        let get_table_field = fields_vtable
-            .get_table_field
-            .ok_or(FailureReason::Failure)?;
         let field = unsafe {
-            get_table_field(
+            (tables_input.fields_ext.get_table_field)(
                 self.table,
                 name.as_ptr().cast(),
                 V::TYPE_ID as ss_plugin_state_type,
@@ -109,15 +96,11 @@ impl<K: TableData> TypedTable<K> {
     /// an entry from a different table will cause an error at runtime.
     pub fn add_field<V: TableData + ?Sized>(
         &self,
+        tables_input: &TablesInput,
         name: &CStr,
     ) -> Result<TypedTableField<V>, FailureReason> {
-        let fields_vtable = unsafe { self.fields_vtable.as_ref() }.ok_or(FailureReason::Failure)?;
-        let add_table_field = fields_vtable
-            .add_table_field
-            .ok_or(FailureReason::Failure)?;
-
         let table = unsafe {
-            add_table_field(
+            (tables_input.fields_ext.add_table_field)(
                 self.table,
                 name.as_ptr().cast(),
                 V::TYPE_ID as ss_plugin_state_type,
@@ -131,13 +114,9 @@ impl<K: TableData> TypedTable<K> {
     /// # Get the table name
     ///
     /// This method returns an error if the name cannot be represented as UTF-8
-    pub fn get_name(
-        &self,
-        reader_vtable: &ss_plugin_table_reader_vtable_ext,
-    ) -> Result<&str, TableError> {
-        let get_table_name = reader_vtable.get_table_name.ok_or(TableError::BadVtable)?;
+    pub fn get_name(&self, reader_vtable: &TableReader) -> Result<&str, TableError> {
         Ok(try_str_from_ptr(
-            unsafe { get_table_name(self.table) },
+            unsafe { (reader_vtable.get_table_name)(self.table) },
             self,
         )?)
     }
@@ -145,12 +124,8 @@ impl<K: TableData> TypedTable<K> {
     /// # Get the table size
     ///
     /// Return the number of entries in the table
-    pub fn get_size(
-        &self,
-        reader_vtable: &ss_plugin_table_reader_vtable_ext,
-    ) -> Result<usize, TableError> {
-        let get_table_size = reader_vtable.get_table_size.ok_or(TableError::BadVtable)?;
-        Ok(unsafe { get_table_size(self.table) } as usize)
+    pub fn get_size(&self, reader_vtable: &TableReader) -> Result<usize, TableError> {
+        Ok(unsafe { (reader_vtable.get_table_size)(self.table) } as usize)
     }
 
     pub(crate) fn get_entry(

@@ -3,10 +3,10 @@ use std::ffi::{CStr, CString};
 use std::fmt::Display;
 use std::io::Write;
 
-use crate::base::InitInput;
 use crate::extract::FieldStorage;
 use crate::plugin::base::metrics::Metric;
 use crate::plugin::schema::ConfigSchema;
+use crate::plugin::tables::vtable::TablesInput;
 use crate::strings::cstring_writer::WriteIntoCString;
 
 mod logger;
@@ -95,12 +95,11 @@ pub trait Plugin: Sized {
     /// the same version of serde as the SDK.
     type ConfigType: ConfigSchema;
 
-    /// This method takes a plugin init input instance, whose only notable feature is that it supports
-    /// the [`TableInitInput`](`crate::base::TableInitInput`) trait, which lets you access tables
-    /// exposed by other plugins (and Falco core).
+    /// This method takes a [`TablesInput`](`crate::tables::TablesInput`) instance, which lets you
+    /// access tables exposed by other plugins (and Falco core).
     ///
     /// It should return a new instance of `Self`
-    fn new(input: &InitInput, config: Self::ConfigType) -> Result<Self, anyhow::Error>;
+    fn new(input: Option<&TablesInput>, config: Self::ConfigType) -> Result<Self, anyhow::Error>;
 
     /// Update the configuration of a running plugin
     ///
