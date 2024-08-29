@@ -13,6 +13,7 @@ use falco_plugin_api::{ss_plugin_state_data, ss_plugin_table_fieldinfo};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::ffi::CStr;
+use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 
 /// # A table exported to other plugins
@@ -44,6 +45,21 @@ where
     data: BTreeMap<K, Rc<RefCell<ExtensibleEntry<E>>>>,
 
     pub(in crate::plugin::exported_tables) vtable: RefCell<Option<Box<Vtable>>>,
+}
+
+impl<K, E> Debug for Table<K, E>
+where
+    K: Key + Ord + Clone + Debug,
+    E: Entry + Debug,
+    E::Metadata: TableMetadata + Debug,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Table")
+            .field("name", &self.name)
+            .field("metadata", &self.metadata)
+            .field("data", &self.data)
+            .finish()
+    }
 }
 
 impl<K, E> Table<K, E>

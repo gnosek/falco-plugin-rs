@@ -11,6 +11,7 @@ use std::ffi::c_char;
 ///
 /// This handle gets created from the asynchronous event handler. Whenever you have
 /// an event to submit to the main event loop, call [`AsyncHandler::emit`].
+#[derive(Debug)]
 pub struct AsyncHandler {
     pub(crate) owner: *mut ss_plugin_owner_t,
     pub(crate) raw_handler: unsafe extern "C" fn(

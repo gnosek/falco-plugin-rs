@@ -18,6 +18,7 @@ pub trait StaticFieldFallback {
 impl<T> StaticFieldFallback for T {}
 
 #[allow(missing_docs)]
+#[allow(missing_debug_implementations)]
 pub struct StaticFieldCheck<T>(PhantomData<T>);
 
 impl<T> StaticFieldCheck<T>
@@ -48,6 +49,7 @@ pub trait StaticFieldGetFallback {
 impl<T> StaticFieldGetFallback for T {}
 
 #[allow(missing_docs)]
+#[allow(missing_debug_implementations)]
 pub struct StaticFieldGet<'a, T>(pub &'a T);
 
 impl<'a, T> StaticFieldGet<'a, T>
@@ -77,6 +79,7 @@ pub trait StaticFieldSetFallback {
 impl<T> StaticFieldSetFallback for T {}
 
 #[allow(missing_docs)]
+#[allow(missing_debug_implementations)]
 pub struct StaticFieldSet<'a, T>(pub &'a mut T);
 
 impl<'a, T> StaticFieldSet<'a, T>

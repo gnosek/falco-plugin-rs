@@ -22,6 +22,7 @@ pub trait ExtractPluginFallbackApi {
 }
 impl<T> ExtractPluginFallbackApi for T {}
 
+#[allow(missing_debug_implementations)]
 pub struct ExtractPluginApi<T>(std::marker::PhantomData<T>);
 
 impl<T: ExtractPlugin> ExtractPluginApi<T> {

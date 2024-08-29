@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![warn(missing_docs)]
+#![warn(missing_debug_implementations)]
 #![deny(rustdoc::broken_intra_doc_links)]
 
 // reexport dependencies

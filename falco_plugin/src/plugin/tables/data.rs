@@ -11,6 +11,7 @@ use falco_plugin_api::{
 };
 use num_derive::FromPrimitive;
 use std::ffi::CStr;
+use std::fmt::{Debug, Formatter};
 
 pub(in crate::plugin::tables) mod seal {
     pub trait Sealed {}
@@ -161,8 +162,15 @@ impl_table_data_direct!(i64 => s64: FieldTypeId::I64);
 /// value, we cannot convert it on the fly to the native Rust type.
 ///
 /// This type serves as a wrapper, exposing conversion methods to/from Rust bool.
+#[derive(Copy, Clone)]
 #[repr(transparent)]
 pub struct Bool(pub(crate) ss_plugin_bool);
+
+impl Debug for Bool {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Bool").field(&bool::from(*self)).finish()
+    }
+}
 
 impl From<bool> for Bool {
     fn from(value: bool) -> Self {

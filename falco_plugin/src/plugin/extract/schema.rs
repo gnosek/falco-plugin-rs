@@ -1,6 +1,7 @@
 use anyhow::Error;
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
+use std::fmt::{Debug, Formatter};
 
 use falco_plugin_api::ss_plugin_extract_field;
 
@@ -14,7 +15,7 @@ use crate::plugin::storage::FieldStorageSession;
 /// If a request comes with an argument not conforming to the spec
 /// (e.g. an argument where none was requested), the SDK will return an error
 /// and not invoke the extractor function at all.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ExtractArgType {
     /// no argument, extraction requested as `field_name`
     None,
@@ -133,6 +134,13 @@ pub struct ExtractFieldInfo<P: ExtractPlugin> {
     #[serde(skip)]
     /// the function implementing the actual extraction
     pub func: &'static dyn Extractor<P>,
+}
+
+impl<P: ExtractPlugin> Debug for ExtractFieldInfo<P> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let json = serde_json::to_string_pretty(self).map_err(|_| std::fmt::Error)?;
+        f.write_str(&json)
+    }
 }
 
 impl<P: ExtractPlugin> ExtractFieldInfo<P> {

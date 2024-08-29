@@ -9,6 +9,7 @@ use std::marker::PhantomData;
 /// tables at compile time (runtime checks are also done on a best-effort basis)
 pub type RuntimeEntry<T> = super::entry::Entry<NoMetadata<T>>;
 
+#[derive(Debug)]
 pub struct NoMetadata<T> {
     tag: PhantomData<T>,
 }

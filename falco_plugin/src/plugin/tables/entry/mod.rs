@@ -15,6 +15,7 @@ use raw::RawEntry;
 ///
 /// You can add methods to this type using the `#[derive(TableMetadata)]` macro.
 /// See the [module documentation](`crate::tables::import`) for details.
+#[derive(Debug)]
 pub struct Entry<M> {
     pub(in crate::plugin::tables) raw_entry: RawEntry,
     pub(in crate::plugin::tables) table: *mut ss_plugin_table_t,

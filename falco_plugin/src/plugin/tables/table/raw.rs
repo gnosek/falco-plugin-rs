@@ -19,6 +19,7 @@ use std::ops::ControlFlow;
 /// This is a thin wrapper around the Falco plugin API and provides little type safety.
 ///
 /// You will probably want to use [`crate::tables::import::Table`] instead.
+#[derive(Debug)]
 pub struct RawTable {
     pub(crate) table: *mut ss_plugin_table_t,
 }

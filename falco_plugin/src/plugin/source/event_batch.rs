@@ -40,6 +40,7 @@ impl EventBatchStorage {
 /// This is only available by reference, not by ownership, since the data needs to outlive
 /// the plugin API call and is stored elsewhere (in a wrapper struct that's not exposed to
 /// plugin developers)
+#[derive(Debug)]
 pub struct EventBatch<'a> {
     buf: &'a mut Vec<u8>,
     offsets: &'a mut Vec<usize>,

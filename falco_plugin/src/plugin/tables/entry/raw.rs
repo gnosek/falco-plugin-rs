@@ -5,6 +5,7 @@ use falco_plugin_api::{
     ss_plugin_table_field_t, ss_plugin_table_t,
 };
 
+#[derive(Debug)]
 pub struct RawEntry {
     pub(crate) table: *mut ss_plugin_table_t,
     pub(crate) entry: *mut ss_plugin_table_entry_t,

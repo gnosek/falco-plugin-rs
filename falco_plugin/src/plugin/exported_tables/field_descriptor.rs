@@ -19,6 +19,7 @@ pub enum FieldId {
 /// somewhere). For dynamic fields, it's a reference-counted pointer to the descriptor living
 /// in a runtime-managed map
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub enum FieldRef {
     Static(&'static FieldDescriptor),
     Dynamic(Rc<FieldDescriptor>),
@@ -40,6 +41,7 @@ impl AsRef<FieldDescriptor> for FieldRef {
 ///
 /// **Note**: the data is stored as an enum capable of holding values of any type, but the table enforces
 /// the defined type on all incoming data.
+#[derive(Debug)]
 pub struct FieldDescriptor {
     pub(in crate::plugin::exported_tables) index: FieldId,
     pub(in crate::plugin::exported_tables) type_id: FieldTypeId,

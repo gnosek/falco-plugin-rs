@@ -4,6 +4,7 @@ use std::ffi::CStr;
 pub use falco_plugin_api::ss_plugin_event_input;
 
 /// # An event from which additional data may be extracted
+#[derive(Debug)]
 pub struct EventInput(pub(crate) ss_plugin_event_input);
 
 impl EventInput {

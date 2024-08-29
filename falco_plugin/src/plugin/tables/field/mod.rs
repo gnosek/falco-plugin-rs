@@ -3,6 +3,7 @@ use crate::plugin::tables::field::raw::RawField;
 use crate::plugin::tables::runtime::RuntimeEntry;
 use crate::plugin::tables::runtime_table_validator::RuntimeTableValidator;
 use crate::plugin::tables::traits::RawFieldValueType;
+use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 
 pub(in crate::plugin::tables) mod raw;
@@ -19,6 +20,20 @@ pub struct Field<V: Value + ?Sized, T = RuntimeEntry<()>> {
     pub(in crate::plugin::tables) field: RawField<V>,
     pub(in crate::plugin::tables) validator: RuntimeTableValidator,
     pub(in crate::plugin::tables) tag: PhantomData<T>,
+}
+
+impl<V, T> Debug for Field<V, T>
+where
+    V: Value + Debug + ?Sized,
+    V::AssocData: Debug,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("field")
+            .field("field", &self.field)
+            .field("validator", &self.validator)
+            .field("tag", &self.tag)
+            .finish()
+    }
 }
 
 impl<V: Value + ?Sized, T> Field<V, T> {

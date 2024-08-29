@@ -7,6 +7,7 @@ use anyhow::Error;
 use falco_plugin_api::ss_plugin_table_fieldinfo;
 use std::ffi::CStr;
 
+#[derive(Debug)]
 pub struct ExtensibleEntryMetadata<M> {
     pub(in crate::plugin::exported_tables) inner: M,
     custom_fields: DynamicFieldsOnly,

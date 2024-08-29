@@ -63,6 +63,7 @@ pub trait ParsePlugin: Plugin {
 /// You will pass these vtables to all methods that read or write data from tables,
 /// but you won't interact with them otherwise. They're effectively tokens proving
 /// you're in the right context to read/write tables.
+#[derive(Debug)]
 pub struct ParseInput {
     /// Accessors to read table entries
     pub reader: TableReader,

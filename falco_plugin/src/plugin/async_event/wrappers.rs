@@ -21,6 +21,7 @@ pub trait AsyncPluginFallbackApi {
 }
 impl<T> AsyncPluginFallbackApi for T {}
 
+#[derive(Debug)]
 pub struct AsyncPluginApi<T>(std::marker::PhantomData<T>);
 impl<T: AsyncEventPlugin + 'static> AsyncPluginApi<T> {
     pub const ASYNC_API: async_plugin_api = async_plugin_api {

@@ -1,5 +1,6 @@
 use falco_plugin_api::ss_plugin_table_t;
 
+#[derive(Debug)]
 pub struct RuntimeTableValidator {
     table: *mut ss_plugin_table_t,
 }

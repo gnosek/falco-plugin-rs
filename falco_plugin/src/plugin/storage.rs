@@ -7,12 +7,13 @@
 /// This is that object. It's used in a wrapper struct (generally hidden from you, the plugin SDK
 /// user) that lives as long as the plugin instance. The strings themselves are cleared earlier,
 /// usually during the next API call, but that's long enough and it conforms to the API contract.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FieldStorage {
     byte_storage: Vec<Vec<u8>>,
     pointer_storage: Vec<Vec<*const u8>>,
 }
 
+#[derive(Debug)]
 pub struct FieldStorageSession<'a> {
     byte_storage: &'a mut Vec<Vec<u8>>,
     pointer_storage: &'a mut Vec<Vec<*const u8>>,

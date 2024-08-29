@@ -21,7 +21,9 @@ pub trait ParsePluginFallbackApi {
 }
 impl<T> ParsePluginFallbackApi for T {}
 
+#[allow(missing_debug_implementations)]
 pub struct ParsePluginApi<T>(std::marker::PhantomData<T>);
+
 impl<T: ParsePlugin + 'static> ParsePluginApi<T> {
     pub const PARSE_API: parse_plugin_api = parse_plugin_api {
         get_parse_event_types: Some(plugin_get_parse_event_types::<T>),

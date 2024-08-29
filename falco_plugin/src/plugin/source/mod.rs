@@ -82,6 +82,7 @@ pub trait SourcePlugin: Plugin {
 }
 
 /// Information about capture progress
+#[derive(Debug)]
 pub struct ProgressInfo<'a> {
     /// Progress percentage (0.0-100.0)
     pub value: f64,

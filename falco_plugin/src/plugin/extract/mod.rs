@@ -94,6 +94,7 @@ impl ExtractField for ss_plugin_extract_field {
 }
 
 /// An extraction request
+#[derive(Debug)]
 pub struct ExtractRequest<'c, 'e, 't, P: ExtractPlugin> {
     /// a context instance, potentially shared between extractions
     pub context: &'c mut P::ExtractContext,

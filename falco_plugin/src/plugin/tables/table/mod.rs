@@ -15,6 +15,7 @@ use std::ops::ControlFlow;
 pub(in crate::plugin::tables) mod raw;
 
 /// # A table imported via the Falco plugin API
+#[derive(Debug)]
 pub struct Table<K, E = super::entry::Entry<NoMetadata<()>>, M = <E as Entry>::Metadata> {
     pub(in crate::plugin::tables) raw_table: RawTable,
     pub(in crate::plugin::tables) metadata: M,

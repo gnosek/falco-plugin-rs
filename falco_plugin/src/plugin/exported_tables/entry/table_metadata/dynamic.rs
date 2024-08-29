@@ -9,6 +9,7 @@ use std::ffi::{CStr, CString};
 use std::rc::Rc;
 
 /// A struct to hold the descriptors for dynamically added fields
+#[derive(Debug)]
 pub struct DynamicFieldsOnly {
     pub(crate) fields: BTreeMap<CString, Rc<FieldDescriptor>>,
 }

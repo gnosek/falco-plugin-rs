@@ -15,6 +15,7 @@ use std::ops::{Deref, DerefMut};
 ///
 /// This type implements [`Deref`] and [`DerefMut`], so you do not need any extra
 /// code when accessing the actual data.
+#[derive(Debug)]
 pub struct Readonly<T>(T);
 
 impl<T: FieldValue + Default> HasMetadata for Readonly<T> {

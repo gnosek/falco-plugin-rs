@@ -102,6 +102,7 @@ impl MetricLabel {
 /// A metric with a value
 ///
 /// This is what gets emitted to the Falco Plugin API (after a conversion to the required format)
+#[derive(Debug)]
 pub struct Metric {
     label: MetricLabel,
     value: MetricValue,

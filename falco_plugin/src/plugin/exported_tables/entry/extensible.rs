@@ -12,6 +12,7 @@ use std::ffi::CStr;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
+#[derive(Debug)]
 pub struct ExtensibleEntry<E> {
     inner: E,
     custom_fields: DynamicEntry,

@@ -11,6 +11,7 @@ use std::ops::{Deref, DerefMut};
 ///
 /// This type implements [`Deref`] and [`DerefMut`], so you do not need any extra
 /// code when accessing the actual data.
+#[derive(Debug)]
 pub struct Private<T>(T);
 
 impl<T> Deref for Private<T> {
