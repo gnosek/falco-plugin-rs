@@ -46,7 +46,7 @@ struct EventArg {
     _comma1: Token![,],
     field_type: Ident,
     _comma2: Token![,],
-    _field_format: Ident,
+    field_format: Ident,
     info: EventArgInfo,
 }
 
@@ -61,6 +61,35 @@ impl EventArg {
             self.field_type.clone()
         }
     }
+
+    fn ident(&self) -> Ident {
+        let mut name = Ident::new(&self.name.value(), self.name.span());
+        if syn::parse::<Ident>(quote!(#name).into()).is_err() {
+            // #name is a keyword
+            name = Ident::new(&format!("{}_", name), name.span());
+        }
+
+        name
+    }
+
+    fn lifetimes(&self) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
+        if let Some((_, IdentOrNumber::Number(num), _)) = &self.info {
+            // shortcut: only PT_FSRELPATH uses these and it takes a lifetime param,
+            // so don't bother supporting const generics without lifetimes just yet
+            (proc_macro2::TokenStream::new(), quote!(<'a, #num>))
+        } else {
+            let field_type = self.final_field_type();
+
+            match lifetime_type(&field_type.to_string()) {
+                LifetimeType::Ref => (quote!(&'a), proc_macro2::TokenStream::new()),
+                LifetimeType::Generic => (proc_macro2::TokenStream::new(), quote!(<'a>)),
+                LifetimeType::None => (
+                    proc_macro2::TokenStream::new(),
+                    proc_macro2::TokenStream::new(),
+                ),
+            }
+        }
+    }
 }
 
 impl Parse for EventArg {
@@ -72,7 +101,7 @@ impl Parse for EventArg {
             _comma1: content.parse()?,
             field_type: content.parse()?,
             _comma2: content.parse()?,
-            _field_format: content.parse()?,
+            field_format: content.parse()?,
             info: if content.peek(Token![,]) {
                 Some((
                     content.parse()?,
@@ -92,30 +121,10 @@ impl Parse for EventArg {
 
 impl ToTokens for EventArg {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let mut name = Ident::new(&self.name.value(), self.name.span());
-        if syn::parse::<Ident>(quote!(#name).into()).is_err() {
-            // #name is a keyword
-            name = Ident::new(&format!("{}_", name), name.span());
-        }
-
+        let name = self.ident();
         let field_type = self.final_field_type();
 
-        let (field_ref, field_lifetime) =
-            if let Some((_, IdentOrNumber::Number(num), _)) = &self.info {
-                // shortcut: only PT_FSRELPATH uses these and it takes a lifetime param,
-                // so don't bother supporting const generics without lifetimes just yet
-                (proc_macro2::TokenStream::new(), quote!(<'a, #num>))
-            } else {
-                match lifetime_type(&field_type.to_string()) {
-                    LifetimeType::Ref => (quote!(&'a), proc_macro2::TokenStream::new()),
-                    LifetimeType::Generic => (proc_macro2::TokenStream::new(), quote!(<'a>)),
-                    LifetimeType::None => (
-                        proc_macro2::TokenStream::new(),
-                        proc_macro2::TokenStream::new(),
-                    ),
-                }
-            };
-
+        let (field_ref, field_lifetime) = self.lifetimes();
         quote!(#[allow(non_snake_case)] pub #name: Option<#field_ref crate::event_derive::event_field_type:: #field_type #field_lifetime>)
             .to_tokens(tokens)
     }
@@ -180,6 +189,7 @@ impl EventInfo {
 
         let mut fields = Vec::new();
         let mut wants_lifetime = false;
+        let mut field_fmts = Vec::new();
 
         if let Some((_, _, args)) = self.args.as_ref() {
             fields = args.iter().map(|arg| arg.to_token_stream()).collect();
@@ -188,7 +198,34 @@ impl EventInfo {
                     lifetime_type(&arg.final_field_type().to_string()),
                     LifetimeType::None
                 )
-            })
+            });
+            field_fmts = args
+                .iter()
+                .enumerate()
+                .map(|(i, field)| {
+                    let name = &field.name;
+                    let ident = field.ident();
+                    let fmt = &field.field_format;
+                    let ty = field.final_field_type();
+                    let (field_ref, field_lifetime) = field.lifetimes();
+
+                    let space = if i == 0 {
+                        None
+                    } else {
+                        Some(quote!(fmt.write_char(' ')?;))
+                    };
+
+                    quote!(
+                        #space
+                        fmt.write_str(#name)?;
+                        fmt.write_char('=')?;
+                        <Option<#field_ref crate::event_derive::event_field_type::#ty #field_lifetime> as
+                            crate::event_derive::Format<
+                                crate::event_derive::format_type::#fmt
+                        >>::format(&self.#ident, fmt)?;
+                    )
+                })
+                .collect();
         }
 
         let lifetime = if wants_lifetime {
@@ -200,18 +237,36 @@ impl EventInfo {
         let name = &self.name;
 
         quote!(
-        #[allow(non_camel_case_types)]
-        #[derive(BinaryPayload)]
-        #[derive(Debug)]
-        pub struct #event_code #lifetime {
-            #(#fields,)*
-        }
+            #[allow(non_camel_case_types)]
+            #[derive(BinaryPayload)]
+            #[derive(Debug)]
+            pub struct #event_code #lifetime {
+                #(#fields,)*
+            }
 
-        impl #lifetime crate::event_derive::EventPayload for #event_code #lifetime {
-            const ID: EventType = EventType:: #event_type;
-            const LARGE: bool = #is_large;
-            const NAME: &'static str = #name;
-        })
+            impl #lifetime crate::event_derive::EventPayload for #event_code #lifetime {
+                const ID: EventType = EventType:: #event_type;
+                const LARGE: bool = #is_large;
+                const NAME: &'static str = #name;
+            }
+
+            impl #lifetime crate::event_derive::Format<crate::event_derive::format_type::PF_NA> for #event_code #lifetime {
+                fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                    use std::fmt::Write;
+
+                    match <Self as crate::event_derive::EventPayload>::direction() {
+                        crate::event_derive::EventDirection::Entry => fmt.write_str("> ")?,
+                        crate::event_derive::EventDirection::Exit => fmt.write_str("< ")?,
+                    }
+                    fmt.write_str(#name)?;
+                    fmt.write_str(" ")?;
+
+                    #(#field_fmts)*
+
+                    Ok(())
+                }
+            }
+        )
     }
 
     fn type_variant(&self) -> proc_macro2::TokenStream {
@@ -275,6 +330,20 @@ impl EventInfo {
             AnyEvent::#event_type(params)
         })
     }
+
+    fn variant_fmt(&self) -> proc_macro2::TokenStream {
+        let event_code = &self.event_code;
+        let event_type = Ident::new(
+            &event_code.to_string().replace("PPME_", ""),
+            event_code.span(),
+        );
+
+        quote!(
+            AnyEvent::#event_type(inner) => {
+                inner.format(fmt)
+            }
+        )
+    }
 }
 
 struct Events {
@@ -305,6 +374,10 @@ impl Events {
     fn enum_matches(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
         self.events.iter().map(|e| e.enum_match())
     }
+
+    fn variant_fmts(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
+        self.events.iter().map(|e| e.variant_fmt())
+    }
 }
 
 pub fn event_info(input: TokenStream) -> TokenStream {
@@ -313,6 +386,8 @@ pub fn event_info(input: TokenStream) -> TokenStream {
     let type_variants = events.type_variants();
     let variants = events.enum_variants();
     let matches = events.enum_matches();
+    let variant_fmts = events.variant_fmts();
+
     quote!(
         use falco_event_derive::BinaryPayload;
         use num_derive::FromPrimitive;
@@ -334,6 +409,14 @@ pub fn event_info(input: TokenStream) -> TokenStream {
             #(#variants,)*
         }
 
+        impl<'a> crate::event_derive::Format<crate::event_derive::format_type::PF_NA> for AnyEvent<'a> {
+            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                match self {
+                    #(#variant_fmts)*
+                }
+            }
+        }
+
         impl RawEvent<'_> {
             pub fn load_any(&self) -> crate::event_derive::FromBytesResult<crate::event_derive::Event<AnyEvent>> {
                 let any: AnyEvent = match self.event_type as u32 {
@@ -348,5 +431,5 @@ pub fn event_info(input: TokenStream) -> TokenStream {
             }
         }
     )
-    .into()
+        .into()
 }

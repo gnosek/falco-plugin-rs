@@ -6,14 +6,12 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
+use crate::types::format::Format;
 use crate::types::net::endpoint::{EndpointV4, EndpointV6};
 
 /// Socket tuple: describing both endpoints of a connection
 #[derive(Debug, Eq, PartialEq)]
 pub enum SockTuple<'a> {
-    /// Unknown
-    None,
-
     /// Unix socket connection
     Unix {
         /// source socket kernel pointer
@@ -47,7 +45,6 @@ pub enum SockTuple<'a> {
 impl Display for SockTuple<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            SockTuple::None => write!(f, "None"),
             SockTuple::Unix {
                 source_ptr,
                 dest_ptr,
@@ -75,7 +72,6 @@ impl Display for SockTuple<'_> {
 impl ToBytes for SockTuple<'_> {
     fn binary_size(&self) -> usize {
         match self {
-            SockTuple::None => 0,
             SockTuple::Unix {
                 source_ptr: source_addr,
                 dest_ptr: dest_addr,
@@ -89,7 +85,6 @@ impl ToBytes for SockTuple<'_> {
 
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
         match self {
-            SockTuple::None => Ok(()),
             SockTuple::Unix {
                 source_ptr: source_addr,
                 dest_ptr: dest_addr,
@@ -118,7 +113,7 @@ impl ToBytes for SockTuple<'_> {
     }
 
     fn default_repr() -> impl ToBytes {
-        Self::None
+        [].as_slice()
     }
 }
 
@@ -140,6 +135,37 @@ impl<'a> FromBytes<'a> for SockTuple<'a> {
                 dest: FromBytes::from_bytes(buf)?,
             }),
             _ => Ok(Self::Other(variant, buf)),
+        }
+    }
+}
+
+impl<F> Format<F> for SockTuple<'_>
+where
+    for<'a> &'a Path: Format<F>,
+    EndpointV4: Format<F>,
+    EndpointV6: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        match self {
+            SockTuple::Unix {
+                source_ptr,
+                dest_ptr,
+                path,
+            } => {
+                write!(fmt, "<{:#016x}->{:#016x}>unix://", source_ptr, dest_ptr)?;
+                path.format(fmt)
+            }
+            SockTuple::V4 { source, dest } => {
+                source.format(fmt)?;
+                fmt.write_str("->")?;
+                dest.format(fmt)
+            }
+            SockTuple::V6 { source, dest } => {
+                source.format(fmt)?;
+                fmt.write_str("->")?;
+                dest.format(fmt)
+            }
+            SockTuple::Other(af, raw) => write!(fmt, "<af={}>{:02x?}", af, raw),
         }
     }
 }

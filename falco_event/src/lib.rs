@@ -25,6 +25,7 @@ mod event_derive {
     pub use byteorder::WriteBytesExt;
 
     pub use crate::events::Event;
+    pub use crate::events::EventDirection;
     pub use crate::events::EventMetadata;
     pub use crate::events::EventPayload;
     pub use crate::events::PayloadFromBytes;
@@ -36,4 +37,6 @@ mod event_derive {
     pub use crate::fields::FromBytesResult;
     pub use crate::fields::NoDefault;
     pub use crate::fields::ToBytes;
+    pub use crate::types::format::format_type;
+    pub use crate::types::format::Format;
 }

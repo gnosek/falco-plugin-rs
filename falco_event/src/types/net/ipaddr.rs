@@ -1,4 +1,6 @@
 use crate::event_derive::{FromBytes, FromBytesError, FromBytesResult, ToBytes};
+use crate::types::format::Format;
+use std::fmt::Formatter;
 use std::io::Write;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
@@ -29,5 +31,11 @@ impl ToBytes for IpAddr {
 
     fn default_repr() -> impl ToBytes {
         IpAddr::V4(Ipv4Addr::from(0))
+    }
+}
+
+impl<F> Format<F> for IpAddr {
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        write!(fmt, "{}", self)
     }
 }

@@ -1,8 +1,10 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL, PPM_AF_UNSPEC};
+use crate::types::format::Format;
 use crate::types::{EndpointV4, EndpointV6};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::ffi::OsStr;
+use std::fmt::Formatter;
 use std::io::Write;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
@@ -77,6 +79,26 @@ impl<'a> FromBytes<'a> for SockAddr<'a> {
                 Ok(Self::V6(addr))
             }
             _ => Ok(Self::Other(variant, buf)),
+        }
+    }
+}
+
+impl<F> Format<F> for SockAddr<'_>
+where
+    EndpointV4: Format<F>,
+    EndpointV6: Format<F>,
+    for<'a> &'a [u8]: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        match self {
+            SockAddr::Unix(u) => {
+                let bytes = u.as_os_str().as_bytes();
+                fmt.write_str("unix://")?;
+                bytes.format(fmt)
+            }
+            SockAddr::V4(v4) => v4.format(fmt),
+            SockAddr::V6(v6) => v6.format(fmt),
+            SockAddr::Other(af, raw) => write!(fmt, "<af={}>{:02x?}", af, raw),
         }
     }
 }

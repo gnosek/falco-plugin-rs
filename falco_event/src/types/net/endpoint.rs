@@ -1,5 +1,7 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
+use crate::types::format::Format;
 use crate::types::Port;
+use std::fmt::Formatter;
 use std::io::Write;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
@@ -27,6 +29,12 @@ impl FromBytes<'_> for EndpointV4 {
     }
 }
 
+impl<F> Format<F> for EndpointV4 {
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        write!(fmt, "{}:{}", self.0, self.1 .0)
+    }
+}
+
 pub type EndpointV6 = (Ipv6Addr, Port);
 
 impl ToBytes for EndpointV6 {
@@ -48,5 +56,11 @@ impl ToBytes for EndpointV6 {
 impl FromBytes<'_> for EndpointV6 {
     fn from_bytes(buf: &mut &'_ [u8]) -> FromBytesResult<Self> {
         Ok((FromBytes::from_bytes(buf)?, FromBytes::from_bytes(buf)?))
+    }
+}
+
+impl<F> Format<F> for EndpointV6 {
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        write!(fmt, "[{}]:{}", self.0, self.1 .0)
     }
 }

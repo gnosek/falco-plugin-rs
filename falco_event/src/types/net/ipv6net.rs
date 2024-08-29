@@ -1,7 +1,9 @@
+use std::fmt::Formatter;
 use std::io::Write;
 use std::net::Ipv6Addr;
 
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
+use crate::types::format::Format;
 
 /// An IPv6 network
 ///
@@ -26,5 +28,11 @@ impl ToBytes for Ipv6Net {
 
     fn default_repr() -> impl ToBytes {
         Ipv6Addr::default_repr()
+    }
+}
+
+impl<F> Format<F> for Ipv6Net {
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        write!(fmt, "{}", self.0)
     }
 }

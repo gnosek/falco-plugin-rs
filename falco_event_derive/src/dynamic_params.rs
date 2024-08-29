@@ -101,6 +101,22 @@ impl DynamicParamVariant {
             crate::event_derive::ToBytes::write(val, writer)
         })
     }
+
+    fn variant_fmt(&self) -> proc_macro2::TokenStream {
+        let (disc, ty, field_ref, field_lifetime) = self.unpack();
+        let mut disc_str = disc.to_string();
+        if let Some(idx_pos) = disc_str.find("_IDX_") {
+            let substr = &disc_str.as_str()[idx_pos + 5..];
+            disc_str = String::from(substr);
+        }
+
+        quote!(Self:: #disc(val) => {
+            fmt.write_str(#disc_str)?;
+            fmt.write_char(':')?;
+
+            <#field_ref crate::event_derive::event_field_type::#ty #field_lifetime as crate::event_derive::Format<crate::event_derive::format_type::PF_NA>>::format(val, fmt)
+        })
+    }
 }
 
 struct DynamicParam {
@@ -140,6 +156,7 @@ impl ToTokens for DynamicParam {
         let variant_reads = self.items.iter().map(|v| v.variant_read());
         let variant_binary_size = self.items.iter().map(|v| v.variant_binary_size());
         let variant_write = self.items.iter().map(|v| v.variant_write());
+        let variant_fmts = self.items.iter().map(|v| v.variant_fmt());
 
         let wants_lifetime = !self.items.iter().all(|arg| {
             matches!(
@@ -151,6 +168,11 @@ impl ToTokens for DynamicParam {
             quote!(<'a>)
         } else {
             proc_macro2::TokenStream::new()
+        };
+        let format_generics = if wants_lifetime {
+            quote!(<'a, F>)
+        } else {
+            quote!(<F>)
         };
 
         quote!(
@@ -188,8 +210,18 @@ impl ToTokens for DynamicParam {
                     }
                 }
             }
+
+            impl #format_generics crate::event_derive::Format<F> for #name #lifetime {
+                fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                    use std::fmt::Write;
+
+                    match self {
+                        #(#variant_fmts)*
+                    }
+                }
+            }
         )
-        .to_tokens(tokens);
+            .to_tokens(tokens);
     }
 }
 

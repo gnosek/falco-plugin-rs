@@ -161,6 +161,17 @@ fn render_enum(
                 Ok(val)
             }
         }
+
+        impl<F> crate::event_derive::Format<F> for #name
+        where
+            #repr_type: crate::event_derive::Format<F>,
+        {
+            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                let raw = (*self) as #repr_type;
+                raw.format(fmt)?;
+                write!(fmt, "({:?})", self)
+            }
+        }
     )
 }
 
@@ -202,6 +213,41 @@ fn render_bitflags(
                 let repr = #repr_type::from_bytes(buf)?;
                 let val = Self::from_bits_retain(repr);
                 Ok(val)
+            }
+        }
+
+        impl<F> crate::event_derive::Format<F> for #name {
+            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(fmt, "{:#x}", self.bits())?;
+                let mut first = true;
+
+                let mut it = self.iter_names();
+                for (name, bits) in &mut it {
+                    if first {
+                        fmt.write_str("(")?;
+                        first = false;
+                    } else {
+                        fmt.write_str("|")?;
+                    }
+                    write!(fmt, "{name}")?;
+                }
+
+                let rem = it.remaining().bits();
+                if rem != 0 {
+                    if first {
+                        fmt.write_str("(")?;
+                        first = false;
+                    } else {
+                        fmt.write_str("|")?;
+                    }
+                    write!(fmt, "{rem:#x}")?;
+                }
+
+                if !first {
+                    fmt.write_str(")")?;
+                }
+
+                Ok(())
             }
         }
     )

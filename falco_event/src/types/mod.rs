@@ -1,5 +1,6 @@
 mod bytebuf;
 mod fd_list;
+pub mod format;
 mod net;
 mod path;
 mod primitive;

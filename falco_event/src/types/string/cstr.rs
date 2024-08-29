@@ -1,5 +1,7 @@
 use crate::event_derive::{FromBytes, FromBytesError, FromBytesResult, ToBytes};
+use crate::types::format::Format;
 use std::ffi::{CStr, CString};
+use std::fmt::Formatter;
 use std::io::Write;
 
 impl<'a> FromBytes<'a> for &'a CStr {
@@ -25,6 +27,16 @@ impl ToBytes for &CStr {
     }
 }
 
+impl<F> Format<F> for &CStr
+where
+    for<'a> &'a [u8]: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        let bytes = self.to_bytes();
+        bytes.format(fmt)
+    }
+}
+
 impl ToBytes for CString {
     fn binary_size(&self) -> usize {
         self.as_c_str().binary_size()
@@ -36,6 +48,16 @@ impl ToBytes for CString {
 
     fn default_repr() -> impl ToBytes {
         0u8
+    }
+}
+
+impl<F> Format<F> for CString
+where
+    for<'a> &'a [u8]: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        let bytes = self.as_bytes();
+        bytes.format(fmt)
     }
 }
 

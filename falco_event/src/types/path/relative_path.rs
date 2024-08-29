@@ -1,7 +1,10 @@
+use std::fmt::Formatter;
 use std::io::Write;
+use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
+use crate::types::format::Format;
 
 // TODO(sdk) not really trivial to use DIRFD_PARAM :)
 //      might need a dedicated generated method on the event type
@@ -34,6 +37,18 @@ impl<'a, const DIRFD_PARAM: usize> ToBytes for RelativePath<'a, DIRFD_PARAM> {
 impl<'a, const DIRFD_PARAM: usize> FromBytes<'a> for RelativePath<'a, DIRFD_PARAM> {
     fn from_bytes(buf: &mut &'a [u8]) -> FromBytesResult<Self> {
         Ok(Self(<&'a Path>::from_bytes(buf)?))
+    }
+}
+
+impl<'a, const DIRFD_PARAM: usize, F> Format<F> for RelativePath<'a, DIRFD_PARAM>
+where
+    &'a [u8]: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        write!(fmt, "<{}>", DIRFD_PARAM)?;
+
+        let bytes = self.0.as_os_str().as_bytes();
+        bytes.format(fmt)
     }
 }
 

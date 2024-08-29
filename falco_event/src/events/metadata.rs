@@ -1,3 +1,4 @@
+use crate::event_derive::Format;
 use std::fmt::{Debug, Formatter};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -23,6 +24,18 @@ impl Debug for EventMetadata {
             .field("ts", &self.timestamp())
             .field("tid", &self.tid)
             .finish()
+    }
+}
+
+impl<F> Format<F> for EventMetadata
+where
+    Option<SystemTime>: Format<F>,
+    i64: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        self.timestamp().format(fmt)?;
+        fmt.write_str(" tid=")?;
+        self.tid.format(fmt)
     }
 }
 

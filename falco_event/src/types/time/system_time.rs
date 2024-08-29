@@ -1,4 +1,7 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
+use crate::types::format::Format;
+use chrono::Local;
+use std::fmt::Formatter;
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -26,5 +29,12 @@ impl ToBytes for SystemTime {
 
     fn default_repr() -> impl ToBytes {
         0u64
+    }
+}
+
+impl<F> Format<F> for SystemTime {
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        let dt = chrono::DateTime::<Local>::from(*self);
+        fmt.write_str(&dt.to_rfc2822())
     }
 }

@@ -1,17 +1,21 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Formatter};
 use std::io::Write;
 
 use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 
 use crate::fields::event_flags::PT_FLAGS16_file_flags;
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
+use crate::types::format::Format;
 
 /// A list of file descriptors with flags
 #[derive(Debug, Eq, PartialEq)]
 pub struct FdList(pub Vec<(u64, PT_FLAGS16_file_flags)>);
 
-impl Display for FdList {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl<F> Format<F> for FdList
+where
+    PT_FLAGS16_file_flags: Format<F>,
+{
+    fn format(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut first = true;
         for item in &self.0 {
             if first {
@@ -20,7 +24,9 @@ impl Display for FdList {
             } else {
                 write!(f, " ")?;
             }
-            write!(f, "{}:{:?}", item.0, item.1)?
+            write!(f, "{}:", item.0)?;
+            // TODO: this could use a shorter repr (without the bits)
+            item.1.format(f)?;
         }
 
         write!(f, "]")?;

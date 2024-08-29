@@ -1,9 +1,11 @@
 use std::ffi::{CStr, OsStr};
+use std::fmt::Formatter;
 use std::io::Write;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
+use crate::types::format::Format;
 
 impl<'a> FromBytes<'a> for &'a Path {
     fn from_bytes(buf: &mut &'a [u8]) -> FromBytesResult<Self> {
@@ -25,6 +27,16 @@ impl ToBytes for &Path {
 
     fn default_repr() -> impl ToBytes {
         0u8
+    }
+}
+
+impl<F> Format<F> for &Path
+where
+    for<'a> &'a [u8]: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        let bytes = self.as_os_str().as_bytes();
+        bytes.format(fmt)
     }
 }
 

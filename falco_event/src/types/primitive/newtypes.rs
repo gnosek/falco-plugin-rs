@@ -1,6 +1,20 @@
-use std::fmt::Debug;
-
+use crate::event_derive::format_type;
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
+use crate::types::format::Format;
+use std::fmt::{Debug, Formatter};
+
+macro_rules! default_format {
+    ($name:ident($repr:ty)) => {
+        impl<F> Format<F> for $name
+        where
+            $repr: Format<F>,
+        {
+            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                self.0.format(fmt)
+            }
+        }
+    };
+}
 
 macro_rules! newtype {
     ($(#[$attr:meta])* $name:ident($repr:ty)) => {
@@ -33,67 +47,188 @@ macro_rules! newtype {
     };
 }
 
-// TODO(sdk) some of these might want to be enums but it's probably overkill
-// TODO(sdk) we might want fancier Debug reprs but it's not possible to e.g. get an Error or ErrorKind
-//           from a raw errno value in stable Rust
 newtype!(
-    /// Error number (errno value)
+    /// Syscall result
     #[derive(Debug)]
-    Errno(u64)
+    SyscallResult(i64)
 );
+
+#[cfg(target_os = "linux")]
+impl<F> Format<F> for SyscallResult
+where
+    i64: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        if self.0 < 0 {
+            let errno = nix::errno::Errno::from_raw(-self.0 as i32);
+            if errno == nix::errno::Errno::UnknownErrno {
+                // always format errors as decimal
+                <i64 as Format<format_type::PF_DEC>>::format(&self.0, fmt)
+            } else {
+                write!(fmt, "{}({:?})", self.0, errno)
+            }
+        } else {
+            self.0.format(fmt)
+        }
+    }
+}
+
+// not on Linux, we don't have the Linux errnos without maintaining the list ourselves
+#[cfg(not(target_os = "linux"))]
+impl<F> Format<F> for SyscallResult
+where
+    i64: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        if self.0 < 0 {
+            // always format errors as decimal
+            <i64 as Format<format_type::PF_DEC>>::format(&self.0, fmt)
+        } else {
+            self.0.format(fmt)
+        }
+    }
+}
 
 newtype!(
     /// A system call number
     #[derive(Debug)]
     SyscallId(u16)
 );
+default_format!(SyscallId(u16));
+
 newtype!(
     /// A signal number
     #[derive(Debug)]
     SigType(u8)
 );
+
+impl<F> Format<F> for SigType
+where
+    u8: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        self.0.format(fmt)?;
+
+        let sig = nix::sys::signal::Signal::try_from(self.0 as i32);
+        if let Ok(sig) = sig {
+            write!(fmt, "({sig:?})")?;
+        }
+
+        Ok(())
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+default_format!(SigType(u8));
+
 newtype!(
     /// File descriptor
     #[derive(Debug)]
     Fd(i64)
 );
+
+impl<F> Format<F> for Fd
+where
+    i64: Format<F>,
+{
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        if self.0 == -100 {
+            fmt.write_str("AT_FDCWD")
+        } else {
+            self.0.format(fmt)
+        }
+    }
+}
+
 newtype!(
     /// Process or thread id
     #[derive(Debug)]
     Pid(i64)
 );
+default_format!(Pid(i64));
+
 newtype!(
     /// User id
     #[derive(Debug)]
     Uid(u32)
 );
+default_format!(Uid(u32));
+
 newtype!(
     /// Group id
     #[derive(Debug)]
     Gid(u32)
 );
+default_format!(Gid(u32));
+
 newtype!(
     /// Signal set (bitmask of signals, only the lower 32 bits are used)
     #[derive(Debug)]
     SigSet(u32)
 );
+
+impl<F> Format<F> for SigSet {
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        <u32 as Format<format_type::PF_HEX>>::format(&self.0, fmt)?;
+        if self.0 != 0 {
+            write!(fmt, "(")?;
+            for sig in 0..32 {
+                if (self.0 & (1 << sig)) != 0 {
+                    let sig_obj = nix::sys::signal::Signal::try_from(self.0 as i32);
+                    if let Ok(sig) = sig_obj {
+                        write!(fmt, "{sig:?}")?;
+                    } else {
+                        write!(fmt, "SIG{sig}")?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
 newtype!(
     /// IP port number
+    ///
+    /// This looks unused
     #[derive(Debug)]
     Port(u16)
 );
+default_format!(Port(u16));
+
 newtype!(
     /// Layer 4 protocol (tcp/udp)
+    ///
+    /// This looks unused
     #[derive(Debug)]
     L4Proto(u8)
 );
+default_format!(L4Proto(u8));
+
 newtype!(
     /// Socket family (`PPM_AF_*`)
+    ///
+    /// This looks unused
     #[derive(Debug)]
     SockFamily(u8)
 );
+default_format!(SockFamily(u8));
+
 newtype!(
     /// Boolean value (0/1)
+    ///
+    /// This looks unused
     #[derive(Debug)]
     Bool(u32)
 );
+
+impl<F> Format<F> for Bool {
+    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        match self.0 {
+            0 => fmt.write_str("false"),
+            1 => fmt.write_str("true"),
+            n => write!(fmt, "true({n})"),
+        }
+    }
+}

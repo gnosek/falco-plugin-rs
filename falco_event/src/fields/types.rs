@@ -3,7 +3,6 @@
 pub use crate::fields::dynamic_params::*;
 pub use crate::fields::event_flags::*;
 pub use crate::types::Bool as PT_BOOL;
-pub use crate::types::Errno as PT_ERRNO;
 pub use crate::types::Fd as PT_FD;
 pub use crate::types::FdList as PT_FDLIST;
 pub use crate::types::Gid as PT_GID;
@@ -19,6 +18,7 @@ pub use crate::types::SockAddr as PT_SOCKADDR;
 pub use crate::types::SockFamily as PT_SOCKFAMILY;
 pub use crate::types::SockTuple as PT_SOCKTUPLE;
 pub use crate::types::SyscallId as PT_SYSCALLID;
+pub use crate::types::SyscallResult as PT_ERRNO;
 pub use crate::types::Uid as PT_UID;
 use std::ffi::CStr;
 pub use std::net::IpAddr as PT_IPADDR;

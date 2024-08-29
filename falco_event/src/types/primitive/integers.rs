@@ -1,5 +1,34 @@
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
+use crate::types::format::{format_type, Format};
 use byteorder::{ReadBytesExt, WriteBytesExt};
+
+macro_rules! impl_format {
+    ($ty:ty) => {
+        impl Format<format_type::PF_NA> for $ty {
+            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                std::fmt::Display::fmt(self, fmt)
+            }
+        }
+
+        impl Format<format_type::PF_DEC> for $ty {
+            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                std::fmt::Display::fmt(self, fmt)
+            }
+        }
+
+        impl Format<format_type::PF_HEX> for $ty {
+            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(fmt, "{:#x}", self)
+            }
+        }
+
+        impl Format<format_type::PF_OCT> for $ty {
+            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(fmt, "{:#o}", self)
+            }
+        }
+    };
+}
 
 macro_rules! impl_int_type {
     ($ty:ty) => {
@@ -26,6 +55,8 @@ macro_rules! impl_int_type {
                 0 as $ty
             }
         }
+
+        impl_format!($ty);
     };
 }
 
@@ -54,6 +85,8 @@ macro_rules! impl_uint_type {
                 0 as $ty
             }
         }
+
+        impl_format!($ty);
     };
 }
 
