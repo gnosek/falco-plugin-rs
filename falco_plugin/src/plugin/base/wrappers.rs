@@ -8,7 +8,7 @@ use std::ffi::{c_char, CString};
 use std::sync::Mutex;
 
 use crate::base::Plugin;
-use crate::plugin::base::logger::FalcoPluginLogger;
+use crate::plugin::base::logger::{FalcoPluginLoggerImpl, FALCO_LOGGER};
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
@@ -65,11 +65,13 @@ pub unsafe extern "C" fn plugin_init<P: Plugin>(
 
         let config = P::ConfigType::from_str(init_config).context("Failed to parse config")?;
         if let Some(log_fn) = init_input.log_fn {
-            let logger = Box::new(FalcoPluginLogger {
+            let logger_impl = FalcoPluginLoggerImpl {
                 owner: init_input.owner,
                 logger_fn: log_fn,
-            });
-            log::set_boxed_logger(logger).ok();
+            };
+
+            *FALCO_LOGGER.inner.write().unwrap() = Some(logger_impl);
+            log::set_logger(&FALCO_LOGGER).ok();
 
             #[cfg(debug_assertions)]
             log::set_max_level(log::LevelFilter::Trace);

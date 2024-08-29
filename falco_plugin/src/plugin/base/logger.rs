@@ -9,8 +9,9 @@ use std::ffi::{c_char, CString};
 
 #[cfg(debug_assertions)]
 use std::borrow::Cow;
+use std::sync::RwLock;
 
-pub(super) struct FalcoPluginLogger {
+pub(super) struct FalcoPluginLoggerImpl {
     pub(super) owner: *mut ss_plugin_owner_t,
     pub(super) logger_fn: unsafe extern "C" fn(
         o: *mut ss_plugin_owner_t,
@@ -19,8 +20,12 @@ pub(super) struct FalcoPluginLogger {
         sev: ss_plugin_log_severity,
     ),
 }
-unsafe impl Send for FalcoPluginLogger {}
-unsafe impl Sync for FalcoPluginLogger {}
+unsafe impl Send for FalcoPluginLoggerImpl {}
+unsafe impl Sync for FalcoPluginLoggerImpl {}
+
+pub(super) struct FalcoPluginLogger {
+    pub(super) inner: RwLock<Option<FalcoPluginLoggerImpl>>,
+}
 
 impl Log for FalcoPluginLogger {
     fn enabled(&self, _metadata: &Metadata) -> bool {
@@ -49,10 +54,26 @@ impl Log for FalcoPluginLogger {
             format!("{}[{}] {}", loc, record.level(), record.args())
         };
 
-        if let Ok(msg) = CString::new(msg) {
-            unsafe { (self.logger_fn)(self.owner, std::ptr::null(), msg.as_ptr(), severity) }
+        let logger_impl = self.inner.read().unwrap();
+        if let Some(ref logger_impl) = *logger_impl {
+            if let Ok(msg) = CString::new(msg) {
+                unsafe {
+                    (logger_impl.logger_fn)(
+                        logger_impl.owner,
+                        std::ptr::null(),
+                        msg.as_ptr(),
+                        severity,
+                    )
+                }
+            }
+        } else {
+            eprintln!("{msg}")
         }
     }
 
     fn flush(&self) {}
 }
+
+pub(crate) static FALCO_LOGGER: FalcoPluginLogger = FalcoPluginLogger {
+    inner: RwLock::new(None),
+};
