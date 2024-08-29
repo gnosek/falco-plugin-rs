@@ -1,9 +1,9 @@
 use std::ffi::{CStr, CString};
 
-use anyhow::{anyhow, Error};
+use anyhow::anyhow;
 
 use falco_event::events::types::EventType;
-use falco_plugin::base::{Metric, Plugin, TableInitInput};
+use falco_plugin::base::{Plugin, TableInitInput};
 use falco_plugin::parse::{EventParseInput, ParsePlugin};
 use falco_plugin::tables::{DynamicFieldValues, TypedTableField};
 use falco_plugin::tables::{DynamicTable, TypedTable};
@@ -66,14 +66,6 @@ impl Plugin for DummyPlugin {
             another_table,
             table_with_static_fields_only,
         })
-    }
-
-    fn set_config(&mut self, _config: Self::ConfigType) -> Result<(), Error> {
-        Ok(())
-    }
-
-    fn get_metrics(&mut self) -> impl IntoIterator<Item = Metric> {
-        []
     }
 }
 

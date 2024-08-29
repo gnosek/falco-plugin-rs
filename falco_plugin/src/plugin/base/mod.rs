@@ -83,8 +83,14 @@ pub trait Plugin: Sized {
     fn new(input: &InitInput, config: Self::ConfigType) -> Result<Self, FailureReason>;
 
     /// Update the configuration of a running plugin
-    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error>;
+    ///
+    /// The default implementation does nothing
+    fn set_config(&mut self, _config: Self::ConfigType) -> Result<(), anyhow::Error> {
+        Ok(())
+    }
 
     /// Return the plugin metrics
-    fn get_metrics(&mut self) -> impl IntoIterator<Item = Metric>;
+    fn get_metrics(&mut self) -> impl IntoIterator<Item = Metric> {
+        []
+    }
 }

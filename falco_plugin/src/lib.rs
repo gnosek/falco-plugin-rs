@@ -265,14 +265,6 @@ pub mod extract {
 /// #        -> Result<Self, FailureReason> {
 /// #        Ok(MyParsePlugin)
 /// #    }
-/// #
-/// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
-/// #        Ok(())
-/// #    }
-/// #
-/// #    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
-/// #        []
-/// #    }
 /// }
 ///
 /// impl ParsePlugin for MyParsePlugin {
@@ -350,14 +342,6 @@ pub mod parse {
 /// #            stop_request: Arc::new(Default::default()),
 /// #            thread: None,
 /// #        })
-/// #    }
-/// #
-/// #    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
-/// #        Ok(())
-/// #    }
-/// #
-/// #    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
-/// #        []
 /// #    }
 /// }
 ///
