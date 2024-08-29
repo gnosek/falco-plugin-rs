@@ -56,8 +56,14 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
             );
         }
         (true, 0) => (
-            quote!(Err(::falco_plugin::FailureReason::NotSupported)),
-            quote!(Err(::falco_plugin::FailureReason::NotSupported)),
+            quote!(Err(::falco_plugin::anyhow::anyhow!(
+                "Table does not have dynamic fields"
+            )
+            .context(::falco_plugin::FailureReason::NotSupported))),
+            quote!(Err(::falco_plugin::anyhow::anyhow!(
+                "Table does not have dynamic fields"
+            )
+            .context(::falco_plugin::FailureReason::NotSupported))),
         ),
         (false, 1) => {
             let dynamic_field_name = dynamic_fields[0].ident.as_ref().unwrap();
@@ -96,7 +102,8 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
 
     let static_field_gets = visible_static_fields.clone().enumerate().map(|(i, f)| {
         let name = f.ident.as_ref().unwrap();
-        quote!(#i => self.#name.to_data(out, type_id).ok_or(::falco_plugin::FailureReason::Failure))
+        let name_str = name.to_string();
+        quote!(#i => self.#name.to_data(out, type_id).ok_or(::falco_plugin::anyhow::anyhow!("Failed to serialize {}", #name_str)))
     });
 
     let static_field_sets = visible_static_fields.clone().enumerate().map(|(i, f)| {
@@ -117,7 +124,7 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
                 key: usize,
                 type_id: ::falco_plugin::tables::FieldTypeId,
                 out: &mut ::falco_plugin::api::ss_plugin_state_data,
-            ) -> Result<(), ::falco_plugin::FailureReason> {
+            ) -> Result<(), ::falco_plugin::anyhow::Error> {
                 use ::falco_plugin::tables::TableValues;
                 use ::falco_plugin::tables::FieldValue;
                 match key {
@@ -126,7 +133,7 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
                 }
             }
 
-            fn set(&mut self, key: usize, value: ::falco_plugin::tables::DynamicFieldValue) -> Result<(), ::falco_plugin::FailureReason> {
+            fn set(&mut self, key: usize, value: ::falco_plugin::tables::DynamicFieldValue) -> Result<(), ::falco_plugin::anyhow::Error> {
                 use ::falco_plugin::tables::TableValues;
                 use ::falco_plugin::tables::FieldValue;
                 match key {
@@ -136,5 +143,5 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
             }
         }
     )
-    .into()
+        .into()
 }

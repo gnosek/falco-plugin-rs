@@ -268,7 +268,7 @@ pub trait TableValues: Default {
         key: usize,
         type_id: FieldTypeId,
         out: &mut ss_plugin_state_data,
-    ) -> Result<(), FailureReason>;
+    ) -> Result<(), anyhow::Error>;
 
     /// Set field value by index
     ///
@@ -277,7 +277,7 @@ pub trait TableValues: Default {
     ///
     /// `key` will correspond to an entry in [`TableValues::STATIC_FIELDS`] or to a dynamic field
     /// (if it's larger than `STATIC_FIELDS.size()`)
-    fn set(&mut self, key: usize, value: DynamicFieldValue) -> Result<(), FailureReason>;
+    fn set(&mut self, key: usize, value: DynamicFieldValue) -> Result<(), anyhow::Error>;
 }
 
 impl TableValues for DynamicFieldValues {
@@ -289,20 +289,27 @@ impl TableValues for DynamicFieldValues {
         key: usize,
         type_id: FieldTypeId,
         out: &mut ss_plugin_state_data,
-    ) -> Result<(), FailureReason> {
-        let Some((_, actual_type_id, _)) = Self::STATIC_FIELDS.get(key) else {
-            return Err(FailureReason::Failure);
-        };
-        if type_id != *actual_type_id {
-            return Err(FailureReason::Failure);
+    ) -> Result<(), anyhow::Error> {
+        if let Some((_, actual_type_id, _)) = Self::STATIC_FIELDS.get(key) {
+            if type_id != *actual_type_id {
+                return Err(anyhow::anyhow!(
+                    "Type mismatch, requested {:?}, actual type is {:?}",
+                    type_id,
+                    actual_type_id
+                ));
+            };
         }
 
-        self.get(&key)
-            .and_then(|v| v.to_data(out, type_id))
-            .ok_or(FailureReason::Failure)
+        let field = self
+            .get(&key)
+            .ok_or_else(|| anyhow::anyhow!("Dynamic field {} not found", key))?;
+
+        field
+            .to_data(out, type_id)
+            .ok_or_else(|| anyhow::anyhow!("Could not serialize {}", key))
     }
 
-    fn set(&mut self, key: usize, value: DynamicFieldValue) -> Result<(), FailureReason> {
+    fn set(&mut self, key: usize, value: DynamicFieldValue) -> Result<(), anyhow::Error> {
         self.insert(key, value);
         Ok(())
     }
@@ -353,7 +360,7 @@ pub trait ExportedTable {
         entry: &Rc<Self::Entry>,
         field: &Rc<Self::Field>,
         out: &mut ss_plugin_state_data,
-    ) -> Result<(), FailureReason>;
+    ) -> Result<(), anyhow::Error>;
 
     /// Execute a closure on all entries in the table with read-only access.
     ///
@@ -382,7 +389,7 @@ pub trait ExportedTable {
         entry: &mut Rc<Self::Entry>,
         field: &Rc<Self::Field>,
         value: &ss_plugin_state_data,
-    ) -> Result<(), FailureReason>;
+    ) -> Result<(), anyhow::Error>;
 
     /// Return a list of fields as a slice of raw FFI objects
     fn list_fields(&mut self) -> &[ss_plugin_table_fieldinfo];
@@ -441,7 +448,7 @@ impl<K: TableData + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<
         entry: &Rc<Self::Entry>,
         field: &Rc<Self::Field>,
         out: &mut ss_plugin_state_data,
-    ) -> Result<(), FailureReason> {
+    ) -> Result<(), anyhow::Error> {
         let (type_id, index) = { (field.type_id, field.index) };
 
         entry.borrow().get(index, type_id, out)
@@ -483,15 +490,19 @@ impl<K: TableData + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<
         entry: &mut Rc<Self::Entry>,
         field: &Rc<Self::Field>,
         value: &ss_plugin_state_data,
-    ) -> Result<(), FailureReason> {
+    ) -> Result<(), anyhow::Error> {
         if field.read_only {
-            return Err(FailureReason::NotSupported);
+            return Err(anyhow::anyhow!("Field is read-only").context(FailureReason::NotSupported));
         }
 
         let (type_id, index) = { (field.type_id, field.index) };
 
-        let value =
-            unsafe { DynamicFieldValue::from_data(value, type_id).ok_or(FailureReason::Failure)? };
+        let value = unsafe {
+            DynamicFieldValue::from_data(value, type_id).ok_or(anyhow::anyhow!(
+                "Cannot store {:?} data (unsupported type)",
+                type_id
+            ))?
+        };
 
         let mut entry = entry.borrow_mut();
         entry.set(index, value)
