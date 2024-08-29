@@ -7,6 +7,9 @@ use falco_plugin_api::{
 use log::{Level, Log, Metadata, Record};
 use std::ffi::{c_char, CString};
 
+#[cfg(debug_assertions)]
+use std::borrow::Cow;
+
 pub(super) struct FalcoPluginLogger {
     pub(super) owner: *mut ss_plugin_owner_t,
     pub(super) logger_fn: unsafe extern "C" fn(
@@ -33,7 +36,19 @@ impl Log for FalcoPluginLogger {
             Level::Trace => ss_plugin_log_severity_SS_PLUGIN_LOG_SEV_TRACE,
         };
 
-        let msg = format!("{}: {}", record.target(), record.args());
+        #[cfg(not(debug_assertions))]
+        let msg = format!("[{}] {}", record.level(), record.args());
+
+        #[cfg(debug_assertions)]
+        let msg = {
+            let loc = record
+                .file()
+                .zip(record.line())
+                .map(|(f, l)| Cow::Owned(format!("{}:{}", f, l)))
+                .unwrap_or_else(|| Cow::Borrowed(record.target()));
+            format!("{}[{}] {}", loc, record.level(), record.args())
+        };
+
         if let Ok(msg) = CString::new(msg) {
             unsafe { (self.logger_fn)(self.owner, std::ptr::null(), msg.as_ptr(), severity) }
         }
