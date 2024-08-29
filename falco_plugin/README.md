@@ -103,3 +103,10 @@ for example from a separate thread. They are created by implementing [`async_eve
 and calling [`async_event_plugin!`] with the plugin type.
 
 See `samples/async_plugin.rs` for an example implementation.
+
+## Logging in plugins
+
+The SDK uses the [`log`] crate for logging, redirecting all messages to the Falco libs logger, so you can use
+e.g. `log::info!` in your plugin without any explicit initialization. The log level defaults to `Trace`
+in debug builds and to `Info` in release builds, but can be overridden by calling [`log::set_max_level`]
+in your [plugin init method](`base::Plugin::new`).
