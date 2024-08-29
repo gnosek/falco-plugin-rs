@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use std::ffi::{c_char, CString};
 use std::sync::Mutex;
 
+use crate::parse::EventInput;
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::parse::ParsePlugin;
@@ -84,6 +85,8 @@ pub unsafe extern "C" fn plugin_parse_event<T: ParsePlugin>(
         let Some(event) = event.as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
+        let event = EventInput(*event);
+
         let Some(parse_input) = parse_input.as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };

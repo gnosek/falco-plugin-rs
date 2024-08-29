@@ -156,7 +156,7 @@ where
     ///
     /// `arg` is the actual argument passed along with the field (see [`ExtractFieldRequestArg`])
     ///
-    /// `event` is the event being processed (see [`EventInputExt`](`crate::EventInputExt`))
+    /// `event` is the event being processed (see [`EventInput`](`crate::extract::EventInput`))
     ///
     /// `tables` is an interface to access tables exposed from Falco core and other plugins (see
     /// [`tables`](`crate::tables`))

@@ -1,5 +1,6 @@
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
+use crate::plugin::event::EventInput;
 use crate::plugin::extract::ExtractPlugin;
 use crate::tables::TableReader;
 use falco_plugin_api::plugin_api__bindgen_ty_2 as extract_plugin_api;
@@ -85,6 +86,8 @@ pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
         let Some(event_input) = event_input.as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
+        let event_input = EventInput(*event_input);
+
         let Some(extract_input) = extract_input.as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };

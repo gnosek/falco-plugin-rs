@@ -4,11 +4,11 @@ use anyhow::anyhow;
 
 use falco_event::events::types::EventType;
 use falco_plugin::base::{Plugin, TableInitInput};
-use falco_plugin::parse::{EventParseInput, ParsePlugin};
+use falco_plugin::parse::{EventInput, EventParseInput, ParsePlugin};
 use falco_plugin::tables::{DynamicFieldValues, TypedTableField};
 use falco_plugin::tables::{DynamicTable, TypedTable};
-use falco_plugin::{parse_plugin, plugin, EventInputExt};
-use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input, ss_plugin_init_input};
+use falco_plugin::{parse_plugin, plugin};
+use falco_plugin_api::{ss_plugin_event_parse_input, ss_plugin_init_input};
 use falco_plugin_derive::TableValues;
 
 #[derive(TableValues, Default)]
@@ -75,7 +75,7 @@ impl ParsePlugin for DummyPlugin {
 
     fn parse_event(
         &mut self,
-        event_input: &ss_plugin_event_input,
+        event_input: &EventInput,
         parse_input: &ss_plugin_event_parse_input,
     ) -> anyhow::Result<()> {
         let event = event_input.event()?;

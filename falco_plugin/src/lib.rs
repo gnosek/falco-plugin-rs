@@ -64,7 +64,6 @@ pub use falco_plugin_derive::TableValues;
 
 
 pub use crate::plugin::error::FailureReason;
-pub use crate::plugin::event::EventInputExt;
 
 /// # The common foundation for all Falco plugins
 ///
@@ -213,14 +212,9 @@ pub mod base {
 ///
 /// See the [`extract::ExtractPlugin`] trait documentation for details.
 pub mod extract {
-    /// # An event from which additional data may be extracted
-    ///
-    /// The one notable thing about it is that it implements the [`EventInputExt`](`crate::EventInputExt`)
-    /// trait. You probably won't need to access any of its fields directly.
-    pub use falco_plugin_api::ss_plugin_event_input as EventInput;
     pub use falco_plugin_api::ss_plugin_field_extract_input as FieldExtractInput;
 
-
+    pub use crate::plugin::event::EventInput;
     pub use crate::plugin::extract::schema::field;
     pub use crate::plugin::extract::schema::{ExtractArgType, ExtractFieldInfo};
     pub use crate::plugin::extract::ExtractFieldRequestArg;
@@ -248,7 +242,7 @@ pub mod extract {
 /// use falco_event::{ };
 /// use falco_event::events::types::EventType;
 /// use falco_plugin::base::{InitInput, Metric, Plugin};
-/// use falco_plugin::{EventInputExt, parse_plugin, plugin};
+/// use falco_plugin::{parse_plugin, plugin};
 /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
 /// use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input};
 ///
@@ -287,9 +281,9 @@ pub mod extract {
 /// parse_plugin!(MyParsePlugin);
 /// ```
 pub mod parse {
-    pub use falco_plugin_api::ss_plugin_event_input as EventInput;
     pub use falco_plugin_api::ss_plugin_event_parse_input as ParseInput;
 
+    pub use crate::plugin::event::EventInput;
     pub use crate::plugin::parse::EventParseInput;
     pub use crate::plugin::parse::ParsePlugin;
 }
@@ -321,7 +315,7 @@ pub mod parse {
 /// use falco_event::events::Event;
 /// use falco_event::events::EventMetadata;
 /// use falco_plugin::base::{InitInput, Metric, Plugin};
-/// use falco_plugin::{async_event_plugin, EventInputExt, plugin};
+/// use falco_plugin::{async_event_plugin, plugin};
 /// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
 ///
 /// struct MyAsyncPlugin {
@@ -427,7 +421,7 @@ pub mod async_event {
 /// use anyhow::Error;
 /// use falco_event::events::Event;
 /// use falco_plugin::base::{InitInput, Metric, Plugin};
-/// use falco_plugin::{EventInputExt, plugin, source_plugin};
+/// use falco_plugin::{plugin, source_plugin};
 /// use falco_plugin::source::{
 ///     EventBatch,
 ///     EventInput,
@@ -507,12 +501,12 @@ pub mod async_event {
 /// source_plugin!(MySourcePlugin);
 /// ```
 pub mod source {
+    pub use crate::plugin::event::EventInput;
     pub use crate::plugin::source::event_batch::EventBatch;
     pub use crate::plugin::source::open_params::{serialize_open_params, OpenParam};
     pub use crate::plugin::source::{ProgressInfo, SourcePlugin, SourcePluginInstance};
     pub use crate::strings::cstring_writer::CStringWriter;
     pub use falco_event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
-    pub use falco_plugin_api::ss_plugin_event_input as EventInput;
 }
 
 /// # Creating and accessing tables

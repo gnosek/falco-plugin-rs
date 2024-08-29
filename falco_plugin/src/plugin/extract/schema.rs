@@ -2,9 +2,9 @@ use anyhow::Error;
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 
-use falco_plugin_api::{ss_plugin_event_input, ss_plugin_extract_field};
+use falco_plugin_api::ss_plugin_extract_field;
 
-use crate::extract::ExtractFieldRequestArg;
+use crate::extract::{EventInput, ExtractFieldRequestArg};
 use crate::plugin::extract::fields::{Extract, ExtractFieldTypeId};
 use crate::plugin::extract::{ExtractField, ExtractPlugin};
 use crate::plugin::storage::FieldStorageSession;
@@ -83,7 +83,7 @@ pub trait Extractor<P: ExtractPlugin> {
         plugin: &'a mut P,
         context: &mut <P as ExtractPlugin>::ExtractContext,
         field: &mut ss_plugin_extract_field,
-        event_input: &ss_plugin_event_input,
+        event_input: &EventInput,
         tables: &TableReader,
         arg_type: ExtractArgType,
         storage: FieldStorageSession<'a>,
@@ -98,7 +98,7 @@ where
         &mut P,
         &mut <P as ExtractPlugin>::ExtractContext,
         ExtractFieldRequestArg,
-        &ss_plugin_event_input,
+        &EventInput,
         &TableReader,
     ) -> Result<R, Error>,
 {
@@ -107,7 +107,7 @@ where
         plugin: &'a mut P,
         context: &mut <P as ExtractPlugin>::ExtractContext,
         field: &mut ss_plugin_extract_field,
-        event_input: &ss_plugin_event_input,
+        event_input: &EventInput,
         tables: &TableReader,
         arg_type: ExtractArgType,
         storage: FieldStorageSession<'a>,
@@ -185,7 +185,7 @@ where
         &mut P,
         &mut <P as ExtractPlugin>::ExtractContext,
         ExtractFieldRequestArg,
-        &ss_plugin_event_input,
+        &EventInput,
         &TableReader,
     ) -> Result<R, Error>,
 {

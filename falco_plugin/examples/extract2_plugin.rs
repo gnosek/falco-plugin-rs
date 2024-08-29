@@ -4,11 +4,13 @@ use anyhow::{anyhow, Error};
 
 use falco_event::events::types::EventType;
 use falco_plugin::base::{Plugin, TableInitInput};
-use falco_plugin::extract::{field, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin};
+use falco_plugin::extract::{
+    field, EventInput, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin,
+};
 use falco_plugin::tables::TypedTableField;
 use falco_plugin::tables::{TableReader, TypedTable};
-use falco_plugin::{extract_plugin, plugin, EventInputExt};
-use falco_plugin_api::{ss_plugin_event_input, ss_plugin_init_input};
+use falco_plugin::{extract_plugin, plugin};
+use falco_plugin_api::ss_plugin_init_input;
 
 pub struct DummyPlugin {
     thread_table: TypedTable<i64>,
@@ -38,7 +40,7 @@ impl DummyPlugin {
         &mut self,
         _context: &mut (),
         _arg: ExtractFieldRequestArg,
-        _input: &ss_plugin_event_input,
+        _input: &EventInput,
         _tables: &TableReader,
     ) -> Result<CString, Error> {
         Ok(c"hello".to_owned())
@@ -48,7 +50,7 @@ impl DummyPlugin {
         &mut self,
         _context: &mut (),
         _arg: ExtractFieldRequestArg,
-        _input: &ss_plugin_event_input,
+        _input: &EventInput,
         _tables: &TableReader,
     ) -> Result<Vec<CString>, Error> {
         Ok(vec![c"hello".to_owned(), c"byebye".to_owned()])
@@ -59,7 +61,7 @@ impl DummyPlugin {
         &mut self,
         _context: &mut (),
         _arg: ExtractFieldRequestArg,
-        _input: &ss_plugin_event_input,
+        _input: &EventInput,
         _tables: &TableReader,
     ) -> Result<Vec<u64>, Error> {
         Ok(vec![5u64, 10u64])
@@ -69,7 +71,7 @@ impl DummyPlugin {
         &mut self,
         _context: &mut (),
         _arg: ExtractFieldRequestArg,
-        input: &ss_plugin_event_input,
+        input: &EventInput,
         tables: &TableReader,
     ) -> Result<u64, Error> {
         let tid = input.event()?.metadata.tid;

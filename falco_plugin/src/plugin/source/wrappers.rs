@@ -4,7 +4,7 @@ use std::io::Write;
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::source::SourcePluginInstanceWrapper;
-use crate::source::{SourcePlugin, SourcePluginInstance};
+use crate::source::{EventInput, SourcePlugin, SourcePluginInstance};
 use crate::strings::cstring_writer::WriteIntoCString;
 use crate::strings::from_ptr::try_str_from_ptr;
 use falco_plugin_api::plugin_api__bindgen_ty_1 as source_plugin_api;
@@ -249,8 +249,9 @@ pub unsafe extern "C" fn plugin_event_to_string<T: SourcePlugin>(
         let Some(event) = event.as_ref() else {
             return std::ptr::null_mut();
         };
+        let event = EventInput(*event);
 
-        match actual_plugin.event_to_string(event) {
+        match actual_plugin.event_to_string(&event) {
             Ok(s) => {
                 plugin.string_storage = s;
                 plugin.string_storage.as_ptr()

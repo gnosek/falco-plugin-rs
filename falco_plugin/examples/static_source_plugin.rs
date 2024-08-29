@@ -9,7 +9,7 @@ use falco_plugin::serde::Deserialize;
 use falco_plugin::source::{
     CStringWriter, EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
 };
-use falco_plugin::{static_plugin, EventInputExt, FailureReason};
+use falco_plugin::{static_plugin, FailureReason};
 use falco_plugin_api::ss_plugin_init_input;
 
 #[derive(Debug, Deserialize, JsonSchema)]
