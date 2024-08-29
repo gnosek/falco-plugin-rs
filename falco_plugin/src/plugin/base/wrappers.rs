@@ -10,7 +10,7 @@ use std::sync::Mutex;
 use crate::base::Plugin;
 use crate::plugin::base::logger::FalcoPluginLogger;
 use crate::plugin::base::PluginWrapper;
-use crate::plugin::error::FfiResult;
+use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
 use crate::strings::from_ptr::try_str_from_ptr;
 

@@ -4,7 +4,7 @@ use std::ffi::{c_char, CString};
 use std::sync::Mutex;
 
 use crate::plugin::base::PluginWrapper;
-use crate::plugin::error::FfiResult;
+use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::parse::ParsePlugin;
 use falco_plugin_api::plugin_api__bindgen_ty_3 as parse_plugin_api;
 use falco_plugin_api::{

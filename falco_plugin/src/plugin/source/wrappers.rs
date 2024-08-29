@@ -2,7 +2,7 @@ use std::ffi::c_char;
 use std::io::Write;
 
 use crate::plugin::base::PluginWrapper;
-use crate::plugin::error::FfiResult;
+use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::source::SourcePluginInstanceWrapper;
 use crate::source::{SourcePlugin, SourcePluginInstance};
 use crate::strings::cstring_writer::WriteIntoCString;

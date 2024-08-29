@@ -1,4 +1,5 @@
-use crate::plugin::error::{AsResult, LastError};
+use crate::plugin::error::as_result::AsResult;
+use crate::plugin::error::last_error::LastError;
 use crate::plugin::tables::data::{TableData, TypedTableField};
 use crate::plugin::tables::table::TableError;
 use falco_plugin_api::{

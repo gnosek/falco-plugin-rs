@@ -1,5 +1,5 @@
 use crate::plugin::base::PluginWrapper;
-use crate::plugin::error::FfiResult;
+use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::extract::ExtractPlugin;
 use crate::tables::TableReader;
 use falco_plugin_api::plugin_api__bindgen_ty_2 as extract_plugin_api;

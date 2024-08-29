@@ -11,7 +11,7 @@ use falco_plugin_api::{
     ss_plugin_table_reader_vtable_ext, ss_plugin_table_t, ss_plugin_table_writer_vtable_ext,
 };
 
-use crate::plugin::error::LastError;
+use crate::plugin::error::last_error::LastError;
 use crate::plugin::tables::data::TableData;
 use crate::plugin::tables::entry::{TableEntry, TableEntryReader};
 use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};

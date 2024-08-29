@@ -11,7 +11,7 @@ use falco_plugin_api::{
     ss_plugin_table_writer_vtable_ext,
 };
 
-use crate::plugin::error::FfiResult;
+use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::exported_tables::ExportedTable;
 use crate::plugin::tables::data::{FieldTypeId, TableData};
 

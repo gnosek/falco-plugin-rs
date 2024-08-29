@@ -6,7 +6,7 @@ use falco_plugin_api::{
     ss_plugin_table_writer_vtable,
 };
 
-use crate::plugin::error::AsResult;
+use crate::plugin::error::as_result::AsResult;
 use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, writer_vtable};
 use crate::plugin::exported_tables::ExportedTable;
 use crate::plugin::tables::data::TableData;
