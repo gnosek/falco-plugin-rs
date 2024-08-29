@@ -1,9 +1,9 @@
 use falco_plugin::anyhow::Error;
 use falco_plugin::base::{Metric, MetricLabel, MetricType, MetricValue, Plugin};
-use falco_plugin::source::CStringWriter;
 use falco_plugin::source::{
     EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
 };
+use falco_plugin::strings::CStringWriter;
 use falco_plugin::tables::TablesInput;
 use falco_plugin::{anyhow, static_plugin, FailureReason};
 use std::ffi::{CStr, CString};

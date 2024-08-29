@@ -6,8 +6,9 @@ use falco_plugin::extract::{
     field, ExtractArgType, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin, ExtractRequest,
 };
 use falco_plugin::source::{
-    CStringWriter, EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
+    EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
 };
+use falco_plugin::strings::{CStringWriter, WriteIntoCString};
 use falco_plugin::tables::TablesInput;
 use falco_plugin::{anyhow, static_plugin, FailureReason};
 use std::ffi::{CStr, CString};
@@ -103,9 +104,9 @@ impl DummyPlugin {
             .event_data
             .ok_or(anyhow::anyhow!("no payload in event"))?;
 
-        let mut out = CStringWriter::default();
-        out.write_all(payload)?;
-        Ok(out.into_cstring())
+        let mut out = CString::default();
+        out.write_into(|w| w.write_all(payload))?;
+        Ok(out)
     }
 
     fn extract_payload_repeated(
@@ -124,9 +125,8 @@ impl DummyPlugin {
             .event_data
             .ok_or(anyhow::anyhow!("no payload in event"))?;
 
-        let mut out = CStringWriter::default();
-        out.write_all(payload)?;
-        let out = out.into_cstring();
+        let mut out = CString::default();
+        out.write_into(|w| w.write_all(payload))?;
         Ok(vec![out; arg as usize])
     }
 

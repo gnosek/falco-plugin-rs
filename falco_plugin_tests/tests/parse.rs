@@ -7,8 +7,9 @@ use falco_plugin::extract::{
 };
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::source::{
-    CStringWriter, EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
+    EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
 };
+use falco_plugin::strings::CStringWriter;
 use falco_plugin::tables::export;
 use falco_plugin::tables::import;
 use falco_plugin::tables::TablesInput;

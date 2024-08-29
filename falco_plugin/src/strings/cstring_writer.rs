@@ -15,7 +15,7 @@ use std::io::Write;
 /// Example:
 /// ```
 /// use std::ffi::CString;
-/// use falco_plugin::source::CStringWriter;
+/// use falco_plugin::strings::CStringWriter;
 /// use std::io::Write;
 /// let mut writer = CStringWriter::default();
 ///
@@ -76,7 +76,27 @@ impl CStringWriter {
     }
 }
 
+/// # Extension trait to enable [`Write`] on [`CString`]
+///
+/// It receives a closure that takes a [`CStringWriter`] and stores the write
+/// result in the instance (replacing any previous content).
+///
+/// If the written data contains NUL bytes, an error is returned.
+///
+/// # Example:
+///
+/// ```
+/// use std::ffi::CString;
+/// use std::io::Write;
+/// use falco_plugin::strings::WriteIntoCString;
+/// let mut buf = CString::default();
+///
+/// buf.write_into(|w| write!(w, "hello")).unwrap();
+///
+/// assert_eq!(buf.as_c_str(), c"hello");
+/// ```
 pub trait WriteIntoCString {
+    /// Write into a [`std::ffi::CString`] using [`std::io::Write`]
     fn write_into<F>(&mut self, func: F) -> std::io::Result<()>
     where
         F: FnOnce(&mut CStringWriter) -> std::io::Result<()>;

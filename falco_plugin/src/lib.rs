@@ -400,7 +400,6 @@ pub mod source {
     pub use crate::plugin::source::event_batch::EventBatch;
     pub use crate::plugin::source::open_params::{serialize_open_params, OpenParam};
     pub use crate::plugin::source::{ProgressInfo, SourcePlugin, SourcePluginInstance};
-    pub use crate::strings::cstring_writer::CStringWriter;
     pub use falco_event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
 }
 
@@ -858,7 +857,7 @@ pub mod tables {
 }
 
 mod plugin;
-mod strings;
+pub mod strings;
 
 #[doc(hidden)]
 pub mod internals {

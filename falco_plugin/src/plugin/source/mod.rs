@@ -77,7 +77,7 @@ pub trait SourcePlugin: Plugin {
     /// # Render an event to string
     ///
     /// This string will be available as `%evt.plugininfo` in Falco rules. You may consider
-    /// using [`crate::source::CStringWriter`] to build the resulting CString.
+    /// using the helpers from [`crate::strings`] to build the resulting CString.
     fn event_to_string(&mut self, event: &EventInput) -> Result<CString, anyhow::Error>;
 }
 

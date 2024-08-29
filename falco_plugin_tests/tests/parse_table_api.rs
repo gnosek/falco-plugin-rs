@@ -7,8 +7,9 @@ use falco_plugin::extract::{
 };
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::source::{
-    CStringWriter, EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
+    EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
 };
+use falco_plugin::strings::{CStringWriter, WriteIntoCString};
 use falco_plugin::tables::export;
 use falco_plugin::tables::import;
 use falco_plugin::tables::TablesInput;
@@ -200,11 +201,11 @@ impl ParsePlugin for DummyParsePlugin {
         let remaining = entry.get_remaining(&parse_input.reader)?;
 
         let is_even = (remaining % 2 == 0).into();
-        let mut string_rep = CStringWriter::default();
-        write!(string_rep, "{} events remaining", remaining)?;
+        let mut string_rep = CString::default();
+        string_rep.write_into(|w| write!(w, "{} events remaining", remaining))?;
 
         entry.set_is_even(&parse_input.writer, &is_even)?;
-        entry.set_as_string(&parse_input.writer, string_rep.into_cstring().as_c_str())?;
+        entry.set_as_string(&parse_input.writer, string_rep.as_c_str())?;
 
         Ok(())
     }

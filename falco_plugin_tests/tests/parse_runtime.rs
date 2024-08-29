@@ -6,10 +6,10 @@ use falco_plugin::extract::{
     field, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin, ExtractRequest,
 };
 use falco_plugin::parse::{ParseInput, ParsePlugin};
-use falco_plugin::source::CStringWriter;
 use falco_plugin::source::{
     EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
 };
+use falco_plugin::strings::CStringWriter;
 use falco_plugin::tables::export;
 use falco_plugin::tables::import;
 use falco_plugin::tables::TablesInput;
