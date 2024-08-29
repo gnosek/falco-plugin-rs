@@ -16,6 +16,10 @@ grep -F '[PPME' $EVENT_TABLE | sed '-res@DIRFD_PARAM\(([0-9]+)\)@\1@g' '-res@//.
   sub(/ID/, "id", $0);
 }
 
+/FUTEX_E/ {
+  sub(/PT_ENUMFLAGS/, "PT_FLAGS", $0);
+}
+
 {
   print $0
 }
