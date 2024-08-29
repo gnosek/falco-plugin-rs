@@ -22,3 +22,5 @@ grep -F '[PPME' $EVENT_TABLE | sed '-res@DIRFD_PARAM\(([0-9]+)\)@\1@g' '-res@//.
 '
 
 echo '}') > src/events/types.rs
+
+rustfmt src/events/types.rs

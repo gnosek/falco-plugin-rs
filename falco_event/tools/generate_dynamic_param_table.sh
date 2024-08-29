@@ -13,3 +13,5 @@ EOF
 sed -n '/ppm_param_info/,$p' < $DYNAMIC_PARAM_TABLE
 
 echo '}') > src/fields/dynamic_params.rs
+
+rustfmt src/fields/dynamic_params.rs

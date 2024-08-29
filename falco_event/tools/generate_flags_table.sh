@@ -17,3 +17,5 @@ echo
 sed -n '/ppm_name_value/,$p' < $EVENT_TABLE | grep -v '^#' | uniq
 
 echo '}') > src/fields/event_flags.rs
+
+rustfmt src/fields/event_flags.rs
