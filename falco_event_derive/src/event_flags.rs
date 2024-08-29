@@ -111,7 +111,7 @@ impl Parse for Flags {
 fn render_enum(
     name: &Ident,
     repr_type: proc_macro2::TokenStream,
-    items: impl Iterator<Item = (Ident, Ident)>,
+    items: impl Iterator<Item = (Ident, Ident)> + Clone,
     skips: &Skips,
 ) -> proc_macro2::TokenStream {
     let mut skipped = BTreeSet::new();
@@ -121,19 +121,44 @@ fn render_enum(
         }
     }
 
-    let items = items.filter_map(|(name, value)| {
-        if skipped.contains(&value.to_string()) {
-            None
-        } else {
-            Some(quote!(#name = crate::ffi::#value as #repr_type))
-        }
-    });
+    let filtered = items.filter(|(_, value)| !skipped.contains(&value.to_string()));
+
+    let tags = filtered.clone().map(|(variant, _)| variant);
+
+    let raw_to_enum = filtered
+        .clone()
+        .map(|(variant, value)| quote!(crate::ffi::#value => Self::#variant));
+
+    let enum_to_raw = filtered
+        .clone()
+        .map(|(variant, value)| quote!(#name::#variant => crate::ffi::#value as #repr_type));
+
     quote!(
         #[repr(#repr_type)]
         #[allow(non_camel_case_types)]
-        #[derive(FromPrimitive, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+        #[non_exhaustive]
+        #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
         pub enum #name {
-            #(#items,)*
+            #(#tags,)*
+            Unknown(usize),
+        }
+
+        impl From<#repr_type> for #name {
+            fn from(val: #repr_type) -> Self {
+                match val as u32 {
+                    #(#raw_to_enum,)*
+                    other => Self::Unknown(other as usize),
+                }
+            }
+        }
+
+        impl From<#name> for #repr_type {
+            fn from(val: #name) -> #repr_type {
+                match val {
+                    #(#enum_to_raw,)*
+                    #name::Unknown(other) => other as #repr_type,
+                }
+            }
         }
 
         impl crate::event_derive::ToBytes for #name {
@@ -142,7 +167,8 @@ fn render_enum(
             }
 
             fn write<W: std::io::Write>(&self, writer: W) -> std::io::Result<()> {
-                (*self as #repr_type).write(writer)
+                let repr: #repr_type = (*self).into();
+                repr.write(writer)
             }
 
             fn default_repr() -> impl crate::event_derive::ToBytes {
@@ -155,10 +181,8 @@ fn render_enum(
             where
                 Self: Sized,
             {
-                use num_traits::FromPrimitive;
                 let repr = #repr_type::from_bytes(buf)?;
-                let val = Self::from_usize(repr as usize).ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid enum value"))?;
-                Ok(val)
+                Ok(repr.into())
             }
         }
 
@@ -167,9 +191,12 @@ fn render_enum(
             #repr_type: crate::event_derive::Format<F>,
         {
             fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-                let raw = (*self) as #repr_type;
+                let raw: #repr_type = (*self).into();
                 raw.format(fmt)?;
-                write!(fmt, "({:?})", self)
+                match self {
+                    Self::Unknown(_) => Ok(()),
+                    _ => write!(fmt, "({:?})", self)
+                }
             }
         }
     )
@@ -314,8 +341,6 @@ pub fn event_flags(input: TokenStream) -> TokenStream {
     }
 
     quote!(
-        use num_derive::FromPrimitive;
-
         #(#tokens)*
     )
     .into()
