@@ -5,9 +5,9 @@ use anyhow::{anyhow, Error};
 use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
 use falco_plugin::extract::{
-    field, EventInput, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin,
+    field, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin, ExtractRequest,
 };
-use falco_plugin::tables::{TableReader, TypedTable};
+use falco_plugin::tables::TypedTable;
 use falco_plugin::tables::{TablesInput, TypedTableField};
 use falco_plugin::{extract_plugin, plugin};
 
@@ -39,20 +39,16 @@ impl Plugin for DummyPlugin {
 impl DummyPlugin {
     fn extract_sample(
         &mut self,
-        _context: &mut (),
+        _req: ExtractRequest<Self>,
         _arg: ExtractFieldRequestArg,
-        _input: &EventInput,
-        _tables: &TableReader,
     ) -> Result<CString, Error> {
         Ok(c"hello".to_owned())
     }
 
     fn extract_sample_strs(
         &mut self,
-        _context: &mut (),
+        _req: ExtractRequest<Self>,
         _arg: ExtractFieldRequestArg,
-        _input: &EventInput,
-        _tables: &TableReader,
     ) -> Result<Vec<CString>, Error> {
         Ok(vec![c"hello".to_owned(), c"byebye".to_owned()])
     }
@@ -60,23 +56,23 @@ impl DummyPlugin {
     //noinspection DuplicatedCode
     fn extract_sample_nums(
         &mut self,
-        _context: &mut (),
+        _req: ExtractRequest<Self>,
         _arg: ExtractFieldRequestArg,
-        _input: &EventInput,
-        _tables: &TableReader,
     ) -> Result<Vec<u64>, Error> {
         Ok(vec![5u64, 10u64])
     }
 
     fn extract_sample_num(
         &mut self,
-        _context: &mut (),
+        ExtractRequest {
+            event,
+            table_reader,
+            ..
+        }: ExtractRequest<Self>,
         _arg: ExtractFieldRequestArg,
-        input: &EventInput,
-        tables: &TableReader,
     ) -> Result<u64, Error> {
-        let tid = input.event()?.metadata.tid;
-        let mut reader = tables
+        let tid = event.event()?.metadata.tid;
+        let mut reader = table_reader
             .table_entry(&self.thread_table, &tid)
             .ok_or_else(|| anyhow!("tid not found"))?;
 

@@ -5,9 +5,9 @@ use anyhow::{anyhow, Error};
 use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
 use falco_plugin::extract::{
-    field, EventInput, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin,
+    field, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin, ExtractRequest,
 };
-use falco_plugin::tables::{TableReader, TypedTable};
+use falco_plugin::tables::TypedTable;
 use falco_plugin::tables::{TablesInput, TypedTableField};
 use falco_plugin::{extract_plugin, plugin};
 
@@ -39,12 +39,10 @@ impl Plugin for DummyPlugin {
 impl DummyPlugin {
     fn extract_sample(
         &mut self,
-        _context: &mut (),
+        ExtractRequest { table_reader, .. }: ExtractRequest<Self>,
         _arg: ExtractFieldRequestArg,
-        _input: &EventInput,
-        tables: &TableReader,
     ) -> Result<CString, Error> {
-        let mut reader = tables
+        let mut reader = table_reader
             .table_entry(&self.thread_table, &1i64)
             .ok_or_else(|| anyhow!("tid 1 not found"))?;
         dbg!(reader.read_field(&self.comm_field)).ok();
@@ -53,10 +51,8 @@ impl DummyPlugin {
 
     fn extract_sample_strs(
         &mut self,
-        _context: &mut (),
+        _req: ExtractRequest<Self>,
         _arg: ExtractFieldRequestArg,
-        _input: &EventInput,
-        _tables: &TableReader,
     ) -> Result<Vec<CString>, Error> {
         Ok(vec![c"hello".to_owned(), c"bybye".to_owned()])
     }
@@ -64,10 +60,8 @@ impl DummyPlugin {
     //noinspection DuplicatedCode
     fn extract_sample_nums(
         &mut self,
-        _context: &mut (),
+        _req: ExtractRequest<Self>,
         _arg: ExtractFieldRequestArg,
-        _input: &EventInput,
-        _tables: &TableReader,
     ) -> Result<Vec<u64>, Error> {
         Ok(vec![5u64, 10u64])
     }

@@ -151,6 +151,7 @@ pub mod base {
 ///     ExtractFieldInfo,
 ///     ExtractFieldRequestArg,
 ///     ExtractPlugin,
+///     ExtractRequest,
 ///     field};
 /// use falco_plugin::tables::{TableReader, TablesInput};
 ///
@@ -180,10 +181,8 @@ pub mod base {
 /// impl MyExtractPlugin { // note this is not the trait implementation
 ///     fn extract_sample(
 ///         &mut self,
-///         _context: &mut (),
+///         _req: ExtractRequest<Self>,
 ///         _arg: ExtractFieldRequestArg,
-///         _input: &EventInput,
-///         _tables: &TableReader,
 ///     ) -> Result<CString, Error> {
 ///         Ok(c"hello".to_owned())
 ///     }
@@ -212,6 +211,7 @@ pub mod extract {
     pub use crate::plugin::extract::schema::{ExtractArgType, ExtractFieldInfo};
     pub use crate::plugin::extract::ExtractFieldRequestArg;
     pub use crate::plugin::extract::ExtractPlugin;
+    pub use crate::plugin::extract::ExtractRequest;
     pub use crate::plugin::storage::FieldStorage;
 }
 

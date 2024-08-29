@@ -95,6 +95,20 @@ impl ExtractField for ss_plugin_extract_field {
     }
 }
 
+/// An extraction request
+pub struct ExtractRequest<'c, 'e, 't, P: ExtractPlugin> {
+    /// a context instance, potentially shared between extractions
+    pub context: &'c mut P::ExtractContext,
+
+    /// the event being processed
+    pub event: &'e EventInput,
+
+    /// an interface to access tables exposed from Falco core and other plugins
+    ///
+    /// See [`crate::tables`] for details
+    pub table_reader: &'t TableReader,
+}
+
 /// # Support for field extraction plugins
 pub trait ExtractPlugin: Plugin + Sized
 where
@@ -126,6 +140,7 @@ where
     /// The actual list of extractable fields
     ///
     /// The required signature corresponds to a method like:
+    /// TODO: outdated
     /// ```
     /// use anyhow::Error;
     /// use falco_plugin::extract::{EventInput, ExtractFieldRequestArg};
@@ -213,15 +228,15 @@ where
             let info = Self::EXTRACT_FIELDS
                 .get(req.field_id as usize)
                 .ok_or_else(|| anyhow::anyhow!("field index out of bounds"))?;
-            info.func.extract(
-                self,
-                &mut context,
-                req,
-                event_input,
-                &table_reader,
-                info.arg,
-                storage.start(),
-            )?;
+
+            let request = ExtractRequest::<Self> {
+                context: &mut context,
+                event: event_input,
+                table_reader: &table_reader,
+            };
+
+            info.func
+                .extract(self, req, request, info.arg, storage.start())?;
         }
         Ok(())
     }

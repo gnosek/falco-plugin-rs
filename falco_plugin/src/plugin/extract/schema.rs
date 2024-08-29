@@ -4,11 +4,10 @@ use serde::{Serialize, Serializer};
 
 use falco_plugin_api::ss_plugin_extract_field;
 
-use crate::extract::{EventInput, ExtractFieldRequestArg};
+use crate::extract::ExtractFieldRequestArg;
 use crate::plugin::extract::fields::{Extract, ExtractFieldTypeId};
-use crate::plugin::extract::{ExtractField, ExtractPlugin};
+use crate::plugin::extract::{ExtractField, ExtractPlugin, ExtractRequest};
 use crate::plugin::storage::FieldStorageSession;
-use crate::plugin::tables::table_reader::TableReader;
 
 /// The type of argument a field extractor expects
 ///
@@ -81,10 +80,8 @@ pub trait Extractor<P: ExtractPlugin> {
     fn extract<'a>(
         &self,
         plugin: &'a mut P,
-        context: &mut <P as ExtractPlugin>::ExtractContext,
         field: &mut ss_plugin_extract_field,
-        event_input: &EventInput,
-        tables: &TableReader,
+        request: ExtractRequest<'a, '_, '_, P>,
         arg_type: ExtractArgType,
         storage: FieldStorageSession<'a>,
     ) -> Result<(), Error>;
@@ -94,31 +91,17 @@ impl<P, R, F> Extractor<P> for F
 where
     P: ExtractPlugin,
     R: Extract,
-    F: Fn(
-        &mut P,
-        &mut <P as ExtractPlugin>::ExtractContext,
-        ExtractFieldRequestArg,
-        &EventInput,
-        &TableReader,
-    ) -> Result<R, Error>,
+    F: Fn(&mut P, ExtractRequest<P>, ExtractFieldRequestArg) -> Result<R, Error>,
 {
     fn extract<'a>(
         &self,
         plugin: &'a mut P,
-        context: &mut <P as ExtractPlugin>::ExtractContext,
         field: &mut ss_plugin_extract_field,
-        event_input: &EventInput,
-        tables: &TableReader,
+        request: ExtractRequest<'a, '_, '_, P>,
         arg_type: ExtractArgType,
         storage: FieldStorageSession<'a>,
     ) -> Result<(), Error> {
-        let result = self(
-            plugin,
-            context,
-            unsafe { field.key(arg_type) }?,
-            event_input,
-            tables,
-        )?;
+        let result = self(plugin, request, unsafe { field.key(arg_type) }?)?;
         Ok(result.extract_to(field, storage)?)
     }
 }
@@ -181,13 +164,7 @@ pub const fn field<P, R, F>(name: &'static str, func: &'static F) -> ExtractFiel
 where
     P: ExtractPlugin,
     R: Extract,
-    F: Fn(
-        &mut P,
-        &mut <P as ExtractPlugin>::ExtractContext,
-        ExtractFieldRequestArg,
-        &EventInput,
-        &TableReader,
-    ) -> Result<R, Error>,
+    F: Fn(&mut P, ExtractRequest<P>, ExtractFieldRequestArg) -> Result<R, Error>,
 {
     ExtractFieldInfo {
         name,
