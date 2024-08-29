@@ -1,9 +1,8 @@
 use crate::plugin::error::ffi_result::FfiResult;
-use crate::plugin::exported_tables::entry::extensible::ExtensibleEntry;
 use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
-use crate::plugin::exported_tables::table::Table;
+use crate::plugin::exported_tables::table::{Table, TableEntryType};
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_rc, ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS,
@@ -13,9 +12,7 @@ use falco_plugin_api::{
     ss_plugin_table_writer_vtable_ext,
 };
 use num_traits::FromPrimitive;
-use std::cell::RefCell;
 use std::ffi::{c_char, CStr};
-use std::rc::Rc;
 
 // SAFETY: `table` must be a valid pointer to Table<K,E>
 unsafe extern "C" fn get_table_name<K, E>(table: *mut ss_plugin_table_t) -> *const c_char
@@ -90,7 +87,7 @@ where
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(entry) = (entry as *mut Rc<RefCell<ExtensibleEntry<E>>>).as_mut() else {
+        let Some(entry) = (entry as *mut TableEntryType<E>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(field) = (field as *const FieldDescriptor).as_ref() else {
@@ -114,7 +111,7 @@ unsafe extern "C" fn release_table_entry<E>(
 {
     if !entry.is_null() {
         unsafe {
-            drop(Box::from_raw(entry as *mut Rc<RefCell<ExtensibleEntry<E>>>));
+            drop(Box::from_raw(entry as *mut TableEntryType<E>));
         }
     }
 }
@@ -232,7 +229,7 @@ where
             return std::ptr::null_mut();
         };
         let key = K::from_data(key);
-        let entry = Box::from_raw(entry as *mut Rc<RefCell<ExtensibleEntry<E>>>);
+        let entry = Box::from_raw(entry as *mut TableEntryType<E>);
 
         match table.insert(key, *entry) {
             Some(entry) => Box::into_raw(Box::new(entry)) as *mut _,
@@ -257,7 +254,7 @@ where
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(entry) = (entry as *mut Rc<RefCell<ExtensibleEntry<E>>>).as_mut() else {
+        let Some(entry) = (entry as *mut TableEntryType<E>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(field) = (field as *const FieldDescriptor).as_ref() else {

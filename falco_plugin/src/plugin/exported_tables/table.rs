@@ -62,6 +62,9 @@ where
     }
 }
 
+type TableMetadataType<E> = Rc<RefCell<ExtensibleEntryMetadata<<E as HasMetadata>::Metadata>>>;
+pub(in crate::plugin::exported_tables) type TableEntryType<E> = Rc<RefCell<ExtensibleEntry<E>>>;
+
 impl<K, E> Table<K, E>
 where
     K: Key + Ord + Clone,
@@ -73,7 +76,7 @@ where
     /// This is only expected to be used by the derive macro.
     pub fn new_with_metadata(
         tag: &'static CStr,
-        metadata: &Rc<RefCell<ExtensibleEntryMetadata<E::Metadata>>>,
+        metadata: &TableMetadataType<E>,
     ) -> Result<Self, anyhow::Error> {
         let table = Self {
             name: tag,
@@ -110,14 +113,14 @@ where
     }
 
     /// Get an entry corresponding to a particular key.
-    pub fn lookup(&self, key: &K) -> Option<Rc<RefCell<ExtensibleEntry<E>>>> {
+    pub fn lookup(&self, key: &K) -> Option<TableEntryType<E>> {
         self.data.get(key).cloned()
     }
 
     /// Get the value for a field in an entry.
     pub fn get_field_value(
         &self,
-        entry: &Rc<RefCell<ExtensibleEntry<E>>>,
+        entry: &TableEntryType<E>,
         field: &FieldDescriptor,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
@@ -132,7 +135,7 @@ where
     // TODO(upstream) the closure cannot store away the entry but we could use explicit docs
     pub fn iterate_entries<F>(&mut self, mut func: F) -> bool
     where
-        F: FnMut(&mut Rc<RefCell<ExtensibleEntry<E>>>) -> bool,
+        F: FnMut(&mut TableEntryType<E>) -> bool,
     {
         for value in &mut self.data.values_mut() {
             if !func(value) {
@@ -148,14 +151,14 @@ where
     }
 
     /// Erase an entry by key.
-    pub fn erase(&mut self, key: &K) -> Option<Rc<RefCell<ExtensibleEntry<E>>>> {
+    pub fn erase(&mut self, key: &K) -> Option<TableEntryType<E>> {
         self.data.remove(key)
     }
 
     /// Create a new table entry.
     ///
     /// This is a detached entry that can be later inserted into the table using [`Table::insert`].
-    pub fn create_entry(&self) -> Result<Rc<RefCell<ExtensibleEntry<E>>>, anyhow::Error> {
+    pub fn create_entry(&self) -> Result<TableEntryType<E>, anyhow::Error> {
         Ok(Rc::new(RefCell::new(ExtensibleEntry::new_with_metadata(
             self.name,
             &self.metadata,
@@ -163,11 +166,7 @@ where
     }
 
     /// Attach an entry to a table key
-    pub fn insert(
-        &mut self,
-        key: &K,
-        entry: Rc<RefCell<ExtensibleEntry<E>>>,
-    ) -> Option<Rc<RefCell<ExtensibleEntry<E>>>> {
+    pub fn insert(&mut self, key: &K, entry: TableEntryType<E>) -> Option<TableEntryType<E>> {
         // note: different semantics from data.insert: we return the *new* entry
         self.data.insert(key.clone(), entry);
         self.lookup(key)
@@ -176,7 +175,7 @@ where
     /// Write a value to a field of an entry
     pub fn write(
         &self,
-        entry: &mut Rc<RefCell<ExtensibleEntry<E>>>,
+        entry: &mut TableEntryType<E>,
         field: &FieldDescriptor,
         value: &ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
