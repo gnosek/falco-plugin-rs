@@ -102,8 +102,7 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
 
     let static_field_gets = visible_static_fields.clone().enumerate().map(|(i, f)| {
         let name = f.ident.as_ref().unwrap();
-        let name_str = name.to_string();
-        quote!(#i => self.#name.to_data(out, type_id).ok_or(::falco_plugin::anyhow::anyhow!("Failed to serialize {}", #name_str)))
+        quote!(#i => self.#name.to_data(out, type_id))
     });
 
     let static_field_sets = visible_static_fields.clone().enumerate().map(|(i, f)| {

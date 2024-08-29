@@ -22,9 +22,13 @@ mod seal {
 pub trait FieldValue: seal::Sealed + Sized {
     /// Store a C representation of `&self` in `out`
     ///
-    /// This method must return `None` (and do nothing) if `&self` cannot be represented
+    /// This method must return `Err` (and do nothing) if `&self` cannot be represented
     /// as a value of type [`FieldTypeId`].
-    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: FieldTypeId) -> Option<()>;
+    fn to_data(
+        &self,
+        out: &mut ss_plugin_state_data,
+        type_id: FieldTypeId,
+    ) -> Result<(), anyhow::Error>;
 
     /// Load value from a C representation in `value`
     ///
@@ -51,13 +55,21 @@ macro_rules! impl_field_value {
         impl seal::Sealed for $ty {}
 
         impl FieldValue for $ty {
-            fn to_data(&self, out: &mut ss_plugin_state_data, type_id: FieldTypeId) -> Option<()> {
+            fn to_data(
+                &self,
+                out: &mut ss_plugin_state_data,
+                type_id: FieldTypeId,
+            ) -> Result<(), anyhow::Error> {
                 if type_id != $type_id {
-                    return None;
+                    anyhow::bail!(
+                        "Type mismatch, requested {:?}, got {:?}",
+                        type_id,
+                        stringify!($ty)
+                    )
                 }
 
                 out.$datafield = *self;
-                Some(())
+                Ok(())
             }
 
             unsafe fn from_data(
@@ -77,13 +89,17 @@ macro_rules! impl_field_value {
         }
 
         impl TryFrom<DynamicFieldValue> for $ty {
-            type Error = FailureReason;
+            type Error = anyhow::Error;
 
             fn try_from(value: DynamicFieldValue) -> Result<Self, Self::Error> {
                 if let DynamicFieldValue::$variant(val) = value {
                     Ok(val)
                 } else {
-                    Err(FailureReason::Failure)
+                    Err(anyhow::anyhow!(
+                        "Type mismatch, expected {}, got {:?}",
+                        stringify!($ty),
+                        value
+                    ))
                 }
             }
         }
@@ -101,13 +117,17 @@ impl_field_value!(i64 => s64 => FieldTypeId::I64 => I64);
 
 impl seal::Sealed for bool {}
 impl FieldValue for bool {
-    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: FieldTypeId) -> Option<()> {
+    fn to_data(
+        &self,
+        out: &mut ss_plugin_state_data,
+        type_id: FieldTypeId,
+    ) -> Result<(), anyhow::Error> {
         if type_id != FieldTypeId::Bool {
-            return None;
+            anyhow::bail!("Type mismatch, requested {:?}, got bool", type_id)
         }
 
         out.b = if *self { 1 } else { 0 };
-        Some(())
+        Ok(())
     }
 
     unsafe fn from_data(value: &ss_plugin_state_data, type_id: FieldTypeId) -> Option<Self> {
@@ -124,26 +144,33 @@ impl StaticField for bool {
 }
 
 impl TryFrom<DynamicFieldValue> for bool {
-    type Error = FailureReason;
+    type Error = anyhow::Error;
 
     fn try_from(value: DynamicFieldValue) -> Result<Self, Self::Error> {
         if let DynamicFieldValue::Bool(b) = value {
             Ok(b)
         } else {
-            Err(FailureReason::Failure)
+            Err(anyhow::anyhow!(
+                "Type mismatch, expected bool, got {:?}",
+                value
+            ))
         }
     }
 }
 
 impl seal::Sealed for CString {}
 impl FieldValue for CString {
-    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: FieldTypeId) -> Option<()> {
+    fn to_data(
+        &self,
+        out: &mut ss_plugin_state_data,
+        type_id: FieldTypeId,
+    ) -> Result<(), anyhow::Error> {
         if type_id != FieldTypeId::String {
-            return None;
+            anyhow::bail!("Type mismatch, requested {:?}, got string", type_id)
         }
 
         out.str_ = self.as_ptr();
-        Some(())
+        Ok(())
     }
 
     unsafe fn from_data(value: &ss_plugin_state_data, type_id: FieldTypeId) -> Option<Self> {
@@ -160,13 +187,16 @@ impl StaticField for CString {
 }
 
 impl TryFrom<DynamicFieldValue> for CString {
-    type Error = FailureReason;
+    type Error = anyhow::Error;
 
     fn try_from(value: DynamicFieldValue) -> Result<Self, Self::Error> {
         if let DynamicFieldValue::String(s) = value {
             Ok(s)
         } else {
-            Err(FailureReason::Failure)
+            Err(anyhow::anyhow!(
+                "Type mismatch, expected string, got {:?}",
+                value
+            ))
         }
     }
 }
@@ -175,6 +205,7 @@ impl TryFrom<DynamicFieldValue> for CString {
 ///
 /// This corresponds to `ss_plugin_state_data` in the plugin API.
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub enum DynamicFieldValue {
     U8(u8),
     I8(i8),
@@ -190,7 +221,11 @@ pub enum DynamicFieldValue {
 
 impl seal::Sealed for DynamicFieldValue {}
 impl FieldValue for DynamicFieldValue {
-    fn to_data(&self, out: &mut ss_plugin_state_data, type_id: FieldTypeId) -> Option<()> {
+    fn to_data(
+        &self,
+        out: &mut ss_plugin_state_data,
+        type_id: FieldTypeId,
+    ) -> Result<(), anyhow::Error> {
         match self {
             DynamicFieldValue::U8(v) if type_id == FieldTypeId::U8 => out.u8_ = *v,
             DynamicFieldValue::I8(v) if type_id == FieldTypeId::I8 => out.s8 = *v,
@@ -206,10 +241,10 @@ impl FieldValue for DynamicFieldValue {
             DynamicFieldValue::String(v) if type_id == FieldTypeId::String => {
                 out.str_ = v.as_c_str().as_ptr()
             }
-            _ => return None,
+            _ => anyhow::bail!("Type mismatch, requested {:?}, got {:?}", type_id, self),
         };
 
-        Some(())
+        Ok(())
     }
 
     unsafe fn from_data(value: &ss_plugin_state_data, type_id: FieldTypeId) -> Option<Self> {
@@ -304,9 +339,7 @@ impl TableValues for DynamicFieldValues {
             .get(&key)
             .ok_or_else(|| anyhow::anyhow!("Dynamic field {} not found", key))?;
 
-        field
-            .to_data(out, type_id)
-            .ok_or_else(|| anyhow::anyhow!("Could not serialize {}", key))
+        field.to_data(out, type_id)
     }
 
     fn set(&mut self, key: usize, value: DynamicFieldValue) -> Result<(), anyhow::Error> {
