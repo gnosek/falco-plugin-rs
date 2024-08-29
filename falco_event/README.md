@@ -38,25 +38,25 @@ the `PT_DYN` type in the Falco event table and are available as Rust enums in [`
 
 ### Byte slice to raw event
 
-To read an event from a `&[u8]` to a [events::RawEvent]`, use [events::RawEvent::from].
+To read an event from a `&[u8]` to a [`events::RawEvent`], use [`events::RawEvent::from`].
 It does some basic sanity checking on the slice, but does *not* validate e.g. that all event
 parameters are present and the event is not truncated.
 
-There also exists [events::RawEvent::from_ptr], which is useful if all you have is a raw pointer,
+There also exists [`events::RawEvent::from_ptr`], which is useful if all you have is a raw pointer,
 but it's unsafe for two reasons:
 
 - it dereferences a raw pointer, which is unsafe enough
 - it determines the length of the memory to access based on the event header
 
 This method creates a slice from the pointer (based on the discovered length) and passes it
-to [events::RawEvent::from].
+to [`events::RawEvent::from`].
 
 ### Raw event to typed event
 
 There are two methods you can use to further refine the event type, depending on your use case.
 
 If you are expecting an event of a particular type (or a handful of types), you can match
-on [events::RawEvent::event_type] and call [events::RawEvent::load] with the appropriate
+on [`events::RawEvent::event_type`] and call [`events::RawEvent::load`] with the appropriate
 generic type, for example:
 
 ```
