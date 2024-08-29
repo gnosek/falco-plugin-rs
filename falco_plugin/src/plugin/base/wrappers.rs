@@ -70,6 +70,12 @@ pub unsafe extern "C" fn plugin_init<P: Plugin>(
                 logger_fn: log_fn,
             });
             log::set_boxed_logger(logger).ok();
+
+            #[cfg(debug_assertions)]
+            log::set_max_level(log::LevelFilter::Trace);
+
+            #[cfg(not(debug_assertions))]
+            log::set_max_level(log::LevelFilter::Info);
         }
 
         P::new(init_input, config).map(|plugin| Box::into_raw(Box::new(PluginWrapper::new(plugin))))
