@@ -252,6 +252,7 @@ pub unsafe extern "C" fn plugin_event_to_string<T: SourcePlugin>(
 macro_rules! source_plugin {
     ($ty:ty) => {
         $crate::wrap_ffi! {
+            #[no_mangle]
             use $crate::internals::source::wrappers: <$ty>;
             unsafe fn plugin_next_batch(
                 plugin: *mut falco_plugin::api::ss_plugin_t,

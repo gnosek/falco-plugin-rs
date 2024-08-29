@@ -3,13 +3,13 @@ use std::io::Write;
 
 use anyhow::{anyhow, Error};
 
-use falco_plugin::base::{Json, Plugin, PluginApi, PluginApiWithVersionOverride};
+use falco_plugin::base::{Json, Plugin};
 use falco_plugin::schemars::JsonSchema;
 use falco_plugin::serde::Deserialize;
 use falco_plugin::source::{
     CStringWriter, EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
 };
-use falco_plugin::{EventInputExt, FailureReason};
+use falco_plugin::{static_plugin, EventInputExt, FailureReason};
 use falco_plugin_api::ss_plugin_init_input;
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -96,9 +96,5 @@ impl SourcePluginInstance for DummyPluginInstance {
     }
 }
 
-#[no_mangle]
-pub static DUMMY_PLUGIN_API: falco_plugin_api::plugin_api = PluginApi::<DummyPlugin>::PLUGIN_API;
-
-#[no_mangle]
-pub static DUMMY_PLUGIN_API_3_3_0: falco_plugin_api::plugin_api =
-    PluginApiWithVersionOverride::<3, 3, 0, DummyPlugin>::PLUGIN_API;
+static_plugin!(DUMMY_PLUGIN_API = DummyPlugin);
+static_plugin!(DUMMY_PLUGIN_API_3_3_0 @ (3;3;0) = DummyPlugin);

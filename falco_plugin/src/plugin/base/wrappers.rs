@@ -8,71 +8,12 @@ use falco_plugin_api::{
 };
 
 use crate::base::Plugin;
-use crate::internals::async_events::wrappers::AsyncPluginApi;
-use crate::internals::async_events::wrappers::AsyncPluginFallbackApi;
-use crate::internals::extract::wrappers::ExtractPluginApi;
-use crate::internals::extract::wrappers::ExtractPluginFallbackApi;
-use crate::internals::parse::wrappers::ParsePluginApi;
-use crate::internals::parse::wrappers::ParsePluginFallbackApi;
-use crate::internals::source::wrappers::SourcePluginApi;
-use crate::internals::source::wrappers::SourcePluginFallbackApi;
 use crate::plugin::base::logger::FalcoPluginLogger;
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::FfiResult;
 use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
 use crate::strings::from_ptr::try_str_from_ptr;
 use crate::FailureReason;
-
-/// # Automatically generate the Falco plugin API structure (overriding the API version)
-///
-/// **Note**: you probably want [`PluginApi`], which picks the current API version automatically
-///
-/// For any type `T` that implements [`Plugin`], you can find the [`falco_plugin_api::plugin_api`]
-/// struct corresponding to this plugin and advertising X.Y.Z as the API version
-/// at `PluginApiWithVersionOverride<X, Y, Z, T>::PLUGIN_API`.
-///
-/// **Note**: this does not affect the actual version supported in any way. If you use this form,
-/// it's **entirely your responsibility** to ensure the advertised version is compatible with the actual
-/// version supported by this crate.
-pub struct PluginApiWithVersionOverride<
-    const MAJOR: usize,
-    const MINOR: usize,
-    const PATCH: usize,
-    T,
->(std::marker::PhantomData<T>);
-
-impl<T: Plugin, const MAJOR: usize, const MINOR: usize, const PATCH: usize>
-    PluginApiWithVersionOverride<MAJOR, MINOR, PATCH, T>
-{
-    pub const PLUGIN_API: falco_plugin_api::plugin_api = falco_plugin_api::plugin_api {
-        get_required_api_version: Some(plugin_get_required_api_version::<MAJOR, MINOR, PATCH>),
-        get_init_schema: Some(plugin_get_init_schema::<T>),
-        init: Some(plugin_init::<T>),
-        destroy: Some(plugin_destroy::<T>),
-        get_last_error: Some(plugin_get_last_error::<T>),
-        get_name: Some(plugin_get_name::<T>),
-        get_description: Some(plugin_get_description::<T>),
-        get_contact: Some(plugin_get_contact::<T>),
-        get_version: Some(plugin_get_version::<T>),
-        __bindgen_anon_1: SourcePluginApi::<T>::SOURCE_API,
-        __bindgen_anon_2: ExtractPluginApi::<T>::EXTRACT_API,
-        __bindgen_anon_3: ParsePluginApi::<T>::PARSE_API,
-        __bindgen_anon_4: AsyncPluginApi::<T>::ASYNC_API,
-        set_config: Some(plugin_set_config::<T>),
-        get_metrics: Some(plugin_get_metrics::<T>),
-    };
-}
-
-/// # Automatically generate the Falco plugin API structure
-///
-/// For any type `T` that implements [`Plugin`], you can find the [`falco_plugin_api::plugin_api`]
-/// struct corresponding to this plugin at `PluginApi<T>::PLUGIN_API`.
-pub type PluginApi<T> = PluginApiWithVersionOverride<
-    { falco_plugin_api::PLUGIN_API_VERSION_MAJOR as usize },
-    { falco_plugin_api::PLUGIN_API_VERSION_MINOR as usize },
-    0usize,
-    T,
->;
 
 pub extern "C" fn plugin_get_required_api_version<
     const MAJOR: usize,
@@ -121,8 +62,8 @@ pub unsafe extern "C" fn plugin_init<P: Plugin>(
 
         let init_config =
             try_str_from_ptr(init_input.config, &init_input).map_err(|_| FailureReason::Failure)?;
-        let config = P::ConfigType::from_str(init_config).map_err(|_| FailureReason::Failure)?;
 
+        let config = P::ConfigType::from_str(init_config).map_err(|_| FailureReason::Failure)?;
         if let Some(log_fn) = init_input.log_fn {
             let logger = Box::new(FalcoPluginLogger {
                 owner: init_input.owner,
@@ -141,6 +82,7 @@ pub unsafe extern "C" fn plugin_init<P: Plugin>(
         }
         Err(e) => {
             *rc = e as i32;
+
             std::ptr::null_mut()
         }
     }
@@ -244,29 +186,17 @@ pub unsafe extern "C" fn plugin_get_metrics<P: Plugin>(
 #[doc(hidden)]
 #[macro_export]
 macro_rules! wrap_ffi {
-    (use $mod:path: <$ty:ty>;
+    (
+        #[$attr:meta]
+        use $mod:path: <$ty:ty>;
 
     $(unsafe fn $name:ident( $($param:ident: $param_ty:ty),* $(,)*) -> $ret:ty;)*
     ) => {
         $(
-        #[no_mangle]
+        #[$attr]
         pub unsafe extern "C" fn $name ( $($param: $param_ty),*) -> $ret {
             use $mod as wrappers;
 
-            // In release builds, catch all panics to maintain the ABI
-            // (unwinding across FFI boundaries is undefined behavior)
-            #[cfg(not(debug_assertions))]
-            match std::panic::catch_unwind(|| wrappers::$name::<$ty>($($param),*)) {
-                Ok(ret) => ret,
-                Err(_) => std::process::abort(),
-            }
-
-            // In debug builds, do not interrupt unwinding. This is technically UB,
-            // but seems to work in practice (famous last words). More importantly,
-            // it allows easier debugging (it seems it's hard to single-step into
-            // the closure passed to catch_unwind as it ends up being called from
-            // a compiler built-in function we cannot single-step through)
-            #[cfg(debug_assertions)]
             wrappers::$name::<$ty>($($param),*)
         }
         )*
@@ -363,12 +293,52 @@ macro_rules! plugin {
         );
     };
     ($maj:expr; $min:expr; $patch:expr => $ty:ty) => {
+        $crate::base_plugin_ffi_wrappers!($maj; $min; $patch => #[no_mangle] $ty);
+    };
+}
+
+/// # Automatically generate the Falco plugin API structure for static plugins
+///
+// TODO actually document
+/// **Note**: this does not affect the actual version supported in any way. If you use this form,
+/// it's **entirely your responsibility** to ensure the advertised version is compatible with the actual
+/// version supported by this crate.
+#[macro_export]
+macro_rules! static_plugin {
+    ($name:ident = $ty:ty) => {
+        static_plugin!(
+            $name @ (
+            falco_plugin::api::PLUGIN_API_VERSION_MAJOR as usize;
+            falco_plugin::api::PLUGIN_API_VERSION_MINOR as usize;
+            0)
+            = $ty
+        );
+
+    };
+    ($name:ident @ ($maj:expr; $min:expr; $patch:expr) = $ty:ty) => {
         #[no_mangle]
+        static $name: falco_plugin::api::plugin_api = const {
+            $crate::base_plugin_ffi_wrappers!($maj; $min; $patch => #[deny(dead_code)] $ty);
+            __plugin_base_api()
+        };
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! base_plugin_ffi_wrappers {
+    ($maj:expr; $min:expr; $patch:expr => #[$attr:meta] $ty:ty) => {
+        #[$attr]
         pub extern "C" fn plugin_get_required_api_version() -> *const std::ffi::c_char {
-            $crate::internals::base::wrappers::plugin_get_required_api_version::<{$maj}, {$min}, {$patch}>()
+            $crate::internals::base::wrappers::plugin_get_required_api_version::<
+                { $maj },
+                { $min },
+                { $patch },
+            >()
         }
 
         $crate::wrap_ffi! {
+            #[$attr]
             use $crate::internals::base::wrappers: <$ty>;
 
             unsafe fn plugin_get_version() -> *const std::ffi::c_char;
@@ -395,11 +365,11 @@ macro_rules! plugin {
         }
 
         #[allow(dead_code)]
-        fn __typecheck_plugin_base_api() -> falco_plugin::api::plugin_api {
-            use $crate::internals::source::wrappers::SourcePluginFallbackApi;
+        pub const fn __plugin_base_api() -> falco_plugin::api::plugin_api {
+            use $crate::internals::async_events::wrappers::AsyncPluginFallbackApi;
             use $crate::internals::extract::wrappers::ExtractPluginFallbackApi;
             use $crate::internals::parse::wrappers::ParsePluginFallbackApi;
-            use $crate::internals::async_events::wrappers::AsyncPluginFallbackApi;
+            use $crate::internals::source::wrappers::SourcePluginFallbackApi;
             falco_plugin::api::plugin_api {
                 get_required_api_version: Some(plugin_get_required_api_version),
                 get_version: Some(plugin_get_version),
@@ -410,10 +380,14 @@ macro_rules! plugin {
                 init: Some(plugin_init),
                 destroy: Some(plugin_destroy),
                 get_last_error: Some(plugin_get_last_error),
-                __bindgen_anon_1: $crate::internals::source::wrappers::SourcePluginApi::<$ty>::SOURCE_API,
-                __bindgen_anon_2: $crate::internals::extract::wrappers::ExtractPluginApi::<$ty>::EXTRACT_API,
-                __bindgen_anon_3: $crate::internals::parse::wrappers::ParsePluginApi::<$ty>::PARSE_API,
-                __bindgen_anon_4: $crate::internals::async_events::wrappers::AsyncPluginApi::<$ty>::ASYNC_API,
+                __bindgen_anon_1:
+                    $crate::internals::source::wrappers::SourcePluginApi::<$ty>::SOURCE_API,
+                __bindgen_anon_2:
+                    $crate::internals::extract::wrappers::ExtractPluginApi::<$ty>::EXTRACT_API,
+                __bindgen_anon_3:
+                    $crate::internals::parse::wrappers::ParsePluginApi::<$ty>::PARSE_API,
+                __bindgen_anon_4:
+                    $crate::internals::async_events::wrappers::AsyncPluginApi::<$ty>::ASYNC_API,
                 set_config: Some(plugin_set_config),
                 get_metrics: Some(plugin_get_metrics),
             }

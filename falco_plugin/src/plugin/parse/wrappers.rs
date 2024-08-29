@@ -102,6 +102,7 @@ pub unsafe extern "C" fn plugin_parse_event<T: ParsePlugin>(
 macro_rules! parse_plugin {
     ($ty:ty) => {
         $crate::wrap_ffi! {
+            #[no_mangle]
             use $crate::internals::parse::wrappers: <$ty>;
 
             unsafe fn plugin_get_parse_event_types(

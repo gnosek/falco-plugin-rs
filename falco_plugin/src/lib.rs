@@ -115,8 +115,6 @@ pub mod base {
     pub use falco_plugin_api::ss_plugin_init_input as InitInput;
 
     pub use crate::plugin::base::metrics::{Metric, MetricLabel, MetricType, MetricValue};
-    pub use crate::plugin::base::wrappers::PluginApi;
-    pub use crate::plugin::base::wrappers::PluginApiWithVersionOverride;
     pub use crate::plugin::base::Plugin;
     pub use crate::plugin::schema::Json;
     pub use crate::plugin::tables::ffi::InitInput as TableInitInput;

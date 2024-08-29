@@ -108,6 +108,7 @@ pub unsafe extern "C" fn plugin_set_async_event_handler<T: AsyncEventPlugin>(
 macro_rules! async_event_plugin {
     ($ty:ty) => {
         $crate::wrap_ffi! {
+            #[no_mangle]
             use $crate::internals::async_events::wrappers: <$ty>;
 
             unsafe fn plugin_get_async_events() -> *const ::std::ffi::c_char;

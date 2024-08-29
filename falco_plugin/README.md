@@ -32,7 +32,7 @@ For a statically linked plugin, you need to:
 ```
 use std::ffi::CStr;
 use falco_plugin::base::{InitInput, Metric, Plugin};
-use falco_plugin::base::PluginApi;
+use falco_plugin::static_plugin;
 use falco_plugin::FailureReason;
 
 // define the type holding the plugin state
@@ -60,9 +60,7 @@ impl Plugin for DummyPlugin {
     }
 }
 
-#[no_mangle]
-pub static DUMMY_PLUGIN_API: falco_plugin_api::plugin_api =
-    PluginApi::<DummyPlugin>::PLUGIN_API;
+static_plugin!(DUMMY_PLUGIN_API = DummyPlugin);
 ```
 
 **Note**: due to implementation limitations, there can be only one plugin per static library, though that

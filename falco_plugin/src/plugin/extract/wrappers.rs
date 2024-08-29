@@ -45,13 +45,12 @@ pub unsafe extern "C" fn plugin_get_extract_event_types<T: ExtractPlugin>(
 ) -> *mut u16 {
     let types = T::EVENT_TYPES;
     unsafe { *numtypes = types.len() as u32 };
-    types.as_ptr() as *const u16 as *mut u16 // this should ****really**** be const
+    types.as_ptr() as *const u16 as *mut u16 // TODO(spec): this should ****really**** be const
 }
 
 //noinspection DuplicatedCode
 pub extern "C" fn plugin_get_extract_event_sources<T: ExtractPlugin>() -> *const c_char {
     static SOURCES: Mutex<BTreeMap<TypeId, CString>> = Mutex::new(BTreeMap::new());
-
     let ty = TypeId::of::<T>();
     let mut sources_map = SOURCES.lock().unwrap();
     // we only generate the string once and never change or delete it
@@ -90,6 +89,7 @@ pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
             std::slice::from_raw_parts_mut(extract_input.fields, extract_input.num_fields as usize);
 
         let table_reader = TableReader::new(extract_input.table_reader_ext);
+
         match plugin.plugin.extract_fields(
             event_input,
             table_reader,
@@ -113,6 +113,7 @@ pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
 macro_rules! extract_plugin {
     ($ty:ty) => {
         $crate::wrap_ffi! {
+            #[no_mangle]
             use $crate::internals::extract::wrappers: <$ty>;
 
             unsafe fn plugin_get_extract_event_sources() -> *const ::std::ffi::c_char;
