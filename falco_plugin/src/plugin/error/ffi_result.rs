@@ -23,6 +23,18 @@ impl FfiResult for anyhow::Error {
 
     fn set_last_error(&self, lasterr: &mut CString) {
         let msg = self.to_string();
+
+        #[cfg(debug_assertions)]
+        match self.status_code() {
+            falco_plugin_api::ss_plugin_rc_SS_PLUGIN_EOF => {
+                log::debug!("EOF from plugin: {}", self)
+            }
+            falco_plugin_api::ss_plugin_rc_SS_PLUGIN_TIMEOUT => {
+                log::trace!("Plugin timeout: {}", self)
+            }
+            _ => log::warn!("Plugin error: {:#}", self),
+        }
+
         if let Ok(mut msg) = CString::new(msg.into_bytes()) {
             std::mem::swap(lasterr, &mut msg);
         }
