@@ -13,7 +13,7 @@ use falco_plugin_api::{
 
 use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::exported_tables::ExportedTable;
-use crate::plugin::tables::data::{FieldTypeId, TableData};
+use crate::plugin::tables::data::{FieldTypeId, Key};
 
 // SAFETY: `table` must be a valid pointer to T
 unsafe extern "C" fn get_table_name<T: ExportedTable>(

@@ -1,4 +1,4 @@
-use crate::plugin::tables::data::TableData;
+use crate::plugin::tables::data::Key;
 use crate::plugin::tables::entry::TableEntryReader;
 use crate::tables::TypedTable;
 use falco_plugin_api::ss_plugin_table_reader_vtable_ext;
@@ -19,11 +19,7 @@ impl TableReader {
     /// the corresponding [entry](`TableEntryReader`), which can be used to read individual fields.
     ///
     /// Returns [`None`] if the entry cannot be found
-    pub fn table_entry<K: TableData>(
-        &self,
-        table: &TypedTable<K>,
-        key: &K,
-    ) -> Option<TableEntryReader> {
+    pub fn table_entry<K: Key>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntryReader> {
         unsafe { table.get_entry(self.vtable.as_ref()?, key) }
     }
 
@@ -36,7 +32,7 @@ impl TableReader {
     pub fn iter_entries<F, K>(&self, table: &TypedTable<K>, func: F) -> bool
     where
         F: FnMut(&mut TableEntryReader) -> bool,
-        K: TableData,
+        K: Key,
     {
         unsafe {
             let Some(vtable) = self.vtable.as_ref() else {

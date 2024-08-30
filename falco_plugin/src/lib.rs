@@ -11,7 +11,7 @@ pub use serde;
 
 /// Mark a struct type as a table value
 ///
-/// Tables in Falco plugins are effectively maps from a [key](`tables::TableData`)
+/// Tables in Falco plugins are effectively maps from a key
 /// to a (possibly dynamic) struct of values.
 ///
 /// The default implementation for tables ([`tables::DynamicFieldValues`]) uses

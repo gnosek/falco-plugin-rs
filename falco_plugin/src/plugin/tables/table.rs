@@ -1,5 +1,5 @@
 use crate::plugin::error::last_error::LastError;
-use crate::plugin::tables::data::TableData;
+use crate::plugin::tables::data::{Key, Value};
 use crate::plugin::tables::entry::{TableEntry, TableEntryReader};
 use crate::plugin::tables::vtable::{TableFields, TableReader};
 use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
@@ -17,7 +17,7 @@ use std::mem::ManuallyDrop;
 use thiserror::Error;
 
 /// # A handle for a specific table
-pub struct TypedTable<K: TableData> {
+pub struct TypedTable<K: Key> {
     table: *mut ss_plugin_table_t,
     last_error: LastError,
     key_type: PhantomData<K>,
@@ -32,7 +32,7 @@ pub enum TableError {
     FromPtrError(#[from] FromPtrError),
 }
 
-impl<K: TableData> TypedTable<K> {
+impl<K: Key> TypedTable<K> {
     pub(crate) unsafe fn new(
         table: *mut ss_plugin_table_t,
         owner: *mut ss_plugin_owner_t,
@@ -68,7 +68,7 @@ impl<K: TableData> TypedTable<K> {
     ///
     /// Note that the field objects remembers the table it was retrieved from and accessing
     /// an entry from a different table will cause an error at runtime.
-    pub fn get_field<V: TableData + ?Sized>(
+    pub fn get_field<V: Value + ?Sized>(
         &self,
         tables_input: &TablesInput,
         name: &CStr,
@@ -91,7 +91,7 @@ impl<K: TableData> TypedTable<K> {
     ///
     /// Note that the field objects remembers the table it was retrieved from and accessing
     /// an entry from a different table will cause an error at runtime.
-    pub fn add_field<V: TableData + ?Sized>(
+    pub fn add_field<V: Value + ?Sized>(
         &self,
         tables_input: &TablesInput,
         name: &CStr,

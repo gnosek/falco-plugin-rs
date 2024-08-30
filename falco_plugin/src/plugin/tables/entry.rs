@@ -1,6 +1,6 @@
 use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::error::last_error::LastError;
-use crate::plugin::tables::data::{TableData, TypedTableField};
+use crate::plugin::tables::data::{TypedTableField, Value};
 use crate::plugin::tables::table::TableError;
 use falco_plugin_api::{
     ss_plugin_state_data, ss_plugin_table_entry_t, ss_plugin_table_reader_vtable_ext,
@@ -26,10 +26,10 @@ impl TableEntryReader {
     ///
     /// Given a [field descriptor](`crate::tables::TypedTableField`), this method returns
     /// the value of that field for the entry it describes
-    pub fn read_field<'a, V: TableData + ?Sized>(
+    pub fn read_field<'a, V: Value + ?Sized>(
         &'a mut self,
         field: &'a TypedTableField<V>,
-    ) -> Result<&'a V, anyhow::Error> {
+    ) -> Result<V::Value<'a>, anyhow::Error> {
         if self.table != field.table {
             anyhow::bail!("Trying to access a field from another table")
         }
@@ -95,10 +95,10 @@ impl TableEntry {
     ///
     /// Given a [field descriptor](`crate::tables::TypedTableField`), this method returns
     /// the value of that field for the entry it describes.
-    pub fn read_field<'a, V: TableData + ?Sized>(
+    pub fn read_field<'a, V: Value + ?Sized>(
         &'a mut self,
         field: &'a TypedTableField<V>,
-    ) -> Result<&'a V, anyhow::Error> {
+    ) -> Result<V::Value<'a>, anyhow::Error> {
         self.reader.read_field(field)
     }
 
@@ -106,7 +106,7 @@ impl TableEntry {
     ///
     /// Given a [field descriptor](`crate::tables::TypedTableField`), this method sets
     /// the value of that field for the entry it describes to `value`.
-    pub fn write_field<V: TableData + ?Sized>(
+    pub fn write_field<V: Value + ?Sized>(
         &self,
         field: &TypedTableField<V>,
         value: &V,

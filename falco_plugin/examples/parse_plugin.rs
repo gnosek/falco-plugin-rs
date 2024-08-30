@@ -93,10 +93,7 @@ impl ParsePlugin for DummyPlugin {
             .table_entry(&self.thread_table, &tid)
             .ok_or_else(|| anyhow!("tid not found"))?;
 
-        let mut num = entry
-            .read_field(&self.sample_field)
-            .copied()
-            .unwrap_or_default();
+        let mut num = entry.read_field(&self.sample_field).unwrap_or_default();
         num += 1;
         entry.write_field(&self.sample_field, &num)?;
         Ok(())

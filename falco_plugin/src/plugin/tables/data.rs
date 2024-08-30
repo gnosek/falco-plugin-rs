@@ -11,7 +11,7 @@ use num_derive::FromPrimitive;
 use std::ffi::CStr;
 use std::marker::PhantomData;
 
-mod seal {
+pub(in crate::plugin::tables) mod seal {
     pub trait Sealed {}
 }
 
@@ -49,6 +49,15 @@ pub trait TableData: seal::Sealed {
     /// The Falco plugin type id of the data
     const TYPE_ID: FieldTypeId;
 
+    /// # Convert to the raw FFI representation
+    ///
+    /// **Note**: even though the signature specifies an owned value, this value technically
+    /// still borrows from `self`, as it contains raw pointers (for string values)
+    fn to_data(&self) -> ss_plugin_state_data;
+}
+
+/// # A trait describing types usable as table keys
+pub trait Key: TableData {
     /// # Borrow from the raw FFI representation
     ///
     /// **Note**: this function only borrows the data and must return a reference.
@@ -58,12 +67,16 @@ pub trait TableData: seal::Sealed {
     /// # Safety
     /// `data` must contain valid data of the correct type
     unsafe fn from_data(data: &ss_plugin_state_data) -> &Self;
+}
 
-    /// # Convert to the raw FFI representation
-    ///
-    /// **Note**: even though the signature specifies an owned value, this value technically
-    /// still borrows from `self`, as it contains raw pointers (for string values)
-    fn to_data(&self) -> ss_plugin_state_data;
+/// # A trait describing types usable as table values
+pub trait Value: TableData {
+    /// The type actually retrieved as the field value
+    type Value<'a>
+    where
+        Self: 'a;
+
+    unsafe fn from_data<'a>(data: &ss_plugin_state_data) -> Self::Value<'a>;
 }
 
 macro_rules! impl_table_data_direct {
@@ -72,12 +85,22 @@ macro_rules! impl_table_data_direct {
         impl TableData for $ty {
             const TYPE_ID: FieldTypeId = $type_id;
 
+            fn to_data(&self) -> ss_plugin_state_data {
+                ss_plugin_state_data { $field: *self }
+            }
+        }
+
+        impl Key for $ty {
             unsafe fn from_data(data: &ss_plugin_state_data) -> &Self {
                 unsafe { &data.$field }
             }
+        }
 
-            fn to_data(&self) -> ss_plugin_state_data {
-                ss_plugin_state_data { $field: *self }
+        impl Value for $ty {
+            type Value<'a> = $ty;
+
+            unsafe fn from_data<'a>(data: &ss_plugin_state_data) -> Self::Value<'a> {
+                unsafe { data.$field }
             }
         }
     };
@@ -91,7 +114,6 @@ impl_table_data_direct!(u32 => u32_: FieldTypeId::U32);
 impl_table_data_direct!(i32 => s32: FieldTypeId::I32);
 impl_table_data_direct!(u64 => u64_: FieldTypeId::U64);
 impl_table_data_direct!(i64 => s64: FieldTypeId::I64);
-impl_table_data_direct!(*mut ss_plugin_table_t => table: FieldTypeId::Table);
 
 /// # A boolean value to use in tables
 ///
@@ -119,13 +141,22 @@ impl seal::Sealed for Bool {}
 
 impl TableData for Bool {
     const TYPE_ID: FieldTypeId = FieldTypeId::Bool;
-
-    unsafe fn from_data(data: &ss_plugin_state_data) -> &Self {
-        unsafe { std::mem::transmute(&data.b) }
-    }
-
     fn to_data(&self) -> ss_plugin_state_data {
         ss_plugin_state_data { b: self.0 }
+    }
+}
+
+impl Value for Bool {
+    type Value<'a> = bool;
+
+    unsafe fn from_data<'a>(data: &ss_plugin_state_data) -> Self::Value<'a> {
+        unsafe { data.b != 0 }
+    }
+}
+
+impl Key for Bool {
+    unsafe fn from_data(data: &ss_plugin_state_data) -> &Self {
+        unsafe { std::mem::transmute(&data.b) }
     }
 }
 
@@ -134,14 +165,24 @@ impl seal::Sealed for CStr {}
 impl TableData for CStr {
     const TYPE_ID: FieldTypeId = FieldTypeId::String;
 
-    unsafe fn from_data(data: &ss_plugin_state_data) -> &CStr {
-        unsafe { CStr::from_ptr(data.str_) }
-    }
-
     fn to_data(&self) -> ss_plugin_state_data {
         ss_plugin_state_data {
             str_: self.as_ptr(),
         }
+    }
+}
+
+impl Key for CStr {
+    unsafe fn from_data(data: &ss_plugin_state_data) -> &CStr {
+        unsafe { CStr::from_ptr(data.str_) }
+    }
+}
+
+impl Value for CStr {
+    type Value<'a> = &'a CStr;
+
+    unsafe fn from_data<'a>(data: &ss_plugin_state_data) -> Self::Value<'a> {
+        unsafe { CStr::from_ptr(data.str_) }
     }
 }
 
@@ -152,13 +193,13 @@ impl TableData for CStr {
 ///
 /// You probably won't need to construct any values of this type, but you will receive
 /// them from [`tables::TypedTable<K>::get_field`](`crate::tables::TypedTable::get_field`)
-pub struct TypedTableField<V: TableData + ?Sized> {
+pub struct TypedTableField<V: Value + ?Sized> {
     pub(crate) field: *mut ss_plugin_table_field_t,
     pub(crate) table: *mut ss_plugin_table_t, // used only for validation at call site
     value_type: PhantomData<V>,
 }
 
-impl<V: TableData + ?Sized> TypedTableField<V> {
+impl<V: Value + ?Sized> TypedTableField<V> {
     pub(crate) fn new(field: *mut ss_plugin_table_field_t, table: *mut ss_plugin_table_t) -> Self {
         Self {
             field,

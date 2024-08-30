@@ -1,7 +1,8 @@
 use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::error::last_error::LastError;
 use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, writer_vtable};
-use crate::tables::{ExportedTable, TableData, TypedTable};
+use crate::plugin::tables::data::Key;
+use crate::tables::{ExportedTable, TypedTable};
 use falco_plugin_api::{
     ss_plugin_init_input, ss_plugin_owner_t, ss_plugin_rc, ss_plugin_state_type,
     ss_plugin_table_field_t, ss_plugin_table_fieldinfo, ss_plugin_table_fields_vtable,
@@ -145,7 +146,7 @@ impl TablesInput {
     ///
     /// The key type is verified by the plugin API, so this method will return
     /// an error on mismatch
-    pub fn get_table<K: TableData>(&self, name: &CStr) -> Result<TypedTable<K>, anyhow::Error> {
+    pub fn get_table<K: Key>(&self, name: &CStr) -> Result<TypedTable<K>, anyhow::Error> {
         let table = unsafe {
             (self.get_table)(
                 self.owner,
@@ -162,7 +163,7 @@ impl TablesInput {
     }
 
     /// # Export a table to the Falco plugin API
-    pub fn add_table<K: TableData, T: ExportedTable<Key = K>>(
+    pub fn add_table<K: Key, T: ExportedTable<Key = K>>(
         &self,
         table: T,
     ) -> Result<&'static mut T, anyhow::Error> {

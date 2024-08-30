@@ -76,7 +76,7 @@ impl DummyPlugin {
             .table_entry(&self.thread_table, &tid)
             .ok_or_else(|| anyhow!("tid not found"))?;
 
-        reader.read_field(&self.sample_field).copied()
+        reader.read_field(&self.sample_field)
     }
 }
 

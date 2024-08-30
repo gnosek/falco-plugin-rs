@@ -7,7 +7,7 @@ use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo,
 };
 
-use crate::plugin::tables::data::{FieldTypeId, TableData};
+use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::FailureReason;
 
 pub mod macros;
@@ -358,7 +358,7 @@ impl TableValues for DynamicFieldValues {
 ///
 /// To create a table that includes static fields, pass a type that implements
 /// [`TableValues`] as the second generic parameter.
-pub struct DynamicTable<K: TableData + Ord + Clone, V: TableValues = DynamicFieldValues> {
+pub struct DynamicTable<K: Key + Ord + Clone, V: TableValues = DynamicFieldValues> {
     name: &'static CStr,
     fields: BTreeMap<CString, Rc<DynamicField>>,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,
@@ -374,7 +374,7 @@ pub struct DynamicTable<K: TableData + Ord + Clone, V: TableValues = DynamicFiel
 /// Since the trait specification uses [`Rc`], it's *not* thread-safe.
 pub trait ExportedTable {
     /// The table key type.
-    type Key: TableData;
+    type Key: Key;
     /// The table entry type, exposed over FFI as an opaque pointer.
     type Entry;
     /// The table field descriptor type, exposed over FFI as an opaque pointer.
@@ -443,7 +443,7 @@ pub trait ExportedTable {
     ) -> Option<Rc<Self::Field>>;
 }
 
-impl<K: TableData + Ord + Clone, V: TableValues> DynamicTable<K, V> {
+impl<K: Key + Ord + Clone, V: TableValues> DynamicTable<K, V> {
     /// Create a new table
     pub fn new(name: &'static CStr) -> Self {
         let mut table = Self {
@@ -461,7 +461,7 @@ impl<K: TableData + Ord + Clone, V: TableValues> DynamicTable<K, V> {
     }
 }
 
-impl<K: TableData + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<K, V> {
+impl<K: Key + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<K, V> {
     type Key = K;
     type Entry = RefCell<V>;
     type Field = DynamicField;
