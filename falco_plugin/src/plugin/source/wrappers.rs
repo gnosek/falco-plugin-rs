@@ -64,7 +64,7 @@ pub unsafe extern "C" fn plugin_list_open_params<T: SourcePlugin>(
         return std::ptr::null();
     };
 
-    match actual_plugin.list_open_params() {
+    match actual_plugin.plugin.list_open_params() {
         Ok(s) => {
             unsafe {
                 *rc = ss_plugin_rc_SS_PLUGIN_SUCCESS;
@@ -119,7 +119,7 @@ pub unsafe extern "C" fn plugin_open<T: SourcePlugin>(
             }
         };
 
-        match actual_plugin.open(params) {
+        match actual_plugin.plugin.open(params) {
             Ok(instance) => {
                 *rc = ss_plugin_rc_SS_PLUGIN_SUCCESS;
                 Box::into_raw(Box::new(SourcePluginInstanceWrapper {
@@ -155,7 +155,7 @@ pub unsafe extern "C" fn plugin_close<T: SourcePlugin>(
     let instance = instance as *mut SourcePluginInstanceWrapper<T::Instance>;
     unsafe {
         let mut inst = Box::from_raw(instance);
-        actual_plugin.close(&mut inst.instance);
+        actual_plugin.plugin.close(&mut inst.instance);
     }
 }
 
@@ -183,7 +183,10 @@ pub unsafe extern "C" fn plugin_next_batch<T: SourcePlugin>(
         };
 
         let mut batch = instance.batch.start();
-        match instance.instance.next_batch(actual_plugin, &mut batch) {
+        match instance
+            .instance
+            .next_batch(&mut actual_plugin.plugin, &mut batch)
+        {
             Ok(()) => {
                 let (batch_evts, batch_nevts) = instance.batch.get_raw_pointers();
                 *nevts = batch_nevts as u32;
@@ -250,7 +253,7 @@ pub unsafe extern "C" fn plugin_event_to_string<T: SourcePlugin>(
         };
         let event = EventInput(*event);
 
-        match actual_plugin.event_to_string(&event) {
+        match actual_plugin.plugin.event_to_string(&event) {
             Ok(s) => {
                 plugin.string_storage = s;
                 plugin.string_storage.as_ptr()

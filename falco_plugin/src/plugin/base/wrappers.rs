@@ -2,6 +2,7 @@ use crate::base::Plugin;
 use crate::plugin::base::logger::{FalcoPluginLoggerImpl, FALCO_LOGGER};
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
+use crate::plugin::error::last_error::LastError;
 use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
 use crate::plugin::tables::vtable::TablesInput;
 use crate::strings::from_ptr::try_str_from_ptr;
@@ -83,8 +84,10 @@ pub unsafe extern "C" fn plugin_init<P: Plugin>(
         let tables_input =
             TablesInput::try_from(init_input).context("Failed to build tables input")?;
 
+        let last_error = LastError::from(init_input)?;
+
         P::new(tables_input.as_ref(), config)
-            .map(|plugin| Box::into_raw(Box::new(PluginWrapper::new(plugin))))
+            .map(|plugin| Box::into_raw(Box::new(PluginWrapper::new(plugin, last_error))))
     })();
 
     match res {
@@ -166,7 +169,7 @@ pub unsafe extern "C" fn plugin_set_config<P: Plugin>(
             .context("Failed to get config string")?;
         let config = P::ConfigType::from_str(updated_config).context("Failed to parse config")?;
 
-        actual_plugin.set_config(config)
+        actual_plugin.plugin.set_config(config)
     })();
 
     res.rc(&mut plugin.error_buf)
@@ -191,7 +194,7 @@ pub unsafe extern "C" fn plugin_get_metrics<P: Plugin>(
     };
 
     plugin.metric_storage.clear();
-    for metric in actual_plugin.get_metrics() {
+    for metric in actual_plugin.plugin.get_metrics() {
         plugin.metric_storage.push(metric.as_raw());
     }
 

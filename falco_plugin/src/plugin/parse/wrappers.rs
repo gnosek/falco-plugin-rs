@@ -91,6 +91,7 @@ pub unsafe extern "C" fn plugin_parse_event<T: ParsePlugin>(
         };
 
         actual_plugin
+            .plugin
             .parse_event(&event, &parse_input)
             .rc(&mut plugin.error_buf)
     }

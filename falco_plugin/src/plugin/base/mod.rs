@@ -1,5 +1,6 @@
 use crate::extract::FieldStorage;
 use crate::plugin::base::metrics::Metric;
+use crate::plugin::error::last_error::LastError;
 use crate::plugin::schema::ConfigSchema;
 use crate::plugin::tables::vtable::TablesInput;
 use crate::strings::cstring_writer::WriteIntoCString;
@@ -13,12 +14,17 @@ pub mod metrics;
 #[doc(hidden)]
 pub mod wrappers;
 
+pub(crate) struct ActualPlugin<P: Plugin> {
+    pub(crate) plugin: P,
+    pub(crate) last_error: LastError,
+}
+
 // TODO(sdk): convert this into traits?
 //       this may make it hard to make the lifetimes line up
 //       (will end up with multiple mutable references)
 #[doc(hidden)]
 pub struct PluginWrapper<P: Plugin> {
-    pub(crate) plugin: Option<P>,
+    pub(crate) plugin: Option<ActualPlugin<P>>,
     pub(crate) error_buf: CString,
     pub(crate) field_storage: FieldStorage,
     pub(crate) string_storage: CString,
@@ -26,9 +32,9 @@ pub struct PluginWrapper<P: Plugin> {
 }
 
 impl<P: Plugin> PluginWrapper<P> {
-    pub fn new(plugin: P) -> Self {
+    pub fn new(plugin: P, last_error: LastError) -> Self {
         Self {
-            plugin: Some(plugin),
+            plugin: Some(ActualPlugin { plugin, last_error }),
             error_buf: Default::default(),
             field_storage: Default::default(),
             string_storage: Default::default(),
