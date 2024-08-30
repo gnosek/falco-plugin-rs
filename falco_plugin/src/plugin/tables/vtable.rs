@@ -4,10 +4,13 @@ use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, wri
 use crate::plugin::tables::data::Key;
 use crate::tables::{ExportedTable, TypedTable};
 use falco_plugin_api::{
-    ss_plugin_init_input, ss_plugin_owner_t, ss_plugin_rc, ss_plugin_state_type,
-    ss_plugin_table_field_t, ss_plugin_table_fieldinfo, ss_plugin_table_fields_vtable,
-    ss_plugin_table_fields_vtable_ext, ss_plugin_table_info, ss_plugin_table_input,
-    ss_plugin_table_reader_vtable, ss_plugin_table_t, ss_plugin_table_writer_vtable,
+    ss_plugin_bool, ss_plugin_init_input, ss_plugin_owner_t, ss_plugin_rc, ss_plugin_state_data,
+    ss_plugin_state_type, ss_plugin_table_entry_t, ss_plugin_table_field_t,
+    ss_plugin_table_fieldinfo, ss_plugin_table_fields_vtable, ss_plugin_table_fields_vtable_ext,
+    ss_plugin_table_info, ss_plugin_table_input, ss_plugin_table_iterator_func_t,
+    ss_plugin_table_iterator_state_t, ss_plugin_table_reader_vtable,
+    ss_plugin_table_reader_vtable_ext, ss_plugin_table_t, ss_plugin_table_writer_vtable,
+    ss_plugin_table_writer_vtable_ext,
 };
 use std::ffi::CStr;
 use thiserror::Error;
@@ -18,12 +21,79 @@ pub enum TableError {
     BadVtable(&'static str),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableReader {
     pub(in crate::plugin::tables) get_table_name:
         unsafe extern "C" fn(t: *mut ss_plugin_table_t) -> *const ::std::os::raw::c_char,
     pub(in crate::plugin::tables) get_table_size:
         unsafe extern "C" fn(t: *mut ss_plugin_table_t) -> u64,
+    pub(in crate::plugin::tables) get_table_entry:
+        unsafe extern "C" fn(
+            t: *mut ss_plugin_table_t,
+            key: *const ss_plugin_state_data,
+        ) -> *mut ss_plugin_table_entry_t,
+    pub(in crate::plugin::tables) read_entry_field: unsafe extern "C" fn(
+        t: *mut ss_plugin_table_t,
+        e: *mut ss_plugin_table_entry_t,
+        f: *const ss_plugin_table_field_t,
+        out: *mut ss_plugin_state_data,
+    ) -> ss_plugin_rc,
+    pub(in crate::plugin::tables) release_table_entry:
+        unsafe extern "C" fn(t: *mut ss_plugin_table_t, e: *mut ss_plugin_table_entry_t),
+    pub(in crate::plugin::tables) iterate_entries: unsafe extern "C" fn(
+        t: *mut ss_plugin_table_t,
+        it: ss_plugin_table_iterator_func_t,
+        s: *mut ss_plugin_table_iterator_state_t,
+    ) -> ss_plugin_bool,
+}
+
+impl TableReader {
+    pub(crate) fn try_from(
+        reader_ext: &ss_plugin_table_reader_vtable_ext,
+    ) -> Result<Self, TableError> {
+        Ok(TableReader {
+            get_table_name: reader_ext
+                .get_table_name
+                .ok_or(TableError::BadVtable("get_table_name"))?,
+            get_table_size: reader_ext
+                .get_table_size
+                .ok_or(TableError::BadVtable("get_table_size"))?,
+            get_table_entry: reader_ext
+                .get_table_entry
+                .ok_or(TableError::BadVtable("get_table_entry"))?,
+            read_entry_field: reader_ext
+                .read_entry_field
+                .ok_or(TableError::BadVtable("read_entry_field"))?,
+            release_table_entry: reader_ext
+                .release_table_entry
+                .ok_or(TableError::BadVtable("release_table_entry"))?,
+            iterate_entries: reader_ext
+                .iterate_entries
+                .ok_or(TableError::BadVtable("iterate_entries"))?,
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TableWriter {
+    pub(in crate::plugin::tables) write_entry_field: unsafe extern "C" fn(
+        t: *mut ss_plugin_table_t,
+        e: *mut ss_plugin_table_entry_t,
+        f: *const ss_plugin_table_field_t,
+        in_: *const ss_plugin_state_data,
+    ) -> ss_plugin_rc,
+}
+
+impl TableWriter {
+    pub(crate) fn try_from(
+        writer_ext: &ss_plugin_table_writer_vtable_ext,
+    ) -> Result<Self, TableError> {
+        Ok(TableWriter {
+            write_entry_field: writer_ext
+                .write_entry_field
+                .ok_or(TableError::BadVtable("write_entry_field"))?,
+        })
+    }
 }
 
 #[derive(Debug)]

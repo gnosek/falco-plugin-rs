@@ -1,23 +1,20 @@
 use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::error::last_error::LastError;
 use crate::plugin::tables::data::{TypedTableField, Value};
-use crate::plugin::tables::table::TableError;
-use falco_plugin_api::{
-    ss_plugin_state_data, ss_plugin_table_entry_t, ss_plugin_table_reader_vtable_ext,
-    ss_plugin_table_t, ss_plugin_table_writer_vtable_ext,
-};
-use std::mem::ManuallyDrop;
+use crate::plugin::tables::entry::raw::RawEntry;
+use crate::plugin::tables::vtable::{TableReader, TableWriter};
+use falco_plugin_api::ss_plugin_table_t;
+
+pub(in crate::plugin::tables) mod raw;
 
 /// # A read-only accessor to a table entry
 ///
 /// This type corresponds to a particular entry in a table.
 pub struct TableEntryReader {
     pub(crate) table: *mut ss_plugin_table_t,
-    pub(crate) entry: *mut ss_plugin_table_entry_t,
-    pub(crate) reader_vtable: *const ss_plugin_table_reader_vtable_ext,
+    pub(crate) entry: RawEntry,
+    pub(crate) reader_vtable: TableReader,
     pub(crate) last_error: LastError,
-
-    pub(crate) entry_value: ss_plugin_state_data,
 }
 
 impl TableEntryReader {
@@ -34,46 +31,17 @@ impl TableEntryReader {
             anyhow::bail!("Trying to access a field from another table")
         }
         unsafe {
-            let read_entry_field = self
-                .reader_vtable
-                .as_ref()
-                .and_then(|vt| vt.read_entry_field)
-                .ok_or(TableError::BadVtable)?;
-            read_entry_field(
-                self.table,
-                self.entry,
-                field.field.cast_const(),
-                (&mut self.entry_value) as *mut _,
-            )
-            .as_result()
-            .with_last_error(&self.last_error)?;
-
-            Ok(V::from_data(&self.entry_value))
+            self.entry
+                .read_field::<V>(&self.reader_vtable, field.field.cast_const())
+                .ok_or_else(|| anyhow::anyhow!("Failed to read field"))
+                .with_last_error(&self.last_error)
         }
     }
 
-    pub(crate) fn with_writer(
-        self,
-        writer_vtable: *const ss_plugin_table_writer_vtable_ext,
-    ) -> TableEntry {
+    pub(crate) fn with_writer(self, writer_vtable: TableWriter) -> TableEntry {
         TableEntry {
-            reader: ManuallyDrop::new(self),
+            reader: self,
             writer_vtable,
-            from_reader: true,
-        }
-    }
-}
-
-impl Drop for TableEntryReader {
-    fn drop(&mut self) {
-        unsafe {
-            if let Some(release_table_entry) = self
-                .reader_vtable
-                .as_ref()
-                .and_then(|vt| vt.release_table_entry)
-            {
-                release_table_entry(self.table, self.entry)
-            }
         }
     }
 }
@@ -82,12 +50,8 @@ impl Drop for TableEntryReader {
 ///
 /// This type corresponds to a particular entry in a table.
 pub struct TableEntry {
-    reader: ManuallyDrop<TableEntryReader>,
-    writer_vtable: *const ss_plugin_table_writer_vtable_ext,
-
-    // if from_reader, we have to call release_entry on drop,
-    // otherwise destroy_entry
-    from_reader: bool,
+    reader: TableEntryReader,
+    writer_vtable: TableWriter,
 }
 
 impl TableEntry {
@@ -115,39 +79,12 @@ impl TableEntry {
             anyhow::bail!("Trying to access a field from another table")
         }
         let value = value.to_data();
-        let write_entry_field = unsafe {
-            self.writer_vtable
-                .as_ref()
-                .and_then(|vt| vt.write_entry_field)
-                .ok_or(TableError::BadVtable)?
-        };
         unsafe {
-            write_entry_field(
-                self.reader.table,
-                self.reader.entry,
-                field.field.cast_const(),
-                &value as *const _,
-            )
+            self.reader
+                .entry
+                .write_field(&self.writer_vtable, field.field.cast_const(), &value)
         }
         .as_result()
         .with_last_error(&self.reader.last_error)
-    }
-}
-
-impl Drop for TableEntry {
-    fn drop(&mut self) {
-        if self.from_reader {
-            unsafe { ManuallyDrop::drop(&mut self.reader) }
-        } else {
-            unsafe {
-                if let Some(destroy_table_entry) = self
-                    .writer_vtable
-                    .as_ref()
-                    .and_then(|vt| vt.destroy_table_entry)
-                {
-                    destroy_table_entry(self.reader.table, self.reader.entry)
-                }
-            }
-        }
     }
 }

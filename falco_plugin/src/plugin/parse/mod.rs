@@ -3,7 +3,7 @@ use crate::plugin::base::Plugin;
 use crate::plugin::tables::data::Key;
 use crate::plugin::tables::entry::TableEntry;
 use crate::plugin::tables::table::TypedTable;
-use crate::tables::TableReader;
+use crate::plugin::tables::vtable::{TableReader, TableWriter};
 use falco_event::events::types::EventType;
 
 #[doc(hidden)]
@@ -61,7 +61,7 @@ pub trait EventParseInput {
     /// This is normally not necessary (since [`EventParseInput::table_entry`] is more powerful
     /// as it also gives you write access) but might be useful for sharing code between
     /// parse and extract plugins.
-    fn table_reader<K: Key>(&self) -> TableReader;
+    fn table_reader<K: Key>(&self) -> Option<TableReader>;
 
     /// # Iterate over all entries in a table with mutable access
     ///
@@ -78,16 +78,15 @@ pub trait EventParseInput {
 impl EventParseInput for ParseInput {
     fn table_entry<K: Key>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry> {
         unsafe {
-            Some(
-                table
-                    .get_entry(self.table_reader_ext.as_ref()?, key)?
-                    .with_writer(self.table_writer_ext.as_ref()?),
-            )
+            let reader = TableReader::try_from(self.table_reader_ext.as_ref()?).ok()?;
+            let writer = TableWriter::try_from(self.table_writer_ext.as_ref()?).ok()?;
+
+            Some(table.get_entry(reader, key)?.with_writer(writer))
         }
     }
 
-    fn table_reader<K: Key>(&self) -> TableReader {
-        unsafe { TableReader::new(self.table_reader_ext) }
+    fn table_reader<K: Key>(&self) -> Option<TableReader> {
+        unsafe { TableReader::try_from(self.table_reader_ext.as_ref()?).ok() }
     }
 
     fn iter_entries_mut<F, K>(&self, table: &TypedTable<K>, func: F) -> bool
@@ -95,15 +94,19 @@ impl EventParseInput for ParseInput {
         F: FnMut(&mut TableEntry) -> bool,
         K: Key,
     {
-        unsafe {
-            let Some(reader_vtable) = self.table_reader_ext.as_ref() else {
-                return false;
-            };
-            let Some(writer_vtable) = self.table_writer_ext.as_ref() else {
-                return false;
-            };
+        let rw = unsafe {
+            (|| -> Option<(TableReader, TableWriter)> {
+                let reader = TableReader::try_from(self.table_reader_ext.as_ref()?).ok()?;
+                let writer = TableWriter::try_from(self.table_writer_ext.as_ref()?).ok()?;
 
-            table.iter_entries_mut(reader_vtable, writer_vtable, func)
-        }
+                Some((reader, writer))
+            })()
+        };
+
+        let Some((reader_vtable, writer_vtable)) = rw else {
+            return false;
+        };
+
+        table.iter_entries_mut(&reader_vtable, &writer_vtable, func)
     }
 }

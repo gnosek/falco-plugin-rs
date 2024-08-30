@@ -5,12 +5,16 @@ use falco_plugin_api::ss_plugin_table_reader_vtable_ext;
 
 /// # An accessor object to look up table entries for read-only access
 pub struct TableReader {
-    vtable: *const ss_plugin_table_reader_vtable_ext,
+    vtable: crate::plugin::tables::vtable::TableReader,
 }
 
 impl TableReader {
-    pub(crate) unsafe fn new(vtable: *const ss_plugin_table_reader_vtable_ext) -> Self {
-        Self { vtable }
+    pub(crate) unsafe fn new(vtable: *const ss_plugin_table_reader_vtable_ext) -> Option<Self> {
+        let vtable =
+            crate::plugin::tables::vtable::TableReader::try_from(unsafe { vtable.as_ref()? })
+                .ok()?;
+
+        Some(Self { vtable })
     }
 
     /// # Get a table entry object corresponding to `key`
@@ -20,7 +24,7 @@ impl TableReader {
     ///
     /// Returns [`None`] if the entry cannot be found
     pub fn table_entry<K: Key>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntryReader> {
-        unsafe { table.get_entry(self.vtable.as_ref()?, key) }
+        table.get_entry(self.vtable.clone(), key)
     }
 
     /// # Iterate over all entries in a table with read-only access
@@ -34,12 +38,6 @@ impl TableReader {
         F: FnMut(&mut TableEntryReader) -> bool,
         K: Key,
     {
-        unsafe {
-            let Some(vtable) = self.vtable.as_ref() else {
-                return false;
-            };
-
-            table.iter_entries(vtable, func)
-        }
+        table.iter_entries(&self.vtable, func)
     }
 }

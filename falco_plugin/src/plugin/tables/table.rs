@@ -1,19 +1,18 @@
 use crate::plugin::error::last_error::LastError;
 use crate::plugin::tables::data::{Key, Value};
+use crate::plugin::tables::entry::raw::RawEntry;
 use crate::plugin::tables::entry::{TableEntry, TableEntryReader};
-use crate::plugin::tables::vtable::{TableFields, TableReader};
+use crate::plugin::tables::vtable::{TableFields, TableReader, TableWriter};
 use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
 use crate::tables::{TablesInput, TypedTableField};
 use crate::FailureReason;
 use falco_plugin_api::{
-    ss_plugin_bool, ss_plugin_owner_t, ss_plugin_state_data, ss_plugin_state_type,
-    ss_plugin_table_entry_t, ss_plugin_table_fieldinfo, ss_plugin_table_iterator_func_t,
-    ss_plugin_table_iterator_state_t, ss_plugin_table_reader_vtable_ext, ss_plugin_table_t,
-    ss_plugin_table_writer_vtable_ext,
+    ss_plugin_bool, ss_plugin_owner_t, ss_plugin_state_type, ss_plugin_table_entry_t,
+    ss_plugin_table_fieldinfo, ss_plugin_table_iterator_func_t, ss_plugin_table_iterator_state_t,
+    ss_plugin_table_t,
 };
 use std::ffi::{c_char, CStr};
 use std::marker::PhantomData;
-use std::mem::ManuallyDrop;
 use thiserror::Error;
 
 /// # A handle for a specific table
@@ -127,47 +126,46 @@ impl<K: Key> TypedTable<K> {
 
     pub(crate) fn get_entry(
         &self,
-        reader_vtable: &ss_plugin_table_reader_vtable_ext,
+        reader_vtable: TableReader,
         key: &K,
     ) -> Option<TableEntryReader> {
         let entry = unsafe {
-            reader_vtable.get_table_entry?(self.table, &key.to_data() as *const _).as_mut()
+            (reader_vtable.get_table_entry)(self.table, &key.to_data() as *const _).as_mut()
         }?;
+        let raw_entry = RawEntry {
+            table: self.table,
+            entry: entry as *mut _,
+            destructor: Some(reader_vtable.release_table_entry),
+        };
         Some(TableEntryReader {
             table: self.table,
-            reader_vtable: reader_vtable as *const _,
-            entry: entry as *mut _,
+            reader_vtable,
+            entry: raw_entry,
             last_error: self.last_error.clone(),
-
-            entry_value: ss_plugin_state_data { u64_: 0 },
         })
     }
 
-    pub(crate) fn iter_entries<F>(
-        &self,
-        reader_vtable: &ss_plugin_table_reader_vtable_ext,
-        mut func: F,
-    ) -> bool
+    pub(crate) fn iter_entries<F>(&self, reader_vtable: &TableReader, mut func: F) -> bool
     where
         F: FnMut(&mut TableEntryReader) -> bool,
     {
-        let Some(iterate_entries) = reader_vtable.iterate_entries else {
-            return false;
-        };
-
         iter_inner(
             self.table,
-            iterate_entries,
+            reader_vtable.iterate_entries,
             move |s: *mut ss_plugin_table_entry_t| {
                 // Do not call the destructor on TableEntryReader: we do not have
                 // our own refcount for it, just borrowing
-                let mut entry = ManuallyDrop::new(TableEntryReader {
+                let entry = RawEntry {
                     table: self.table,
-                    entry: s,
-                    reader_vtable,
+                    entry: s as *mut _,
+                    destructor: None,
+                };
+                let mut entry = TableEntryReader {
+                    table: self.table,
+                    entry,
+                    reader_vtable: reader_vtable.clone(),
                     last_error: self.last_error.clone(),
-                    entry_value: ss_plugin_state_data { u64_: 0 },
-                });
+                };
 
                 func(&mut entry)
             },
@@ -176,33 +174,31 @@ impl<K: Key> TypedTable<K> {
 
     pub(crate) fn iter_entries_mut<F>(
         &self,
-        reader_vtable: &ss_plugin_table_reader_vtable_ext,
-        writer_vtable: &ss_plugin_table_writer_vtable_ext,
+        reader_vtable: &TableReader,
+        writer_vtable: &TableWriter,
         mut func: F,
     ) -> bool
     where
         F: FnMut(&mut TableEntry) -> bool,
     {
-        let Some(iterate_entries) = reader_vtable.iterate_entries else {
-            return false;
-        };
-
         iter_inner(
             self.table,
-            iterate_entries,
+            reader_vtable.iterate_entries,
             move |s: *mut ss_plugin_table_entry_t| {
                 // Do not call the destructor on TableEntryReader: we do not have
                 // our own refcount for it, just borrowing
-                let mut entry = ManuallyDrop::new(
-                    TableEntryReader {
-                        table: self.table,
-                        entry: s,
-                        reader_vtable,
-                        last_error: self.last_error.clone(),
-                        entry_value: ss_plugin_state_data { u64_: 0 },
-                    }
-                    .with_writer(writer_vtable),
-                );
+                let entry = RawEntry {
+                    table: self.table,
+                    entry: s as *mut _,
+                    destructor: None,
+                };
+                let mut entry = TableEntryReader {
+                    table: self.table,
+                    entry,
+                    reader_vtable: reader_vtable.clone(),
+                    last_error: self.last_error.clone(),
+                }
+                .with_writer(writer_vtable.clone());
 
                 func(&mut entry)
             },

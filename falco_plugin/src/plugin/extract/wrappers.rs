@@ -95,7 +95,9 @@ pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
         let fields =
             std::slice::from_raw_parts_mut(extract_input.fields, extract_input.num_fields as usize);
 
-        let table_reader = TableReader::new(extract_input.table_reader_ext);
+        let Some(table_reader) = TableReader::new(extract_input.table_reader_ext) else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
 
         actual_plugin
             .extract_fields(
