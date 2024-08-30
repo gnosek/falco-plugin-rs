@@ -4,7 +4,7 @@ use crate::plugin::tables::entry::raw::RawEntry;
 use crate::plugin::tables::entry::{TableEntry, TableEntryReader};
 use crate::plugin::tables::vtable::{TableFields, TableReader, TableWriter};
 use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
-use crate::tables::{TablesInput, TypedTableField};
+use crate::tables::{Field, TablesInput};
 use crate::FailureReason;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_owner_t, ss_plugin_state_type, ss_plugin_table_entry_t,
@@ -71,7 +71,7 @@ impl<K: Key> TypedTable<K> {
         &self,
         tables_input: &TablesInput,
         name: &CStr,
-    ) -> Result<TypedTableField<V>, FailureReason> {
+    ) -> Result<Field<V>, FailureReason> {
         let field = unsafe {
             (tables_input.fields_ext.get_table_field)(
                 self.table,
@@ -81,7 +81,7 @@ impl<K: Key> TypedTable<K> {
             .as_mut()
             .ok_or(FailureReason::Failure)?
         };
-        Ok(TypedTableField::<V>::new(field as *mut _, self.table))
+        Ok(Field::<V>::new(field as *mut _, self.table))
     }
 
     /// # Add a table field
@@ -94,7 +94,7 @@ impl<K: Key> TypedTable<K> {
         &self,
         tables_input: &TablesInput,
         name: &CStr,
-    ) -> Result<TypedTableField<V>, FailureReason> {
+    ) -> Result<Field<V>, FailureReason> {
         let table = unsafe {
             (tables_input.fields_ext.add_table_field)(
                 self.table,
@@ -104,7 +104,7 @@ impl<K: Key> TypedTable<K> {
             .as_mut()
         }
         .ok_or(FailureReason::Failure)?;
-        Ok(TypedTableField::<V>::new(table as *mut _, self.table))
+        Ok(Field::<V>::new(table as *mut _, self.table))
     }
 
     /// # Get the table name

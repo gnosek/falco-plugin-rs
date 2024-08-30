@@ -1,8 +1,9 @@
 use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::error::last_error::LastError;
-use crate::plugin::tables::data::{TypedTableField, Value};
+use crate::plugin::tables::data::Value;
 use crate::plugin::tables::entry::raw::RawEntry;
 use crate::plugin::tables::vtable::{TableReader, TableWriter};
+use crate::tables::Field;
 use falco_plugin_api::ss_plugin_table_t;
 
 pub(in crate::plugin::tables) mod raw;
@@ -21,18 +22,18 @@ impl TableEntryReader {
     //noinspection DuplicatedCode
     /// # Read the value of a field for a particular table entry
     ///
-    /// Given a [field descriptor](`crate::tables::TypedTableField`), this method returns
+    /// Given a [field descriptor](`Field`), this method returns
     /// the value of that field for the entry it describes
     pub fn read_field<'a, V: Value + ?Sized>(
         &'a mut self,
-        field: &'a TypedTableField<V>,
+        field: &'a Field<V>,
     ) -> Result<V::Value<'a>, anyhow::Error> {
         if self.table != field.table {
             anyhow::bail!("Trying to access a field from another table")
         }
         unsafe {
             self.entry
-                .read_field::<V>(&self.reader_vtable, field.field.cast_const())
+                .read_field::<V>(&self.reader_vtable, field.field.field.cast_const())
                 .ok_or_else(|| anyhow::anyhow!("Failed to read field"))
                 .with_last_error(&self.last_error)
         }
@@ -57,22 +58,22 @@ pub struct TableEntry {
 impl TableEntry {
     /// # Read the value of a field for a particular table entry
     ///
-    /// Given a [field descriptor](`crate::tables::TypedTableField`), this method returns
+    /// Given a [field descriptor](`Field`), this method returns
     /// the value of that field for the entry it describes.
     pub fn read_field<'a, V: Value + ?Sized>(
         &'a mut self,
-        field: &'a TypedTableField<V>,
+        field: &'a Field<V>,
     ) -> Result<V::Value<'a>, anyhow::Error> {
         self.reader.read_field(field)
     }
 
     /// # Write the value of a field for a particular table entry
     ///
-    /// Given a [field descriptor](`crate::tables::TypedTableField`), this method sets
+    /// Given a [field descriptor](`Field`), this method sets
     /// the value of that field for the entry it describes to `value`.
     pub fn write_field<V: Value + ?Sized>(
         &self,
-        field: &TypedTableField<V>,
+        field: &Field<V>,
         value: &V,
     ) -> Result<(), anyhow::Error> {
         if self.reader.table != field.table {
@@ -80,9 +81,11 @@ impl TableEntry {
         }
         let value = value.to_data();
         unsafe {
-            self.reader
-                .entry
-                .write_field(&self.writer_vtable, field.field.cast_const(), &value)
+            self.reader.entry.write_field(
+                &self.writer_vtable,
+                field.field.field.cast_const(),
+                &value,
+            )
         }
         .as_result()
         .with_last_error(&self.reader.last_error)
