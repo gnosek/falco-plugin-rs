@@ -5,20 +5,6 @@ use falco_plugin_api::ss_plugin_rc;
 
 pub trait AsResult {
     fn as_result(&self) -> Result<(), FailureReason>;
-    fn as_result_with_last_error(self, last_error: &LastError) -> Result<(), anyhow::Error>
-    where
-        Self: Sized,
-    {
-        let res = self.as_result();
-        if res.is_err() {
-            let msg = last_error.get();
-            if let Some(msg) = msg {
-                return res.context(msg);
-            }
-        }
-
-        Ok(res?)
-    }
 }
 
 impl AsResult for ss_plugin_rc {
@@ -31,6 +17,31 @@ impl AsResult for ss_plugin_rc {
             b::ss_plugin_rc_SS_PLUGIN_EOF => Err(FailureReason::Timeout),
             b::ss_plugin_rc_SS_PLUGIN_NOT_SUPPORTED => Err(FailureReason::NotSupported),
             _ => Err(FailureReason::Failure),
+        }
+    }
+}
+
+pub trait WithLastError {
+    type Decorated;
+
+    fn with_last_error(self, last_error: &LastError) -> Self::Decorated;
+}
+
+impl<T, E> WithLastError for Result<T, E>
+where
+    E: Into<anyhow::Error>,
+    Self: Context<T, E>,
+{
+    type Decorated = anyhow::Result<T>;
+
+    fn with_last_error(self, last_error: &LastError) -> Self::Decorated {
+        let Some(msg) = last_error.get() else {
+            return self.map_err(|e| e.into());
+        };
+
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(_) => self.context(msg),
         }
     }
 }

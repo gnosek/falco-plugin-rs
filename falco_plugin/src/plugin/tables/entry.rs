@@ -1,4 +1,4 @@
-use crate::plugin::error::as_result::AsResult;
+use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::error::last_error::LastError;
 use crate::plugin::tables::data::{TableData, TypedTableField};
 use crate::plugin::tables::table::TableError;
@@ -47,7 +47,8 @@ impl TableEntryReader {
                 field.field.cast_const(),
                 (&mut self.entry_value) as *mut _,
             )
-            .as_result_with_last_error(&self.last_error)?;
+            .as_result()
+            .with_last_error(&self.last_error)?;
 
             Ok(V::from_data(&self.entry_value))
         }
@@ -132,7 +133,8 @@ impl TableEntry {
                 &value as *const _,
             )
         }
-        .as_result_with_last_error(&self.reader.last_error)
+        .as_result()
+        .with_last_error(&self.reader.last_error)
     }
 }
 
