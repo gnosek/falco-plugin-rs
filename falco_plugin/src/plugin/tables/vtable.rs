@@ -2,6 +2,7 @@ use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::error::last_error::LastError;
 use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, writer_vtable};
 use crate::plugin::tables::data::Key;
+use crate::plugin::tables::table::raw::RawTable;
 use crate::tables::{ExportedTable, TypedTable};
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_init_input, ss_plugin_owner_t, ss_plugin_rc, ss_plugin_state_data,
@@ -140,9 +141,7 @@ impl TableFields {
 /// or manage their fields
 pub struct TablesInput {
     owner: *mut ss_plugin_owner_t,
-    get_owner_last_error:
-        unsafe extern "C" fn(o: *mut ss_plugin_owner_t) -> *const std::ffi::c_char,
-
+    pub(in crate::plugin::tables) last_error: LastError,
     pub(in crate::plugin::tables) list_tables: unsafe extern "C" fn(
         o: *mut ss_plugin_owner_t,
         ntables: *mut u32,
@@ -175,10 +174,11 @@ impl TablesInput {
             let get_owner_last_error = value
                 .get_owner_last_error
                 .ok_or(TableError::BadVtable("get_owner_last_error"))?;
+            let last_error = unsafe { LastError::new(value.owner, get_owner_last_error) };
 
             Ok(Some(TablesInput {
                 owner: value.owner,
-                get_owner_last_error,
+                last_error: last_error.clone(),
                 list_tables: table_init_input
                     .list_tables
                     .ok_or(TableError::BadVtable("list_tables"))?,
@@ -228,7 +228,8 @@ impl TablesInput {
             Err(anyhow::anyhow!("Could not get table {:?}", name)).with_last_error(&self.last_error)
         } else {
             // Safety: we pass the data directly from FFI, the framework would never lie to us, right?
-            Ok(unsafe { TypedTable::<K>::new(table, self.owner, self.get_owner_last_error) })
+            let table = RawTable { table };
+            Ok(unsafe { TypedTable::<K>::new(table, self.last_error.clone()) })
         }
     }
 
@@ -275,11 +276,9 @@ impl TablesInput {
             fields_ext: &mut fields_vtable_ext as *mut _,
         };
 
-        let last_error = unsafe { LastError::new(self.owner, self.get_owner_last_error) };
-
         unsafe { (self.add_table)(self.owner, &table_input as *const _) }
             .as_result()
-            .with_last_error(&last_error)?;
+            .with_last_error(&self.last_error)?;
         // There is no API for destroying a table, so we leak the pointer. At least we can have
         // a &'static back
         Ok(Box::leak(table))
