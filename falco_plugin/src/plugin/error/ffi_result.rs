@@ -55,14 +55,3 @@ impl<T> FfiResult for Result<T, anyhow::Error> {
         }
     }
 }
-
-impl<T> FfiResult for Result<T, FailureReason> {
-    fn status_code(&self) -> ss_plugin_rc {
-        match self {
-            Ok(_) => falco_plugin_api::ss_plugin_rc_SS_PLUGIN_SUCCESS,
-            Err(e) => (*e).into(),
-        }
-    }
-
-    fn set_last_error(&self, _lasterr: &mut CString) {}
-}
