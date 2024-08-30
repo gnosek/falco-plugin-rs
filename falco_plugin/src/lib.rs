@@ -273,10 +273,8 @@ pub mod extract {
 /// parse_plugin!(MyParsePlugin);
 /// ```
 pub mod parse {
-    pub use falco_plugin_api::ss_plugin_event_parse_input as ParseInput;
-
     pub use crate::plugin::event::EventInput;
-    pub use crate::plugin::parse::EventParseInput;
+    pub use crate::plugin::parse::ParseInput;
     pub use crate::plugin::parse::ParsePlugin;
 }
 

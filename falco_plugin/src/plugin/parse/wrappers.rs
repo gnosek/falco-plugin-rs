@@ -1,7 +1,7 @@
 use crate::parse::EventInput;
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
-use crate::plugin::parse::ParsePlugin;
+use crate::plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin_api::plugin_api__bindgen_ty_3 as parse_plugin_api;
 use falco_plugin_api::{
     ss_plugin_event_input, ss_plugin_event_parse_input, ss_plugin_rc,
@@ -86,7 +86,8 @@ pub unsafe extern "C" fn plugin_parse_event<T: ParsePlugin>(
         };
         let event = EventInput(*event);
 
-        let Some(parse_input) = parse_input.as_ref() else {
+        let Ok(parse_input) = ParseInput::try_from(parse_input, actual_plugin.last_error.clone())
+        else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 

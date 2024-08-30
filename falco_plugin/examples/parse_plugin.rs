@@ -4,11 +4,10 @@ use anyhow::anyhow;
 
 use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
-use falco_plugin::parse::{EventInput, EventParseInput, ParsePlugin};
+use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
 use falco_plugin::tables::{DynamicFieldValues, Field, TablesInput};
 use falco_plugin::tables::{DynamicTable, Table};
 use falco_plugin::{parse_plugin, plugin};
-use falco_plugin_api::ss_plugin_event_parse_input;
 use falco_plugin_derive::TableValues;
 
 #[derive(TableValues, Default)]
@@ -83,19 +82,14 @@ impl ParsePlugin for DummyPlugin {
     fn parse_event(
         &mut self,
         event_input: &EventInput,
-        parse_input: &ss_plugin_event_parse_input,
+        parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         let event = event_input.event()?;
         let event = event.load_any()?;
         let tid = event.metadata.tid;
 
-        let reader = parse_input
-            .table_reader()
-            .ok_or_else(|| anyhow!("could not get table reader"))?;
-
-        let writer = parse_input
-            .table_writer()
-            .ok_or_else(|| anyhow!("could not get table writer"))?;
+        let reader = &parse_input.reader;
+        let writer = &parse_input.writer;
 
         let entry = self
             .thread_table

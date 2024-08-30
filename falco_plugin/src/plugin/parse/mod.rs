@@ -1,9 +1,10 @@
-use crate::parse::{EventInput, ParseInput};
+use crate::parse::EventInput;
 use crate::plugin::base::Plugin;
 use crate::plugin::error::last_error::LastError;
-use crate::plugin::tables::vtable::TableReader;
-use crate::tables::TableWriter;
+use crate::plugin::tables::vtable::TableWriter;
+use crate::tables::TableReader;
 use falco_event::events::types::EventType;
+use falco_plugin_api::ss_plugin_event_parse_input;
 
 #[doc(hidden)]
 pub mod wrappers;
@@ -46,29 +47,48 @@ pub trait ParsePlugin: Plugin {
     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput) -> anyhow::Result<()>;
 }
 
-/// # Allow table access during event parsing
+/// # The input to a parse plugin
 ///
-/// See [`crate::tables::TablesInput`] for details
-pub trait EventParseInput {
-    /// # Build a TableReader from the parse input
-    fn table_reader(&self) -> Option<TableReader>;
-
-    /// # Build a TableWriter from the parse input
-    fn table_writer(&self) -> Option<TableWriter>;
+/// It has two fields containing the vtables needed to access tables imported through
+/// the [tables API](`crate::tables`).
+///
+/// You will pass these vtables to all methods that read or write data from tables,
+/// but you won't interact with them otherwise. They're effectively tokens proving
+/// you're in the right context to read/write tables.
+pub struct ParseInput {
+    /// Accessors to read table entries
+    pub reader: TableReader,
+    /// Accessors to modify table entries
+    pub writer: TableWriter,
 }
 
-impl EventParseInput for ParseInput {
-    fn table_reader(&self) -> Option<TableReader> {
-        unsafe {
-            let last_error = LastError::new(self.owner, self.get_owner_last_error?);
-            TableReader::try_from(self.table_reader_ext.as_ref()?, last_error).ok()
-        }
-    }
+impl ParseInput {
+    pub(in crate::plugin::parse) unsafe fn try_from(
+        value: *const ss_plugin_event_parse_input,
+        last_error: LastError,
+    ) -> Result<Self, anyhow::Error> {
+        let input = unsafe {
+            value
+                .as_ref()
+                .ok_or(anyhow::anyhow!("Got null event parse input"))?
+        };
 
-    fn table_writer(&self) -> Option<TableWriter> {
-        unsafe {
-            let last_error = LastError::new(self.owner, self.get_owner_last_error?);
-            TableWriter::try_from(self.table_writer_ext.as_ref()?, last_error).ok()
-        }
+        let reader = unsafe {
+            input
+                .table_reader_ext
+                .as_ref()
+                .ok_or(anyhow::anyhow!("Got null reader vtable"))?
+        };
+        let writer = unsafe {
+            input
+                .table_writer_ext
+                .as_ref()
+                .ok_or(anyhow::anyhow!("Got null writer vtable"))?
+        };
+
+        let reader = TableReader::try_from(reader, last_error.clone())?;
+        let writer = TableWriter::try_from(writer, last_error)?;
+
+        Ok(Self { reader, writer })
     }
 }
