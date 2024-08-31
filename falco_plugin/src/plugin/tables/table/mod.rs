@@ -9,7 +9,6 @@ use anyhow::Error;
 use falco_plugin_api::ss_plugin_table_fieldinfo;
 use std::ffi::CStr;
 use std::marker::PhantomData;
-use thiserror::Error;
 
 pub(in crate::plugin::tables) mod raw;
 
@@ -17,15 +16,6 @@ pub(in crate::plugin::tables) mod raw;
 pub struct Table<K: Key> {
     pub(in crate::plugin::tables) raw_table: RawTable,
     pub(in crate::plugin::tables) key_type: PhantomData<K>,
-}
-
-#[derive(Debug, Error)]
-pub enum TableError {
-    #[error("missing vtable entry")]
-    BadVtable,
-
-    #[error("invalid C-style string")]
-    FromPtrError(#[from] FromPtrError),
 }
 
 impl<K: Key> Table<K> {
@@ -104,15 +94,15 @@ impl<K: Key> Table<K> {
     /// # Get the table name
     ///
     /// This method returns an error if the name cannot be represented as UTF-8
-    pub fn get_name(&self, reader_vtable: &TableReader) -> Result<&str, TableError> {
-        Ok(self.raw_table.get_name(reader_vtable)?)
+    pub fn get_name(&self, reader_vtable: &TableReader) -> Result<&str, FromPtrError> {
+        self.raw_table.get_name(reader_vtable)
     }
 
     /// # Get the table size
     ///
     /// Return the number of entries in the table
-    pub fn get_size(&self, reader_vtable: &TableReader) -> Result<usize, TableError> {
-        Ok(self.raw_table.get_size(reader_vtable))
+    pub fn get_size(&self, reader_vtable: &TableReader) -> usize {
+        self.raw_table.get_size(reader_vtable)
     }
 
     /// Look up an entry in `table` corresponding to `key`
