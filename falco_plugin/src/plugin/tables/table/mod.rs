@@ -13,7 +13,7 @@ use std::marker::PhantomData;
 pub(in crate::plugin::tables) mod raw;
 
 /// # A handle for a specific table
-pub struct Table<K: Key> {
+pub struct Table<K> {
     pub(in crate::plugin::tables) raw_table: RawTable,
     pub(in crate::plugin::tables) key_type: PhantomData<K>,
 }
