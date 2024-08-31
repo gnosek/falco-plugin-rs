@@ -1,8 +1,8 @@
 use crate::plugin::tables::data::{seal, FieldTypeId, Key, TableData, Value};
-use crate::plugin::tables::entry::Entry;
 use crate::plugin::tables::field::Field;
 use crate::plugin::tables::runtime_table_validator::RuntimeTableValidator;
 use crate::plugin::tables::table::raw::RawTable;
+use crate::plugin::tables::traits::{Entry, TableAccess};
 use crate::plugin::tables::vtable::{TableFields, TableReader, TableWriter, TablesInput};
 use crate::strings::from_ptr::FromPtrError;
 use anyhow::Error;
@@ -13,17 +13,40 @@ use std::marker::PhantomData;
 pub(in crate::plugin::tables) mod raw;
 
 /// # A handle for a specific table
-pub struct Table<K> {
+pub struct Table<K, E = super::entry::Entry> {
     pub(in crate::plugin::tables) raw_table: RawTable,
     pub(in crate::plugin::tables) is_nested: bool,
     pub(in crate::plugin::tables) key_type: PhantomData<K>,
+    pub(in crate::plugin::tables) entry_type: PhantomData<E>,
 }
 
-impl<K: Key> Table<K> {
+impl<K: Key, E: Entry> TableAccess for Table<K, E> {
+    type Key = K;
+    type Entry = E;
+
+    fn new(raw_table: RawTable, is_nested: bool) -> Self {
+        Self {
+            raw_table,
+            is_nested,
+            key_type: PhantomData,
+            entry_type: PhantomData,
+        }
+    }
+
+    fn get_entry(&self, reader_vtable: &TableReader, key: &Self::Key) -> Result<Self::Entry, Error>
+    where
+        Self::Key: Key,
+        Self::Entry: Entry,
+    {
+        Table::get_entry(self, reader_vtable, key)
+    }
+}
+
+impl<K: Key, E: Entry> Table<K, E> {
     /// Look up an entry in `table` corresponding to `key`
-    pub fn get_entry(&self, reader_vtable: &TableReader, key: &K) -> Result<Entry, anyhow::Error> {
+    pub fn get_entry(&self, reader_vtable: &TableReader, key: &K) -> Result<E, Error> {
         let raw_entry = unsafe { self.raw_table.get_entry(reader_vtable, key)? };
-        Ok(Entry::new(raw_entry, self.raw_table.table))
+        Ok(E::new(raw_entry, self.raw_table.table))
     }
 
     /// Erase a table entry by key
@@ -32,17 +55,18 @@ impl<K: Key> Table<K> {
     }
 
     /// Attach an entry to a table key (insert an entry to the table)
-    pub fn insert(&self, writer_vtable: &TableWriter, key: &K, entry: Entry) -> Result<(), Error> {
+    pub fn insert(&self, writer_vtable: &TableWriter, key: &K, entry: E) -> Result<(), Error> {
         unsafe { self.raw_table.insert(writer_vtable, key, entry.into_raw()) }
     }
 }
 
-impl<K> Table<K> {
-    pub(crate) unsafe fn new(raw_table: RawTable, is_nested: bool) -> Self {
+impl<K, E: Entry> Table<K, E> {
+    pub(crate) unsafe fn new_without_key(raw_table: RawTable, is_nested: bool) -> Self {
         Table {
             raw_table,
             is_nested,
             key_type: PhantomData,
+            entry_type: PhantomData,
         }
     }
 
@@ -56,9 +80,9 @@ impl<K> Table<K> {
     }
 
     /// Create a new table entry (not yet attached to a key)
-    pub fn create_entry(&self, writer_vtable: &TableWriter) -> Result<Entry, Error> {
+    pub fn create_entry(&self, writer_vtable: &TableWriter) -> Result<E, Error> {
         let raw_entry = self.raw_table.create_entry(writer_vtable)?;
-        Ok(Entry::new(raw_entry, self.raw_table.table))
+        Ok(E::new(raw_entry, self.raw_table.table))
     }
 
     /// Remove all entries from the table
@@ -133,7 +157,7 @@ impl<K> Table<K> {
                     let owned = RawTable {
                         table: subtable.table,
                     };
-                    let table = Table::new(owned, true);
+                    let table = Table::new_without_key(owned, true);
                     func(&table)
                 })??
         };
@@ -182,10 +206,10 @@ impl<K> Table<K> {
     /// false.
     pub fn iter_entries_mut<F>(&self, reader_vtable: &TableReader, mut func: F) -> bool
     where
-        F: FnMut(&mut Entry) -> bool,
+        F: FnMut(&mut E) -> bool,
     {
         self.raw_table.iter_entries_mut(reader_vtable, move |raw| {
-            let mut entry = Entry::new(raw, self.raw_table.table);
+            let mut entry = E::new(raw, self.raw_table.table);
             func(&mut entry)
         })
     }
@@ -213,7 +237,6 @@ where
 
     unsafe fn from_data<'a>(data: &ss_plugin_state_data) -> Self::Value<'a> {
         let table = unsafe { RawTable { table: data.table } };
-
         Table::new(table, true)
     }
 }

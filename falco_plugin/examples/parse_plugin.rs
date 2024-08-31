@@ -55,7 +55,7 @@ impl Plugin for DummyPlugin {
     fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
         let input = input.ok_or_else(|| anyhow::anyhow!("did not get tables input"))?;
 
-        let thread_table = input.get_table::<i64>(c"threads")?;
+        let thread_table = input.get_table::<Table<i64>, _>(c"threads")?;
         let sample_field = thread_table.add_field::<u64>(&input, c"sample")?;
 
         let new_table = input.add_table(DynamicTable::new(c"sample"))?;

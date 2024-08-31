@@ -19,18 +19,17 @@ pub struct Entry {
     pub(in crate::plugin::tables) table: *mut ss_plugin_table_t,
 }
 
-impl Entry {
-    pub(in crate::plugin::tables) fn new(
-        raw_entry: RawEntry,
-        table: *mut ss_plugin_table_t,
-    ) -> Self {
+impl crate::plugin::tables::traits::Entry for Entry {
+    fn new(raw_entry: RawEntry, table: *mut ss_plugin_table_t) -> Self {
         Self { raw_entry, table }
     }
 
-    pub(in crate::plugin::tables) fn into_raw(self) -> RawEntry {
+    fn into_raw(self) -> RawEntry {
         self.raw_entry
     }
+}
 
+impl Entry {
     /// Get a field value for this entry
     pub fn read_field<V: Value + ?Sized>(
         &self,

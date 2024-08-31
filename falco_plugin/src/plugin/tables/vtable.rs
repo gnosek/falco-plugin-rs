@@ -3,7 +3,8 @@ use crate::plugin::error::last_error::LastError;
 use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, writer_vtable};
 use crate::plugin::tables::data::Key;
 use crate::plugin::tables::table::raw::RawTable;
-use crate::tables::{ExportedTable, Table};
+use crate::plugin::tables::traits::TableAccess;
+use crate::tables::ExportedTable;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_init_input, ss_plugin_owner_t, ss_plugin_rc, ss_plugin_state_data,
     ss_plugin_state_type, ss_plugin_table_entry_t, ss_plugin_table_field_t,
@@ -281,7 +282,11 @@ impl TablesInput {
     ///
     /// The key type is verified by the plugin API, so this method will return
     /// an error on mismatch
-    pub fn get_table<K: Key>(&self, name: &CStr) -> Result<Table<K>, anyhow::Error> {
+    pub fn get_table<T, K>(&self, name: &CStr) -> Result<T, anyhow::Error>
+    where
+        T: TableAccess<Key = K>,
+        K: Key,
+    {
         let table = unsafe {
             (self.get_table)(
                 self.owner,
@@ -294,7 +299,7 @@ impl TablesInput {
         } else {
             // Safety: we pass the data directly from FFI, the framework would never lie to us, right?
             let table = RawTable { table };
-            Ok(unsafe { Table::<K>::new(table, false) })
+            Ok(T::new(table, false))
         }
     }
 
