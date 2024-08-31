@@ -1,6 +1,8 @@
 use crate::plugin::tables::data::Value;
+use crate::plugin::tables::entry::Entry;
 use crate::plugin::tables::field::raw::RawField;
 use crate::plugin::tables::runtime_table_validator::RuntimeTableValidator;
+use std::marker::PhantomData;
 
 pub(in crate::plugin::tables) mod raw;
 
@@ -11,13 +13,18 @@ pub(in crate::plugin::tables) mod raw;
 ///
 /// You probably won't need to construct any values of this type, but you will receive
 /// them from [`tables::TypedTable<K>::get_field`](`crate::tables::Table::get_field`)
-pub struct Field<V: Value + ?Sized> {
+pub struct Field<V: Value + ?Sized, T = Entry> {
     pub(in crate::plugin::tables) field: RawField<V>,
     pub(in crate::plugin::tables) validator: RuntimeTableValidator,
+    pub(in crate::plugin::tables) tag: PhantomData<T>,
 }
 
-impl<V: Value + ?Sized> Field<V> {
+impl<V: Value + ?Sized, T> Field<V, T> {
     pub(crate) fn new(field: RawField<V>, validator: RuntimeTableValidator) -> Self {
-        Self { field, validator }
+        Self {
+            field,
+            validator,
+            tag: PhantomData,
+        }
     }
 }

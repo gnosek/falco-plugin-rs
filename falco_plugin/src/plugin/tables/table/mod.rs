@@ -112,7 +112,7 @@ impl<K, E: Entry> Table<K, E> {
         &self,
         tables_input: &TablesInput,
         name: &CStr,
-    ) -> Result<Field<V>, Error> {
+    ) -> Result<Field<V, E>, Error> {
         let field = self.raw_table.get_field(tables_input, name)?;
         Ok(Field::new(field, self.table_validator()))
     }
@@ -178,7 +178,7 @@ impl<K, E: Entry> Table<K, E> {
         &self,
         tables_input: &TablesInput,
         name: &CStr,
-    ) -> Result<Field<V>, Error> {
+    ) -> Result<Field<V, E>, Error> {
         let field = self.raw_table.add_field(tables_input, name)?;
         Ok(Field::new(field, self.table_validator()))
     }

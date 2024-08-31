@@ -34,7 +34,7 @@ impl Entry {
     pub fn read_field<V: Value + ?Sized>(
         &self,
         reader: &TableReader,
-        field: &Field<V>,
+        field: &Field<V, Entry>,
     ) -> Result<V::Value<'_>, anyhow::Error> {
         field.validator.check(self.table)?;
         unsafe {
@@ -49,7 +49,7 @@ impl Entry {
     pub fn write_field<V: Value + ?Sized>(
         &self,
         writer: &TableWriter,
-        field: &Field<V>,
+        field: &Field<V, Entry>,
         val: &V,
     ) -> Result<(), anyhow::Error> {
         field.validator.check(self.table)?;
