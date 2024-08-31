@@ -1,7 +1,5 @@
 use std::ffi::{CStr, CString};
 
-use anyhow::anyhow;
-
 use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
 use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
@@ -91,10 +89,7 @@ impl ParsePlugin for DummyPlugin {
         let reader = &parse_input.reader;
         let writer = &parse_input.writer;
 
-        let entry = self
-            .thread_table
-            .get_entry(&reader, &tid)
-            .ok_or_else(|| anyhow!("tid not found"))?;
+        let entry = self.thread_table.get_entry(&reader, &tid)?;
 
         let mut num = entry
             .read_field(&reader, &self.sample_field)

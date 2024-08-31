@@ -20,9 +20,9 @@ pub struct Table<K> {
 
 impl<K: Key> Table<K> {
     /// Look up an entry in `table` corresponding to `key`
-    pub fn get_entry(&self, reader_vtable: &TableReader, key: &K) -> Option<Entry> {
-        let raw_entry = unsafe { self.raw_table.get_entry(reader_vtable, key).ok()? };
-        Some(Entry::new(raw_entry, self.raw_table.table))
+    pub fn get_entry(&self, reader_vtable: &TableReader, key: &K) -> Result<Entry, anyhow::Error> {
+        let raw_entry = unsafe { self.raw_table.get_entry(reader_vtable, key)? };
+        Ok(Entry::new(raw_entry, self.raw_table.table))
     }
 
     /// Erase a table entry by key

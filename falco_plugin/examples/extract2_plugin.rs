@@ -1,6 +1,6 @@
 use std::ffi::{CStr, CString};
 
-use anyhow::{anyhow, Error};
+use anyhow::Error;
 
 use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
@@ -72,10 +72,7 @@ impl DummyPlugin {
         _arg: ExtractFieldRequestArg,
     ) -> Result<u64, Error> {
         let tid = event.event()?.metadata.tid;
-        let entry = self
-            .thread_table
-            .get_entry(table_reader, &tid)
-            .ok_or_else(|| anyhow!("tid not found"))?;
+        let entry = self.thread_table.get_entry(table_reader, &tid)?;
 
         entry.read_field(table_reader, &self.sample_field)
     }
