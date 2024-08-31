@@ -1,6 +1,3 @@
-use std::ffi::c_char;
-use std::io::Write;
-
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::source::SourcePluginInstanceWrapper;
@@ -12,6 +9,8 @@ use falco_plugin_api::{
     ss_instance_t, ss_plugin_event, ss_plugin_event_input, ss_plugin_rc,
     ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_t,
 };
+use std::ffi::c_char;
+use std::io::Write;
 
 pub trait SourcePluginFallbackApi {
     const SOURCE_API: source_plugin_api = source_plugin_api {

@@ -1,8 +1,3 @@
-use std::any::TypeId;
-use std::collections::BTreeMap;
-use std::ffi::{c_char, CString};
-use std::sync::Mutex;
-
 use crate::parse::EventInput;
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
@@ -12,6 +7,10 @@ use falco_plugin_api::{
     ss_plugin_event_input, ss_plugin_event_parse_input, ss_plugin_rc,
     ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_t,
 };
+use std::any::TypeId;
+use std::collections::BTreeMap;
+use std::ffi::{c_char, CString};
+use std::sync::Mutex;
 
 pub trait ParsePluginFallbackApi {
     const PARSE_API: parse_plugin_api = parse_plugin_api {

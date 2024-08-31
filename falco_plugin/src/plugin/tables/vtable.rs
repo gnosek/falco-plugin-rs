@@ -1,6 +1,3 @@
-use std::ffi::CStr;
-use thiserror::Error;
-
 use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::error::last_error::LastError;
 use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, writer_vtable};
@@ -11,6 +8,8 @@ use falco_plugin_api::{
     ss_plugin_table_fields_vtable_ext, ss_plugin_table_info, ss_plugin_table_input,
     ss_plugin_table_reader_vtable, ss_plugin_table_t, ss_plugin_table_writer_vtable,
 };
+use std::ffi::CStr;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum TableError {
