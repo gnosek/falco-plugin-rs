@@ -64,9 +64,11 @@ impl RawTable {
             field
         };
 
+        let assoc = unsafe { V::get_assoc_from_raw_table(self, raw_field, tables_input) }?;
+
         Ok(RawField {
             field: raw_field,
-            value_type: std::marker::PhantomData,
+            assoc_data: assoc,
         })
     }
 
@@ -76,7 +78,7 @@ impl RawTable {
     ///
     /// Note that you must not use fields with tables they did not come from. When using fields
     /// returned from this method, no such validation happens.
-    pub fn add_field<V: Value + ?Sized>(
+    pub fn add_field<V: Value<AssocData = ()> + ?Sized>(
         &self,
         tables_input: &TablesInput,
         name: &CStr,
@@ -96,7 +98,7 @@ impl RawTable {
 
         Ok(RawField {
             field: raw_field,
-            value_type: std::marker::PhantomData,
+            assoc_data: (),
         })
     }
 

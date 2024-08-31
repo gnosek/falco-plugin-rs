@@ -39,14 +39,14 @@ impl Entry {
         field.validator.check(self.table)?;
         unsafe {
             self.raw_entry
-                .read_field::<V>(reader, field.field.field)
+                .read_field_with_assoc::<V>(reader, field.field.field, &field.field.assoc_data)
                 .ok_or(anyhow::anyhow!("Could not read field value"))
                 .with_last_error(&reader.last_error)
         }
     }
 
     /// Set a field value for this entry
-    pub fn write_field<V: Value + ?Sized>(
+    pub fn write_field<V: Value<AssocData = ()> + ?Sized>(
         &self,
         writer: &TableWriter,
         field: &Field<V, Entry>,

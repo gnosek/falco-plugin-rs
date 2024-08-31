@@ -13,10 +13,11 @@ pub struct RawEntry {
 }
 
 impl RawEntry {
-    pub unsafe fn read_field<'a, T: Value + ?Sized>(
+    pub unsafe fn read_field_with_assoc<'a, T: Value + ?Sized>(
         &self,
         reader: &TableReader,
         field: *const ss_plugin_table_field_t,
+        assoc: &T::AssocData,
     ) -> Option<T::Value<'a>> {
         let mut data = ss_plugin_state_data { u64_: 0 };
         if unsafe { (reader.read_entry_field)(self.table, self.entry, field, &mut data as *mut _) }
@@ -24,7 +25,7 @@ impl RawEntry {
         {
             None
         } else {
-            Some(unsafe { T::from_data(&data) })
+            Some(unsafe { T::from_data_with_assoc(&data, assoc) })
         }
     }
 

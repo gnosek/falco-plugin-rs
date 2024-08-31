@@ -6,7 +6,7 @@ use crate::plugin::tables::traits::{Entry, TableAccess};
 use crate::plugin::tables::vtable::{TableFields, TableReader, TableWriter, TablesInput};
 use crate::strings::from_ptr::FromPtrError;
 use anyhow::Error;
-use falco_plugin_api::{ss_plugin_state_data, ss_plugin_table_fieldinfo};
+use falco_plugin_api::{ss_plugin_state_data, ss_plugin_table_field_t, ss_plugin_table_fieldinfo};
 use std::ffi::CStr;
 use std::marker::PhantomData;
 
@@ -174,7 +174,7 @@ impl<K, E: Entry> Table<K, E> {
     /// and accessing an entry from a different table will cause an error at runtime.
     /// However, for nested tables there's no such validation in the Rust SDK (because using
     /// the same fields across different nested tables is critical for supporting nested tables)
-    pub fn add_field<V: Value + ?Sized>(
+    pub fn add_field<V: Value<AssocData = ()> + ?Sized>(
         &self,
         tables_input: &TablesInput,
         name: &CStr,
@@ -231,12 +231,25 @@ impl<K> Value for Table<K>
 where
     K: Key + 'static,
 {
+    type AssocData = ();
+
     type Value<'a> = Self
     where
         Self: 'a;
 
-    unsafe fn from_data<'a>(data: &ss_plugin_state_data) -> Self::Value<'a> {
+    unsafe fn from_data_with_assoc<'a>(
+        data: &ss_plugin_state_data,
+        _assoc: &Self::AssocData,
+    ) -> Self::Value<'a> {
         let table = unsafe { RawTable { table: data.table } };
         Table::new(table, true)
+    }
+
+    unsafe fn get_assoc_from_raw_table(
+        _table: &RawTable,
+        _field: *mut ss_plugin_table_field_t,
+        _tables_input: &TablesInput,
+    ) -> Result<Self::AssocData, Error> {
+        Ok(())
     }
 }

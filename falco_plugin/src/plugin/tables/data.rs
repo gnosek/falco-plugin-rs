@@ -1,3 +1,5 @@
+use crate::plugin::tables::table::raw::RawTable;
+use crate::tables::TablesInput;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_field_type_FTYPE_UINT64, ss_plugin_state_data,
     ss_plugin_state_type_SS_PLUGIN_ST_BOOL, ss_plugin_state_type_SS_PLUGIN_ST_INT16,
@@ -5,6 +7,7 @@ use falco_plugin_api::{
     ss_plugin_state_type_SS_PLUGIN_ST_INT8, ss_plugin_state_type_SS_PLUGIN_ST_STRING,
     ss_plugin_state_type_SS_PLUGIN_ST_TABLE, ss_plugin_state_type_SS_PLUGIN_ST_UINT16,
     ss_plugin_state_type_SS_PLUGIN_ST_UINT32, ss_plugin_state_type_SS_PLUGIN_ST_UINT8,
+    ss_plugin_table_field_t,
 };
 use num_derive::FromPrimitive;
 use std::ffi::CStr;
@@ -69,12 +72,38 @@ pub trait Key: TableData {
 
 /// # A trait describing types usable as table values
 pub trait Value: TableData {
+    /// The type of metadata attached to each field of this type
+    ///
+    /// Usually `()`, except for table-valued fields
+    type AssocData;
+
     /// The type actually retrieved as the field value
     type Value<'a>
     where
         Self: 'a;
 
-    unsafe fn from_data<'a>(data: &ss_plugin_state_data) -> Self::Value<'a>;
+    /// Hydrate a [`ss_plugin_state_data`] value into the Rust representation
+    ///
+    /// # Safety
+    /// Returns a value with arbitrary lifetime (cannot really express "until the next
+    /// call across the API boundary" in the type system) so don't go crazy with 'static
+    unsafe fn from_data_with_assoc<'a>(
+        data: &ss_plugin_state_data,
+        assoc: &Self::AssocData,
+    ) -> Self::Value<'a>;
+
+    /// Given a raw table, fetch the field's metadata
+    ///
+    /// The only interesting implementation is for `Box<Table>`, which gets all the fields
+    /// of a nested table and stores it in the subtable metadata. All others are no-ops.
+    ///
+    /// # Safety
+    /// Dereferences a raw pointer
+    unsafe fn get_assoc_from_raw_table(
+        table: &RawTable,
+        field: *mut ss_plugin_table_field_t,
+        tables_input: &TablesInput,
+    ) -> Result<Self::AssocData, anyhow::Error>;
 }
 
 macro_rules! impl_table_data_direct {
@@ -95,10 +124,22 @@ macro_rules! impl_table_data_direct {
         }
 
         impl Value for $ty {
+            type AssocData = ();
             type Value<'a> = $ty;
 
-            unsafe fn from_data<'a>(data: &ss_plugin_state_data) -> Self::Value<'a> {
+            unsafe fn from_data_with_assoc<'a>(
+                data: &ss_plugin_state_data,
+                _assoc: &Self::AssocData,
+            ) -> Self::Value<'a> {
                 unsafe { data.$field }
+            }
+
+            unsafe fn get_assoc_from_raw_table(
+                _table: &RawTable,
+                _field: *mut ss_plugin_table_field_t,
+                _tables_input: &TablesInput,
+            ) -> Result<Self::AssocData, anyhow::Error> {
+                Ok(())
             }
         }
     };
@@ -145,10 +186,22 @@ impl TableData for Bool {
 }
 
 impl Value for Bool {
+    type AssocData = ();
     type Value<'a> = bool;
 
-    unsafe fn from_data<'a>(data: &ss_plugin_state_data) -> Self::Value<'a> {
+    unsafe fn from_data_with_assoc<'a>(
+        data: &ss_plugin_state_data,
+        _assoc: &Self::AssocData,
+    ) -> Self::Value<'a> {
         unsafe { data.b != 0 }
+    }
+
+    unsafe fn get_assoc_from_raw_table(
+        _table: &RawTable,
+        _field: *mut ss_plugin_table_field_t,
+        _tables_input: &TablesInput,
+    ) -> Result<Self::AssocData, anyhow::Error> {
+        Ok(())
     }
 }
 
@@ -177,9 +230,21 @@ impl Key for CStr {
 }
 
 impl Value for CStr {
+    type AssocData = ();
     type Value<'a> = &'a CStr;
 
-    unsafe fn from_data<'a>(data: &ss_plugin_state_data) -> Self::Value<'a> {
+    unsafe fn from_data_with_assoc<'a>(
+        data: &ss_plugin_state_data,
+        _assoc: &Self::AssocData,
+    ) -> Self::Value<'a> {
         unsafe { CStr::from_ptr(data.str_) }
+    }
+
+    unsafe fn get_assoc_from_raw_table(
+        _table: &RawTable,
+        _field: *mut ss_plugin_table_field_t,
+        _tables_input: &TablesInput,
+    ) -> Result<Self::AssocData, anyhow::Error> {
+        Ok(())
     }
 }
