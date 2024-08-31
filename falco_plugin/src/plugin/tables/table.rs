@@ -1,16 +1,3 @@
-use std::ffi::{c_char, CStr};
-use std::marker::PhantomData;
-use std::mem::ManuallyDrop;
-
-use thiserror::Error;
-
-use falco_plugin_api::{
-    ss_plugin_bool, ss_plugin_owner_t, ss_plugin_state_data, ss_plugin_state_type,
-    ss_plugin_table_entry_t, ss_plugin_table_fieldinfo, ss_plugin_table_iterator_func_t,
-    ss_plugin_table_iterator_state_t, ss_plugin_table_reader_vtable_ext, ss_plugin_table_t,
-    ss_plugin_table_writer_vtable_ext,
-};
-
 use crate::plugin::error::last_error::LastError;
 use crate::plugin::tables::data::TableData;
 use crate::plugin::tables::entry::{TableEntry, TableEntryReader};
@@ -18,6 +5,16 @@ use crate::plugin::tables::vtable::{TableFields, TableReader};
 use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
 use crate::tables::{TablesInput, TypedTableField};
 use crate::FailureReason;
+use falco_plugin_api::{
+    ss_plugin_bool, ss_plugin_owner_t, ss_plugin_state_data, ss_plugin_state_type,
+    ss_plugin_table_entry_t, ss_plugin_table_fieldinfo, ss_plugin_table_iterator_func_t,
+    ss_plugin_table_iterator_state_t, ss_plugin_table_reader_vtable_ext, ss_plugin_table_t,
+    ss_plugin_table_writer_vtable_ext,
+};
+use std::ffi::{c_char, CStr};
+use std::marker::PhantomData;
+use std::mem::ManuallyDrop;
+use thiserror::Error;
 
 /// # A handle for a specific table
 pub struct TypedTable<K: TableData> {
