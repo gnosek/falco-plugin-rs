@@ -1,13 +1,12 @@
-use falco_plugin_api::ss_plugin_metric;
-use std::ffi::{CStr, CString};
-use std::fmt::Display;
-use std::io::Write;
-
 use crate::extract::FieldStorage;
 use crate::plugin::base::metrics::Metric;
 use crate::plugin::schema::ConfigSchema;
 use crate::plugin::tables::vtable::TablesInput;
 use crate::strings::cstring_writer::WriteIntoCString;
+use falco_plugin_api::ss_plugin_metric;
+use std::ffi::{CStr, CString};
+use std::fmt::Display;
+use std::io::Write;
 
 mod logger;
 pub mod metrics;

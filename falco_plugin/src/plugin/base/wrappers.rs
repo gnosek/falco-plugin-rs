@@ -1,3 +1,10 @@
+use crate::base::Plugin;
+use crate::plugin::base::logger::{FalcoPluginLoggerImpl, FALCO_LOGGER};
+use crate::plugin::base::PluginWrapper;
+use crate::plugin::error::ffi_result::FfiResult;
+use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
+use crate::plugin::tables::vtable::TablesInput;
+use crate::strings::from_ptr::try_str_from_ptr;
 use anyhow::Context;
 use falco_plugin_api::{
     ss_plugin_init_input, ss_plugin_metric, ss_plugin_rc, ss_plugin_rc_SS_PLUGIN_FAILURE,
@@ -6,14 +13,6 @@ use falco_plugin_api::{
 use std::collections::BTreeMap;
 use std::ffi::{c_char, CString};
 use std::sync::Mutex;
-
-use crate::base::Plugin;
-use crate::plugin::base::logger::{FalcoPluginLoggerImpl, FALCO_LOGGER};
-use crate::plugin::base::PluginWrapper;
-use crate::plugin::error::ffi_result::FfiResult;
-use crate::plugin::schema::{ConfigSchema, ConfigSchemaType};
-use crate::plugin::tables::vtable::TablesInput;
-use crate::strings::from_ptr::try_str_from_ptr;
 
 pub extern "C" fn plugin_get_required_api_version<
     const MAJOR: usize,
