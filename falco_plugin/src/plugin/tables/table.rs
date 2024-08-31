@@ -14,9 +14,9 @@ pub(in crate::plugin::tables) mod raw;
 
 /// # A handle for a specific table
 pub struct TypedTable<K: Key> {
-    raw_table: RawTable,
-    last_error: LastError,
-    key_type: PhantomData<K>,
+    pub(in crate::plugin::tables) raw_table: RawTable,
+    pub(in crate::plugin::tables) last_error: LastError,
+    pub(in crate::plugin::tables) key_type: PhantomData<K>,
 }
 
 #[derive(Debug, Error)]
