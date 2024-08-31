@@ -19,6 +19,24 @@ pub struct Table<K> {
 }
 
 impl<K: Key> Table<K> {
+    /// Look up an entry in `table` corresponding to `key`
+    pub fn get_entry(&self, reader_vtable: &TableReader, key: &K) -> Option<Entry> {
+        let raw_entry = unsafe { self.raw_table.get_entry(reader_vtable, key).ok()? };
+        Some(Entry::new(raw_entry, self.raw_table.table))
+    }
+
+    /// Erase a table entry by key
+    pub fn erase(&self, writer_vtable: &TableWriter, key: &K) -> Result<(), Error> {
+        unsafe { self.raw_table.erase(writer_vtable, key) }
+    }
+
+    /// Attach an entry to a table key (insert an entry to the table)
+    pub fn insert(&self, writer_vtable: &TableWriter, key: &K, entry: Entry) -> Result<(), Error> {
+        unsafe { self.raw_table.insert(writer_vtable, key, entry.into_raw()) }
+    }
+}
+
+impl<K> Table<K> {
     pub(crate) unsafe fn new(raw_table: RawTable) -> Self {
         Table {
             raw_table,
@@ -39,16 +57,6 @@ impl<K: Key> Table<K> {
     /// Remove all entries from the table
     pub fn clear(&self, writer_vtable: &TableWriter) -> Result<(), Error> {
         self.raw_table.clear(writer_vtable)
-    }
-
-    /// Erase a table entry by key
-    pub fn erase(&self, writer_vtable: &TableWriter, key: &K) -> Result<(), Error> {
-        unsafe { self.raw_table.erase(writer_vtable, key) }
-    }
-
-    /// Attach an entry to a table key (insert an entry to the table)
-    pub fn insert(&self, writer_vtable: &TableWriter, key: &K, entry: Entry) -> Result<(), Error> {
-        unsafe { self.raw_table.insert(writer_vtable, key, entry.into_raw()) }
     }
 
     /// # List the available fields
@@ -103,12 +111,6 @@ impl<K: Key> Table<K> {
     /// Return the number of entries in the table
     pub fn get_size(&self, reader_vtable: &TableReader) -> usize {
         self.raw_table.get_size(reader_vtable)
-    }
-
-    /// Look up an entry in `table` corresponding to `key`
-    pub fn get_entry(&self, reader_vtable: &TableReader, key: &K) -> Option<Entry> {
-        let raw_entry = unsafe { self.raw_table.get_entry(reader_vtable, key).ok()? };
-        Some(Entry::new(raw_entry, self.raw_table.table))
     }
 
     /// # Iterate over all entries in a table with mutable access
