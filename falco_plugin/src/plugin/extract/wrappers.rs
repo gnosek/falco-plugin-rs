@@ -90,18 +90,15 @@ pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
 
         let table_reader = TableReader::new(extract_input.table_reader_ext);
 
-        match plugin.plugin.extract_fields(
-            event_input,
-            table_reader,
-            fields,
-            &mut plugin.field_storage,
-        ) {
-            Ok(()) => falco_plugin_api::ss_plugin_rc_SS_PLUGIN_SUCCESS,
-            Err(e) => {
-                e.set_last_error(&mut plugin.error_buf);
-                e.status_code()
-            }
-        }
+        plugin
+            .plugin
+            .extract_fields(
+                &event_input,
+                table_reader,
+                fields,
+                &mut plugin.field_storage,
+            )
+            .rc(&mut plugin.error_buf)
     }
 }
 

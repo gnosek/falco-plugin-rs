@@ -1,6 +1,6 @@
 use anyhow::Context;
 use falco_plugin_api::{
-    ss_plugin_init_input, ss_plugin_metric, ss_plugin_rc_SS_PLUGIN_FAILURE,
+    ss_plugin_init_input, ss_plugin_metric, ss_plugin_rc, ss_plugin_rc_SS_PLUGIN_FAILURE,
     ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_t,
 };
 use std::collections::BTreeMap;
@@ -54,7 +54,7 @@ pub extern "C" fn plugin_get_contact<T: Plugin>() -> *const c_char {
 /// init_input must be null or a valid pointer
 pub unsafe extern "C" fn plugin_init<P: Plugin>(
     init_input: *const ss_plugin_init_input,
-    rc: *mut i32,
+    rc: *mut ss_plugin_rc,
 ) -> *mut falco_plugin_api::ss_plugin_t {
     let res = (|| -> Result<*mut PluginWrapper<P>, anyhow::Error> {
         let init_input =
@@ -152,13 +152,7 @@ pub unsafe extern "C" fn plugin_set_config<P: Plugin>(
         plugin.plugin.set_config(config)
     })();
 
-    match res {
-        Ok(()) => ss_plugin_rc_SS_PLUGIN_SUCCESS,
-        Err(e) => {
-            e.set_last_error(&mut plugin.error_buf);
-            e.status_code()
-        }
-    }
+    res.rc(&mut plugin.error_buf)
 }
 
 pub unsafe extern "C" fn plugin_get_metrics<P: Plugin>(

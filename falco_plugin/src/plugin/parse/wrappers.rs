@@ -84,13 +84,10 @@ pub unsafe extern "C" fn plugin_parse_event<T: ParsePlugin>(
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 
-        match plugin.plugin.parse_event(event, parse_input) {
-            Ok(()) => falco_plugin_api::ss_plugin_rc_SS_PLUGIN_SUCCESS,
-            Err(e) => {
-                e.set_last_error(&mut plugin.error_buf);
-                e.status_code()
-            }
-        }
+        plugin
+            .plugin
+            .parse_event(&event, &parse_input)
+            .rc(&mut plugin.error_buf)
     }
 }
 

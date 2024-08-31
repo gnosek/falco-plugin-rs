@@ -6,6 +6,11 @@ use std::ffi::CString;
 pub trait FfiResult {
     fn status_code(&self) -> ss_plugin_rc;
     fn set_last_error(&self, lasterr: &mut CString);
+
+    fn rc(&self, lasterr: &mut CString) -> ss_plugin_rc {
+        self.set_last_error(lasterr);
+        self.status_code()
+    }
 }
 
 impl FfiResult for anyhow::Error {
