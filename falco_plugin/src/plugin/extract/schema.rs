@@ -1,14 +1,12 @@
-use anyhow::Error;
-use serde::ser::SerializeStruct;
-use serde::{Serialize, Serializer};
-use std::fmt::{Debug, Formatter};
-
-use falco_plugin_api::ss_plugin_extract_field;
-
 use crate::extract::ExtractFieldRequestArg;
 use crate::plugin::extract::fields::{Extract, ExtractFieldTypeId};
 use crate::plugin::extract::{ExtractField, ExtractPlugin, ExtractRequest};
 use crate::plugin::storage::FieldStorageSession;
+use anyhow::Error;
+use falco_plugin_api::ss_plugin_extract_field;
+use serde::ser::SerializeStruct;
+use serde::{Serialize, Serializer};
+use std::fmt::{Debug, Formatter};
 
 /// The type of argument a field extractor expects
 ///
