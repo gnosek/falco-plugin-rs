@@ -1,6 +1,4 @@
-use num_derive::FromPrimitive;
-use std::ffi::{c_void, CString};
-
+use crate::plugin::storage::FieldStorageSession;
 use falco_event::fields::ToBytes;
 use falco_plugin_api::{
     ss_plugin_extract_field, ss_plugin_field_type_FTYPE_ABSTIME, ss_plugin_field_type_FTYPE_BOOL,
@@ -8,8 +6,8 @@ use falco_plugin_api::{
     ss_plugin_field_type_FTYPE_RELTIME, ss_plugin_field_type_FTYPE_STRING,
     ss_plugin_field_type_FTYPE_UINT64,
 };
-
-use crate::plugin::storage::FieldStorageSession;
+use num_derive::FromPrimitive;
+use std::ffi::{c_void, CString};
 
 #[non_exhaustive]
 #[repr(u32)]
