@@ -1,17 +1,15 @@
-use std::any::TypeId;
-use std::collections::BTreeMap;
-use std::ffi::{CStr, CString};
-use std::sync::Mutex;
-use thiserror::Error;
-
-use falco_event::events::types::EventType;
-use falco_plugin_api::ss_plugin_extract_field;
-
 use crate::extract::{EventInput, ExtractArgType};
 use crate::plugin::base::Plugin;
 use crate::plugin::extract::schema::ExtractFieldInfo;
 use crate::plugin::storage::FieldStorage;
 use crate::tables::TableReader;
+use falco_event::events::types::EventType;
+use falco_plugin_api::ss_plugin_extract_field;
+use std::any::TypeId;
+use std::collections::BTreeMap;
+use std::ffi::{CStr, CString};
+use std::sync::Mutex;
+use thiserror::Error;
 
 pub mod fields;
 pub mod schema;
