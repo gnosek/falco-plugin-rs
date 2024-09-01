@@ -1,7 +1,3 @@
-use num_derive::FromPrimitive;
-use std::ffi::CStr;
-use std::marker::PhantomData;
-
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_field_type_FTYPE_UINT64, ss_plugin_state_data,
     ss_plugin_state_type_SS_PLUGIN_ST_BOOL, ss_plugin_state_type_SS_PLUGIN_ST_INT16,
@@ -11,6 +7,9 @@ use falco_plugin_api::{
     ss_plugin_state_type_SS_PLUGIN_ST_UINT32, ss_plugin_state_type_SS_PLUGIN_ST_UINT8,
     ss_plugin_table_field_t, ss_plugin_table_t,
 };
+use num_derive::FromPrimitive;
+use std::ffi::CStr;
+use std::marker::PhantomData;
 
 mod seal {
     pub trait Sealed {}
