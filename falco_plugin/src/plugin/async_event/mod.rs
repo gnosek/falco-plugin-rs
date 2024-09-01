@@ -1,9 +1,9 @@
+use crate::base::Plugin;
+use crate::plugin::async_event::async_handler::AsyncHandler;
+
 pub mod async_handler;
 #[doc(hidden)]
 pub mod wrappers;
-
-use crate::base::Plugin;
-use crate::plugin::async_event::async_handler::AsyncHandler;
 
 /// # Support for asynchronous event plugins
 pub trait AsyncEventPlugin: Plugin {
