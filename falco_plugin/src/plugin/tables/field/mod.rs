@@ -2,6 +2,7 @@ use crate::plugin::tables::data::Value;
 use crate::plugin::tables::field::raw::RawField;
 use crate::plugin::tables::runtime::RuntimeEntry;
 use crate::plugin::tables::runtime_table_validator::RuntimeTableValidator;
+use crate::plugin::tables::traits::RawFieldValueType;
 use std::marker::PhantomData;
 
 pub(in crate::plugin::tables) mod raw;
@@ -25,6 +26,25 @@ impl<V: Value + ?Sized, T> Field<V, T> {
             field,
             validator,
             tag: PhantomData,
+        }
+    }
+}
+
+impl<V: Value + ?Sized, T> RawFieldValueType for Field<V, T> {
+    type TableValue = V;
+    type EntryValue<'a> = <V as Value>::Value<'a>
+    where
+        Self: 'a;
+}
+
+impl<V: Value + ?Sized, E> From<RawField<V>> for Field<V, E> {
+    fn from(raw_field: RawField<V>) -> Self {
+        let validator = RuntimeTableValidator::new(std::ptr::null_mut());
+
+        Self {
+            field: raw_field,
+            validator,
+            tag: Default::default(),
         }
     }
 }

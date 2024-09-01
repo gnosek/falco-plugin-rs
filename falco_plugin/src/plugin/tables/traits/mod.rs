@@ -1,8 +1,7 @@
 use crate::plugin::tables::data::Key;
 use crate::plugin::tables::entry::raw::RawEntry;
 use crate::plugin::tables::table::raw::RawTable;
-use crate::plugin::tables::vtable::TableReader;
-use crate::tables::TablesInput;
+use crate::plugin::tables::vtable::{TableReader, TablesInput};
 use falco_plugin_api::ss_plugin_table_t;
 use std::rc::Rc;
 
@@ -66,4 +65,19 @@ pub trait TableAccess: Sized {
     where
         Self::Key: Key,
         Self::Entry: Entry;
+}
+
+/// A trait containing some info about a raw field and its related types
+///
+/// More offering for the elder gods of `#[derive]`
+pub trait RawFieldValueType {
+    /// the type (tag) of the value held in this field
+    ///
+    /// notably, for string fields it's the (unsized) CStr type
+    type TableValue: ?Sized;
+
+    /// the actual type retrieved from the table
+    type EntryValue<'a>
+    where
+        Self: 'a;
 }
