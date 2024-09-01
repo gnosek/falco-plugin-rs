@@ -1,11 +1,10 @@
-use falco_event::events::types::EventType;
-
 use crate::parse::{EventInput, ParseInput};
 use crate::plugin::base::Plugin;
 use crate::plugin::tables::data::TableData;
 use crate::plugin::tables::entry::TableEntry;
 use crate::plugin::tables::table::TypedTable;
 use crate::tables::TableReader;
+use falco_event::events::types::EventType;
 
 #[doc(hidden)]
 pub mod wrappers;
