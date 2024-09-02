@@ -8,25 +8,14 @@ use crate::FailureReason;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo,
 };
+use field_descriptor::DynamicField;
 use field_value::dynamic::DynamicFieldValue;
 use field_value::traits::FieldValue;
 
+pub mod field_descriptor;
 pub mod field_value;
 pub mod macros;
 pub(super) mod wrappers;
-
-/// # A descriptor for a dynamically added field
-///
-/// It knows its sequential ID (to look up fields by numbers, not by strings all the time)
-/// and the type of stored data.
-///
-/// **Note**: the data is stored as [`DynamicFieldValue`] in any case, but the table enforces
-/// the defined type on all incoming data.
-pub struct DynamicField {
-    index: usize,
-    type_id: FieldTypeId,
-    read_only: bool,
-}
 
 /// A table value type that only has dynamic fields
 pub type DynamicFieldValues = BTreeMap<usize, DynamicFieldValue>;
