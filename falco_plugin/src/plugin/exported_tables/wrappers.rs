@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::ffi::{c_char, CStr};
 use std::rc::Rc;
 
@@ -12,46 +13,48 @@ use falco_plugin_api::{
 };
 
 use crate::plugin::error::ffi_result::FfiResult;
-use crate::plugin::exported_tables::table::ExportedTable;
 use crate::plugin::tables::data::{FieldTypeId, Key};
+use crate::tables::export::{DynamicField, DynamicTable, TableValues};
 
-// SAFETY: `table` must be a valid pointer to T
-unsafe extern "C" fn get_table_name<T: ExportedTable>(
+// SAFETY: `table` must be a valid pointer to Table<K,E>
+unsafe extern "C" fn get_table_name<K: Key + Ord + Clone, V: TableValues>(
     table: *mut ss_plugin_table_t,
 ) -> *const c_char {
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return std::ptr::null_mut();
         };
         table.name().as_ptr()
     }
 }
 
-// SAFETY: `table` must be a valid pointer to T
-unsafe extern "C" fn get_table_size<T: ExportedTable>(table: *mut ss_plugin_table_t) -> u64 {
+// SAFETY: `table` must be a valid pointer to Table<K,E>
+unsafe extern "C" fn get_table_size<K: Key + Ord + Clone, V: TableValues>(
+    table: *mut ss_plugin_table_t,
+) -> u64 {
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return 0;
         };
         table.size() as u64
     }
 }
 
-// SAFETY: `table` must be a valid pointer to T
+// SAFETY: `table` must be a valid pointer to Table<K,E>
 // SAFETY: `key` must be a valid pointer to ss_plugin_state_data
-unsafe extern "C" fn get_table_entry<T: ExportedTable>(
+unsafe extern "C" fn get_table_entry<K: Key + Ord + Clone, V: TableValues>(
     table: *mut ss_plugin_table_t,
     key: *const ss_plugin_state_data,
 ) -> *mut ss_plugin_table_entry_t {
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return std::ptr::null_mut();
         };
         let Some(key) = key.as_ref() else {
             return std::ptr::null_mut();
         };
 
-        let key = T::Key::from_data(key);
+        let key = K::from_data(key);
         match table.lookup(key) {
             Some(entry) => Box::into_raw(Box::new(entry)) as *mut _,
             None => std::ptr::null_mut(),
@@ -60,20 +63,20 @@ unsafe extern "C" fn get_table_entry<T: ExportedTable>(
 }
 
 // SAFETY: all pointers must be valid
-unsafe extern "C" fn read_entry_field<T: ExportedTable>(
+unsafe extern "C" fn read_entry_field<K: Key + Ord + Clone, V: TableValues>(
     table: *mut ss_plugin_table_t,
     entry: *mut ss_plugin_table_entry_t,
     field: *const ss_plugin_table_field_t,
     out: *mut ss_plugin_state_data,
 ) -> ss_plugin_rc {
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(entry) = (entry as *mut Rc<T::Entry>).as_mut() else {
+        let Some(entry) = (entry as *mut Rc<RefCell<V>>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(field) = (field as *const Rc<T::Field>).as_ref() else {
+        let Some(field) = (field as *const Rc<DynamicField>).as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(out) = out.as_mut() else {
@@ -85,19 +88,19 @@ unsafe extern "C" fn read_entry_field<T: ExportedTable>(
 }
 
 // SAFETY: all pointers must be valid
-unsafe extern "C" fn release_table_entry<T: ExportedTable>(
+unsafe extern "C" fn release_table_entry<K: Key + Ord + Clone, V: TableValues>(
     _table: *mut ss_plugin_table_t,
     entry: *mut ss_plugin_table_entry_t,
 ) {
     if !entry.is_null() {
         unsafe {
-            drop(Box::from_raw(entry as *mut Rc<T::Entry>));
+            drop(Box::from_raw(entry as *mut Rc<RefCell<V>>));
         }
     }
 }
 
 // SAFETY: all pointers must be valid
-unsafe extern "C" fn iterate_entries<T: ExportedTable>(
+unsafe extern "C" fn iterate_entries<K: Key + Ord + Clone, V: TableValues>(
     table: *mut ss_plugin_table_t,
     func: ss_plugin_table_iterator_func_t,
     state: *mut ss_plugin_table_iterator_state_t,
@@ -106,7 +109,7 @@ unsafe extern "C" fn iterate_entries<T: ExportedTable>(
         return 0;
     };
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return 0;
         };
 
@@ -119,10 +122,12 @@ unsafe extern "C" fn iterate_entries<T: ExportedTable>(
     1
 }
 
-// SAFETY: `table` must be a valid pointer to T
-unsafe extern "C" fn clear_table<T: ExportedTable>(table: *mut ss_plugin_table_t) -> ss_plugin_rc {
+// SAFETY: `table` must be a valid pointer to Table<K,E>
+unsafe extern "C" fn clear_table<K: Key + Ord + Clone, V: TableValues>(
+    table: *mut ss_plugin_table_t,
+) -> ss_plugin_rc {
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         table.clear();
@@ -132,32 +137,33 @@ unsafe extern "C" fn clear_table<T: ExportedTable>(table: *mut ss_plugin_table_t
 
 // TODO(spec) is removing a nonexistent entry an error?
 // SAFETY: all pointers must be valid
-unsafe extern "C" fn erase_table_entry<T: ExportedTable>(
+unsafe extern "C" fn erase_table_entry<K: Key + Ord + Clone, V: TableValues>(
     table: *mut ss_plugin_table_t,
     key: *const ss_plugin_state_data,
 ) -> ss_plugin_rc {
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(key) = key.as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let key = T::Key::from_data(key);
+        let key = K::from_data(key);
         table.erase(key);
     }
     ss_plugin_rc_SS_PLUGIN_SUCCESS
 }
 
-extern "C" fn create_table_entry<T: ExportedTable>(
+// SAFETY: `table` must be a valid pointer to Table<K,E>
+extern "C" fn create_table_entry<K: Key + Ord + Clone, V: TableValues>(
     _table: *mut ss_plugin_table_t,
 ) -> *mut ss_plugin_table_entry_t {
-    Box::into_raw(Box::new(T::create_entry())).cast()
+    Box::into_raw(Box::new(DynamicTable::<K, V>::create_entry())).cast()
 }
 
 // TODO(spec) what if the entry already exists?
 // SAFETY: all pointers must be valid
-unsafe extern "C" fn add_table_entry<T: ExportedTable>(
+unsafe extern "C" fn add_table_entry<K: Key + Ord + Clone, V: TableValues>(
     table: *mut ss_plugin_table_t,
     key: *const ss_plugin_state_data,
     entry: *mut ss_plugin_table_entry_t,
@@ -167,14 +173,14 @@ unsafe extern "C" fn add_table_entry<T: ExportedTable>(
     }
 
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return std::ptr::null_mut();
         };
         let Some(key) = key.as_ref() else {
             return std::ptr::null_mut();
         };
-        let key = T::Key::from_data(key);
-        let entry = Box::from_raw(entry as *mut Rc<T::Entry>);
+        let key = K::from_data(key);
+        let entry = Box::from_raw(entry as *mut Rc<RefCell<V>>);
 
         match table.add(key, *entry) {
             Some(entry) => Box::into_raw(Box::new(entry)) as *mut _,
@@ -184,20 +190,20 @@ unsafe extern "C" fn add_table_entry<T: ExportedTable>(
 }
 
 // SAFETY: all pointers must be valid
-unsafe extern "C" fn write_entry_field<T: ExportedTable>(
+unsafe extern "C" fn write_entry_field<K: Key + Ord + Clone, V: TableValues>(
     table: *mut ss_plugin_table_t,
     entry: *mut ss_plugin_table_entry_t,
     field: *const ss_plugin_table_field_t,
     value: *const ss_plugin_state_data,
 ) -> ss_plugin_rc {
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(entry) = (entry as *mut Rc<T::Entry>).as_mut() else {
+        let Some(entry) = (entry as *mut Rc<RefCell<V>>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(field) = (field as *const Rc<T::Field>).as_ref() else {
+        let Some(field) = (field as *const Rc<DynamicField>).as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(value) = value.as_ref() else {
@@ -208,12 +214,12 @@ unsafe extern "C" fn write_entry_field<T: ExportedTable>(
 }
 
 // SAFETY: all pointers must be valid
-unsafe extern "C" fn list_table_fields<T: ExportedTable>(
+unsafe extern "C" fn list_table_fields<K: Key + Ord + Clone, V: TableValues>(
     table: *mut ss_plugin_table_t,
     nfields: *mut u32,
 ) -> *const ss_plugin_table_fieldinfo {
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return std::ptr::null_mut();
         };
         let fields = table.list_fields();
@@ -223,13 +229,13 @@ unsafe extern "C" fn list_table_fields<T: ExportedTable>(
 }
 
 // SAFETY: all pointers must be valid
-unsafe extern "C" fn get_table_field<T: ExportedTable>(
+unsafe extern "C" fn get_table_field<K: Key + Ord + Clone, V: TableValues>(
     table: *mut ss_plugin_table_t,
     name: *const c_char,
     data_type: ss_plugin_state_type,
 ) -> *mut ss_plugin_table_field_t {
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return std::ptr::null_mut();
         };
         let Some(data_type) = FieldTypeId::from_usize(data_type as usize) else {
@@ -248,13 +254,13 @@ unsafe extern "C" fn get_table_field<T: ExportedTable>(
 }
 
 // SAFETY: all pointers must be valid
-unsafe extern "C" fn add_table_field<T: ExportedTable>(
+unsafe extern "C" fn add_table_field<K: Key + Ord + Clone, V: TableValues>(
     table: *mut ss_plugin_table_t,
     name: *const c_char,
     data_type: ss_plugin_state_type,
 ) -> *mut ss_plugin_table_field_t {
     unsafe {
-        let Some(table) = (table as *mut T).as_mut() else {
+        let Some(table) = (table as *mut DynamicTable<K, V>).as_mut() else {
             return std::ptr::null_mut();
         };
         let Some(data_type) = FieldTypeId::from_usize(data_type as usize) else {
@@ -272,32 +278,35 @@ unsafe extern "C" fn add_table_field<T: ExportedTable>(
     }
 }
 
-pub(crate) fn reader_vtable<T: ExportedTable>() -> ss_plugin_table_reader_vtable_ext {
+pub(crate) fn reader_vtable<K: Key + Ord + Clone, V: TableValues>(
+) -> ss_plugin_table_reader_vtable_ext {
     ss_plugin_table_reader_vtable_ext {
-        get_table_name: Some(get_table_name::<T>),
-        get_table_size: Some(get_table_size::<T>),
-        get_table_entry: Some(get_table_entry::<T>),
-        read_entry_field: Some(read_entry_field::<T>),
-        release_table_entry: Some(release_table_entry::<T>),
-        iterate_entries: Some(iterate_entries::<T>),
+        get_table_name: Some(get_table_name::<K, V>),
+        get_table_size: Some(get_table_size::<K, V>),
+        get_table_entry: Some(get_table_entry::<K, V>),
+        read_entry_field: Some(read_entry_field::<K, V>),
+        release_table_entry: Some(release_table_entry::<K, V>),
+        iterate_entries: Some(iterate_entries::<K, V>),
     }
 }
 
-pub(crate) fn writer_vtable<T: ExportedTable>() -> ss_plugin_table_writer_vtable_ext {
+pub(crate) fn writer_vtable<K: Key + Ord + Clone, V: TableValues>(
+) -> ss_plugin_table_writer_vtable_ext {
     ss_plugin_table_writer_vtable_ext {
-        clear_table: Some(clear_table::<T>),
-        erase_table_entry: Some(erase_table_entry::<T>),
-        create_table_entry: Some(create_table_entry::<T>),
-        destroy_table_entry: Some(release_table_entry::<T>), // same as release_table_entry
-        add_table_entry: Some(add_table_entry::<T>),
-        write_entry_field: Some(write_entry_field::<T>),
+        clear_table: Some(clear_table::<K, V>),
+        erase_table_entry: Some(erase_table_entry::<K, V>),
+        create_table_entry: Some(create_table_entry::<K, V>),
+        destroy_table_entry: Some(release_table_entry::<K, V>), // same as release_table_entry
+        add_table_entry: Some(add_table_entry::<K, V>),
+        write_entry_field: Some(write_entry_field::<K, V>),
     }
 }
 
-pub(crate) fn fields_vtable<T: ExportedTable>() -> ss_plugin_table_fields_vtable_ext {
+pub(crate) fn fields_vtable<K: Key + Ord + Clone, V: TableValues>(
+) -> ss_plugin_table_fields_vtable_ext {
     ss_plugin_table_fields_vtable_ext {
-        list_table_fields: Some(list_table_fields::<T>),
-        get_table_field: Some(get_table_field::<T>),
-        add_table_field: Some(add_table_field::<T>),
+        list_table_fields: Some(list_table_fields::<K, V>),
+        get_table_field: Some(get_table_field::<K, V>),
+        add_table_field: Some(add_table_field::<K, V>),
     }
 }

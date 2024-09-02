@@ -26,84 +26,6 @@ pub struct DynamicTable<K: Key + Ord + Clone, V: TableValues = DynamicFieldValue
     data: BTreeMap<K, Rc<RefCell<V>>>,
 }
 
-/// # A table that can be exported to other plugins
-///
-/// Currently, there's no implementation of this trait other than [`DynamicTable`],
-/// but once we have a derive macro, there should be no need to implement this trait
-/// manually.
-///
-/// Since the trait specification uses [`Rc`], it's *not* thread-safe.
-pub trait ExportedTable {
-    /// The table key type.
-    type Key: Key;
-    /// The table entry type, exposed over FFI as an opaque pointer.
-    type Entry;
-    /// The table field descriptor type, exposed over FFI as an opaque pointer.
-    type Field;
-
-    /// Return the table name.
-    fn name(&self) -> &'static CStr;
-
-    /// Return the number of entries in the table.
-    fn size(&self) -> usize;
-
-    /// Get an entry corresponding to a particular key.
-    fn lookup(&self, key: &Self::Key) -> Option<Rc<Self::Entry>>;
-
-    /// Get the value for a field in an entry.
-    fn get_field_value(
-        &self,
-        entry: &Rc<Self::Entry>,
-        field: &Rc<Self::Field>,
-        out: &mut ss_plugin_state_data,
-    ) -> Result<(), anyhow::Error>;
-
-    /// Execute a closure on all entries in the table with read-only access.
-    ///
-    /// The iteration continues until all entries are visited or the closure returns false.
-    fn iterate_entries<F>(&mut self, func: F) -> bool
-    where
-        F: FnMut(&mut Rc<Self::Entry>) -> bool; // TODO(upstream) the closure cannot store away the entry but we could use explicit docs
-
-    /// Remove all entries from the table.
-    fn clear(&mut self);
-
-    /// Erase an entry by key.
-    fn erase(&mut self, key: &Self::Key) -> Option<Rc<Self::Entry>>;
-
-    /// Create a new table entry.
-    ///
-    /// This is a detached entry that can be later inserted into the table using [`ExportedTable::add`].
-    fn create_entry() -> Rc<Self::Entry>;
-
-    /// Attach an entry to a table key
-    fn add(&mut self, key: &Self::Key, entry: Rc<Self::Entry>) -> Option<Rc<Self::Entry>>;
-
-    /// Write a value to a field of an entry
-    fn write(
-        &self,
-        entry: &mut Rc<Self::Entry>,
-        field: &Rc<Self::Field>,
-        value: &ss_plugin_state_data,
-    ) -> Result<(), anyhow::Error>;
-
-    /// Return a list of fields as a slice of raw FFI objects
-    fn list_fields(&mut self) -> &[ss_plugin_table_fieldinfo];
-
-    /// Return a field descriptor for a particular field
-    ///
-    /// The requested `field_type` must match the actual type of the field
-    fn get_field(&self, name: &CStr, field_type: FieldTypeId) -> Option<Rc<Self::Field>>;
-
-    /// Add a new field to the table
-    fn add_field(
-        &mut self,
-        name: &CStr,
-        field_type: FieldTypeId,
-        read_only: bool,
-    ) -> Option<Rc<Self::Field>>;
-}
-
 impl<K: Key + Ord + Clone, V: TableValues> DynamicTable<K, V> {
     /// Create a new table
     pub fn new(name: &'static CStr) -> Self {
@@ -120,29 +42,27 @@ impl<K: Key + Ord + Clone, V: TableValues> DynamicTable<K, V> {
 
         table
     }
-}
 
-impl<K: Key + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<K, V> {
-    type Key = K;
-    type Entry = RefCell<V>;
-    type Field = DynamicField;
-
-    fn name(&self) -> &'static CStr {
+    /// Return the table name.
+    pub fn name(&self) -> &'static CStr {
         self.name
     }
 
-    fn size(&self) -> usize {
+    /// Return the number of entries in the table.
+    pub fn size(&self) -> usize {
         self.data.len()
     }
 
-    fn lookup(&self, key: &Self::Key) -> Option<Rc<Self::Entry>> {
+    /// Get an entry corresponding to a particular key.
+    pub fn lookup(&self, key: &K) -> Option<Rc<RefCell<V>>> {
         self.data.get(key).cloned()
     }
 
-    fn get_field_value(
+    /// Get the value for a field in an entry.
+    pub fn get_field_value(
         &self,
-        entry: &Rc<Self::Entry>,
-        field: &Rc<Self::Field>,
+        entry: &Rc<RefCell<V>>,
+        field: &Rc<DynamicField>,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
         let (type_id, index) = { (field.type_id, field.index) };
@@ -150,9 +70,13 @@ impl<K: Key + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<K, V> 
         entry.borrow().get(index, type_id, out)
     }
 
-    fn iterate_entries<F>(&mut self, mut func: F) -> bool
+    /// Execute a closure on all entries in the table with read-only access.
+    ///
+    /// The iteration continues until all entries are visited or the closure returns false.
+    // TODO(upstream) the closure cannot store away the entry but we could use explicit docs
+    pub fn iterate_entries<F>(&mut self, mut func: F) -> bool
     where
-        F: FnMut(&mut Rc<Self::Entry>) -> bool,
+        F: FnMut(&mut Rc<RefCell<V>>) -> bool,
     {
         for value in &mut self.data.values_mut() {
             if !func(value) {
@@ -163,28 +87,35 @@ impl<K: Key + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<K, V> 
         true
     }
 
-    fn clear(&mut self) {
+    /// Remove all entries from the table.
+    pub fn clear(&mut self) {
         self.data.clear()
     }
 
-    fn erase(&mut self, key: &Self::Key) -> Option<Rc<Self::Entry>> {
+    /// Erase an entry by key.
+    pub fn erase(&mut self, key: &K) -> Option<Rc<RefCell<V>>> {
         self.data.remove(key)
     }
 
-    fn create_entry() -> Rc<Self::Entry> {
+    /// Create a new table entry.
+    ///
+    /// This is a detached entry that can be later inserted into the table using [`DynamicTable::add`].
+    pub fn create_entry() -> Rc<RefCell<V>> {
         Rc::new(RefCell::new(V::default()))
     }
 
-    fn add(&mut self, key: &Self::Key, entry: Rc<Self::Entry>) -> Option<Rc<Self::Entry>> {
+    /// Attach an entry to a table key
+    pub fn add(&mut self, key: &K, entry: Rc<RefCell<V>>) -> Option<Rc<RefCell<V>>> {
         // note: different semantics from data.insert: we return the *new* entry
         self.data.insert(key.clone(), entry);
         self.lookup(key)
     }
 
-    fn write(
+    /// Write a value to a field of an entry
+    pub fn write(
         &self,
-        entry: &mut Rc<Self::Entry>,
-        field: &Rc<Self::Field>,
+        entry: &mut Rc<RefCell<V>>,
+        field: &Rc<DynamicField>,
         value: &ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
         if field.read_only {
@@ -204,11 +135,15 @@ impl<K: Key + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<K, V> 
         entry.set(index, value)
     }
 
-    fn list_fields(&mut self) -> &[ss_plugin_table_fieldinfo] {
+    /// Return a list of fields as a slice of raw FFI objects
+    pub fn list_fields(&mut self) -> &[ss_plugin_table_fieldinfo] {
         self.field_descriptors.as_slice()
     }
 
-    fn get_field(&self, name: &CStr, field_type: FieldTypeId) -> Option<Rc<Self::Field>> {
+    /// Return a field descriptor for a particular field
+    ///
+    /// The requested `field_type` must match the actual type of the field
+    pub fn get_field(&self, name: &CStr, field_type: FieldTypeId) -> Option<Rc<DynamicField>> {
         let field = self.fields.get(name)?;
         if field.type_id != field_type {
             return None;
@@ -216,12 +151,13 @@ impl<K: Key + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<K, V> 
         Some(Rc::clone(field))
     }
 
-    fn add_field(
+    /// Add a new field to the table
+    pub fn add_field(
         &mut self,
         name: &CStr,
         field_type: FieldTypeId,
         read_only: bool,
-    ) -> Option<Rc<Self::Field>> {
+    ) -> Option<Rc<DynamicField>> {
         if let Some(existing_field) = self.fields.get(name) {
             if existing_field.type_id == field_type && existing_field.read_only == read_only {
                 return Some(Rc::clone(existing_field));

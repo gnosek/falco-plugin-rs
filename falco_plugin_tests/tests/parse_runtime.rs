@@ -11,7 +11,6 @@ use falco_plugin::source::{
     EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
 };
 use falco_plugin::tables::export;
-use falco_plugin::tables::export::ExportedTable;
 use falco_plugin::tables::import;
 use falco_plugin::tables::TablesInput;
 use falco_plugin::{anyhow, static_plugin, FailureReason, TableValues};
