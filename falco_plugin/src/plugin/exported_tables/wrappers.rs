@@ -90,7 +90,7 @@ where
         let Some(entry) = (entry as *mut Rc<RefCell<E>>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(field) = (field as *const Rc<FieldDescriptor>).as_ref() else {
+        let Some(field) = (field as *const FieldDescriptor).as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(out) = out.as_mut() else {
@@ -241,7 +241,7 @@ where
         let Some(entry) = (entry as *mut Rc<RefCell<E>>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(field) = (field as *const Rc<FieldDescriptor>).as_ref() else {
+        let Some(field) = (field as *const FieldDescriptor).as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(value) = value.as_ref() else {
@@ -293,7 +293,7 @@ where
             CStr::from_ptr(name)
         };
         match table.get_field(name, data_type) {
-            Some(field) => Box::into_raw(Box::new(field)) as *mut _,
+            Some(field) => field.as_ref() as *const _ as *mut _,
             None => std::ptr::null_mut(),
         }
     }
@@ -322,7 +322,7 @@ where
             CStr::from_ptr(name)
         };
         match table.add_field(name, data_type, false) {
-            Some(field) => Box::into_raw(Box::new(field)) as *mut _,
+            Some(field) => field.as_ref() as *const _ as *mut _,
             None => std::ptr::null_mut(),
         }
     }

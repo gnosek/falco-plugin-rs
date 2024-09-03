@@ -1,5 +1,6 @@
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
+use crate::plugin::exported_tables::field_descriptor::FieldRef;
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::tables::export::DynamicFieldValues;
@@ -63,7 +64,7 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
     pub fn get_field_value(
         &self,
         entry: &Rc<RefCell<E>>,
-        field: &Rc<FieldDescriptor>,
+        field: &FieldDescriptor,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
         let (type_id, index) = { (field.type_id, field.index) };
@@ -116,7 +117,7 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
     pub fn write(
         &self,
         entry: &mut Rc<RefCell<E>>,
-        field: &Rc<FieldDescriptor>,
+        field: &FieldDescriptor,
         value: &ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
         if field.read_only {
@@ -144,12 +145,12 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
     /// Return a field descriptor for a particular field
     ///
     /// The requested `field_type` must match the actual type of the field
-    pub fn get_field(&self, name: &CStr, field_type: FieldTypeId) -> Option<Rc<FieldDescriptor>> {
+    pub fn get_field(&self, name: &CStr, field_type: FieldTypeId) -> Option<FieldRef> {
         let field = self.fields.get(name)?;
         if field.type_id != field_type {
             return None;
         }
-        Some(Rc::clone(field))
+        Some(FieldRef::Dynamic(Rc::clone(field)))
     }
 
     /// Add a new field to the table
@@ -158,10 +159,10 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
         name: &CStr,
         field_type: FieldTypeId,
         read_only: bool,
-    ) -> Option<Rc<FieldDescriptor>> {
+    ) -> Option<FieldRef> {
         if let Some(existing_field) = self.fields.get(name) {
             if existing_field.type_id == field_type && existing_field.read_only == read_only {
-                return Some(Rc::clone(existing_field));
+                return Some(FieldRef::Dynamic(Rc::clone(existing_field)));
             }
             return None;
         }
@@ -186,6 +187,6 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
             read_only: read_only as ss_plugin_bool,
         });
 
-        Some(field)
+        Some(FieldRef::Dynamic(field))
     }
 }

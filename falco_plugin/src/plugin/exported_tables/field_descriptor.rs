@@ -1,4 +1,23 @@
 use crate::plugin::tables::data::FieldTypeId;
+use std::rc::Rc;
+
+/// A reference to a field descriptor
+///
+/// For static fields, it's a static reference to the descriptor (stored in a static global
+/// somewhere). For dynamic fields, it's a reference-counted pointer to the descriptor living
+/// in a runtime-managed map
+#[allow(missing_docs)]
+pub enum FieldRef {
+    Dynamic(Rc<FieldDescriptor>),
+}
+
+impl AsRef<FieldDescriptor> for FieldRef {
+    fn as_ref(&self) -> &FieldDescriptor {
+        match self {
+            FieldRef::Dynamic(d) => d.as_ref(),
+        }
+    }
+}
 
 /// # A descriptor for a dynamically added field
 ///
