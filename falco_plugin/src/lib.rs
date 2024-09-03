@@ -993,6 +993,7 @@ pub mod internals {
 
         pub mod export {
             pub use crate::plugin::exported_tables::entry::traits::Entry;
+            pub use crate::plugin::exported_tables::field_descriptor::FieldId;
             pub use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
             pub use crate::plugin::exported_tables::field_value::traits::FieldValue;
             pub use crate::plugin::exported_tables::field_value::traits::StaticField;

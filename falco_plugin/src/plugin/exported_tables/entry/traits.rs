@@ -1,3 +1,4 @@
+use crate::plugin::exported_tables::field_descriptor::FieldId;
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::tables::data::FieldTypeId;
 use falco_plugin_api::ss_plugin_state_data;
@@ -23,7 +24,7 @@ pub trait Entry: Default {
     /// (if it's larger than `STATIC_FIELDS.size()`)
     fn get(
         &self,
-        key: usize,
+        key: FieldId,
         type_id: FieldTypeId,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), anyhow::Error>;
@@ -35,5 +36,5 @@ pub trait Entry: Default {
     ///
     /// `key` will correspond to an entry in [`Entry::STATIC_FIELDS`] or to a dynamic field
     /// (if it's larger than `STATIC_FIELDS.size()`)
-    fn set(&mut self, key: usize, value: DynamicFieldValue) -> Result<(), anyhow::Error>;
+    fn set(&mut self, key: FieldId, value: DynamicFieldValue) -> Result<(), anyhow::Error>;
 }

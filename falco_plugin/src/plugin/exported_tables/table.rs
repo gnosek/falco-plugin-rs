@@ -1,6 +1,6 @@
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
-use crate::plugin::exported_tables::field_descriptor::FieldRef;
+use crate::plugin::exported_tables::field_descriptor::{FieldId, FieldRef};
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::tables::export::DynamicFieldValues;
@@ -175,7 +175,7 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
         let name = name.to_owned();
 
         let field = Rc::new(FieldDescriptor {
-            index,
+            index: FieldId::Dynamic(index),
             type_id: field_type,
             read_only,
         });

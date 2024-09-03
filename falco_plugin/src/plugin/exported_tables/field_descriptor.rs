@@ -1,6 +1,16 @@
 use crate::plugin::tables::data::FieldTypeId;
 use std::rc::Rc;
 
+/// An opaque id describing a particular field
+///
+/// It's effectively an index describing the order in which the fields were added,
+/// separately for static and dynamic fields
+#[derive(Clone, Copy, Eq, PartialEq, Debug, PartialOrd, Ord)]
+#[allow(missing_docs)]
+pub enum FieldId {
+    Dynamic(usize),
+}
+
 /// A reference to a field descriptor
 ///
 /// For static fields, it's a static reference to the descriptor (stored in a static global
@@ -27,7 +37,7 @@ impl AsRef<FieldDescriptor> for FieldRef {
 /// **Note**: the data is stored as an enum capable of holding values of any type, but the table enforces
 /// the defined type on all incoming data.
 pub struct FieldDescriptor {
-    pub(in crate::plugin::exported_tables) index: usize,
+    pub(in crate::plugin::exported_tables) index: FieldId,
     pub(in crate::plugin::exported_tables) type_id: FieldTypeId,
     pub(in crate::plugin::exported_tables) read_only: bool,
 }

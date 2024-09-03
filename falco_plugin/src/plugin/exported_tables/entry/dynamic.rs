@@ -1,4 +1,5 @@
 use crate::plugin::exported_tables::entry::traits::Entry;
+use crate::plugin::exported_tables::field_descriptor::FieldId;
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::exported_tables::field_value::traits::FieldValue;
 use crate::plugin::tables::data::FieldTypeId;
@@ -7,7 +8,7 @@ use std::collections::BTreeMap;
 use std::ffi::CStr;
 
 /// A table value type that only has dynamic fields
-pub type DynamicFieldValues = BTreeMap<usize, DynamicFieldValue>;
+pub type DynamicFieldValues = BTreeMap<FieldId, DynamicFieldValue>;
 
 impl Entry for DynamicFieldValues {
     const STATIC_FIELDS: &'static [(&'static CStr, FieldTypeId, bool)] = &[];
@@ -15,11 +16,12 @@ impl Entry for DynamicFieldValues {
 
     fn get(
         &self,
-        key: usize,
+        key: FieldId,
         type_id: FieldTypeId,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
-        if let Some((_, actual_type_id, _)) = Self::STATIC_FIELDS.get(key) {
+        let FieldId::Dynamic(static_field_id) = key;
+        if let Some((_, actual_type_id, _)) = Self::STATIC_FIELDS.get(static_field_id) {
             if type_id != *actual_type_id {
                 return Err(anyhow::anyhow!(
                     "Type mismatch, requested {:?}, actual type is {:?}",
@@ -31,12 +33,12 @@ impl Entry for DynamicFieldValues {
 
         let field = self
             .get(&key)
-            .ok_or_else(|| anyhow::anyhow!("Dynamic field {} not found", key))?;
+            .ok_or_else(|| anyhow::anyhow!("Dynamic field {:?} not found", key))?;
 
         field.to_data(out, type_id)
     }
 
-    fn set(&mut self, key: usize, value: DynamicFieldValue) -> Result<(), anyhow::Error> {
+    fn set(&mut self, key: FieldId, value: DynamicFieldValue) -> Result<(), anyhow::Error> {
         self.insert(key, value);
         Ok(())
     }

@@ -22,13 +22,14 @@ macro_rules! impl_export_table_get {
     ) => {
         fn get(
             &$self,
-            key: usize,
+            key: $crate::internals::tables::export::FieldId,
             type_id: $crate::internals::tables::export::FieldTypeId,
             out: &mut $crate::api::ss_plugin_state_data,
         ) -> Result<(), $crate::anyhow::Error> {
             use $crate::internals::tables::export::FieldValue;
+            use $crate::internals::tables::export::FieldId;
             match key {
-                $($i => $self.$field_name.to_data(out, type_id),)*
+                $(FieldId::Dynamic($i) => $self.$field_name.to_data(out, type_id),)*
                 _ => Err($crate::anyhow::anyhow!("Table does not have dynamic fields")
                         .context($crate::FailureReason::NotSupported)),
             }
@@ -41,13 +42,14 @@ macro_rules! impl_export_table_get {
     ) => {
         fn get(
             &$self,
-            key: usize,
+            key: $crate::internals::tables::export::FieldId,
             type_id: $crate::internals::tables::export::FieldTypeId,
             out: &mut $crate::api::ss_plugin_state_data,
         ) -> Result<(), $crate::anyhow::Error> {
             use $crate::internals::tables::export::FieldValue;
+            use $crate::internals::tables::export::FieldId;
             match key {
-                $($i => $self.$field_name.to_data(out, type_id),)*
+                $(FieldId::Dynamic($i) => $self.$field_name.to_data(out, type_id),)*
                 _ => $crate::internals::tables::export::Entry::get(&$self.$dynamic_field, key, type_id, out),
             }
         }
@@ -62,10 +64,14 @@ macro_rules! impl_export_table_set {
         static: $($i:literal: $field_name:ident,)*
         dynamic:,
     ) => {
-        fn set(&mut $self, key: usize, value: $crate::internals::tables::export::DynamicFieldValue)
+        fn set(
+            &mut $self,
+            key: $crate::internals::tables::export::FieldId,
+            value: $crate::internals::tables::export::DynamicFieldValue)
             -> std::result::Result<(), $crate::anyhow::Error> {
+            use $crate::internals::tables::export::FieldId;
             match key {
-                $($i => Ok($self.$field_name = value.try_into()?),)*
+                $(FieldId::Dynamic($i) => Ok($self.$field_name = value.try_into()?),)*
                 _ => Err($crate::anyhow::anyhow!("Table does not have dynamic fields")
                         .context($crate::FailureReason::NotSupported)),
             }
@@ -76,10 +82,14 @@ macro_rules! impl_export_table_set {
         static: $($i:literal: $field_name:ident,)*
         dynamic: $dynamic_field:ident,
     ) => {
-        fn set(&mut $self, key: usize, value: $crate::internals::tables::export::DynamicFieldValue)
+        fn set(
+            &mut $self,
+            key: $crate::internals::tables::export::FieldId,
+            value: $crate::internals::tables::export::DynamicFieldValue)
             -> std::result::Result<(), $crate::anyhow::Error> {
+            use $crate::internals::tables::export::FieldId;
             match key {
-                $($i => Ok($self.$field_name = value.try_into()?),)*
+                $(FieldId::Dynamic($i) => Ok($self.$field_name = value.try_into()?),)*
                 _ => $self.$dynamic_field.set(key, value),
             }
         }
