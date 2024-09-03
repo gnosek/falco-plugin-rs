@@ -1,7 +1,8 @@
 use crate::plugin::exported_tables::entry::traits::Entry;
+use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::tables::data::{FieldTypeId, Key};
-use crate::tables::export::{DynamicField, DynamicFieldValues};
+use crate::tables::export::DynamicFieldValues;
 use crate::FailureReason;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo,
@@ -21,7 +22,7 @@ use std::rc::Rc;
 /// [`Entry`] as the second generic parameter.
 pub struct Table<K: Key + Ord + Clone, E: Entry = DynamicFieldValues> {
     name: &'static CStr,
-    fields: BTreeMap<CString, Rc<DynamicField>>,
+    fields: BTreeMap<CString, Rc<FieldDescriptor>>,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,
     data: BTreeMap<K, Rc<RefCell<E>>>,
 }
@@ -62,7 +63,7 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
     pub fn get_field_value(
         &self,
         entry: &Rc<RefCell<E>>,
-        field: &Rc<DynamicField>,
+        field: &Rc<FieldDescriptor>,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
         let (type_id, index) = { (field.type_id, field.index) };
@@ -115,7 +116,7 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
     pub fn write(
         &self,
         entry: &mut Rc<RefCell<E>>,
-        field: &Rc<DynamicField>,
+        field: &Rc<FieldDescriptor>,
         value: &ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
         if field.read_only {
@@ -143,7 +144,7 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
     /// Return a field descriptor for a particular field
     ///
     /// The requested `field_type` must match the actual type of the field
-    pub fn get_field(&self, name: &CStr, field_type: FieldTypeId) -> Option<Rc<DynamicField>> {
+    pub fn get_field(&self, name: &CStr, field_type: FieldTypeId) -> Option<Rc<FieldDescriptor>> {
         let field = self.fields.get(name)?;
         if field.type_id != field_type {
             return None;
@@ -157,7 +158,7 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
         name: &CStr,
         field_type: FieldTypeId,
         read_only: bool,
-    ) -> Option<Rc<DynamicField>> {
+    ) -> Option<Rc<FieldDescriptor>> {
         if let Some(existing_field) = self.fields.get(name) {
             if existing_field.type_id == field_type && existing_field.read_only == read_only {
                 return Some(Rc::clone(existing_field));
@@ -172,7 +173,7 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
         let index = self.field_descriptors.len();
         let name = name.to_owned();
 
-        let field = Rc::new(DynamicField {
+        let field = Rc::new(FieldDescriptor {
             index,
             type_id: field_type,
             read_only,

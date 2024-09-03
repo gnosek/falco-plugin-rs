@@ -15,7 +15,7 @@ use falco_plugin_api::{
 use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::tables::data::{FieldTypeId, Key};
-use crate::tables::export::{DynamicField, Table};
+use crate::tables::export::{FieldDescriptor, Table};
 
 // SAFETY: `table` must be a valid pointer to Table<K,E>
 unsafe extern "C" fn get_table_name<K, E>(table: *mut ss_plugin_table_t) -> *const c_char
@@ -89,7 +89,7 @@ where
         let Some(entry) = (entry as *mut Rc<RefCell<E>>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(field) = (field as *const Rc<DynamicField>).as_ref() else {
+        let Some(field) = (field as *const Rc<FieldDescriptor>).as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(out) = out.as_mut() else {
@@ -240,7 +240,7 @@ where
         let Some(entry) = (entry as *mut Rc<RefCell<E>>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(field) = (field as *const Rc<DynamicField>).as_ref() else {
+        let Some(field) = (field as *const Rc<FieldDescriptor>).as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(value) = value.as_ref() else {

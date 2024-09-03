@@ -630,7 +630,7 @@ pub mod tables {
     /// ```
     pub mod export {
         pub use crate::plugin::exported_tables::entry::dynamic::DynamicFieldValues;
-        pub use crate::plugin::exported_tables::field_descriptor::DynamicField;
+        pub use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
         pub use crate::plugin::exported_tables::field_value::traits::FieldValue;
         pub use crate::plugin::exported_tables::table::Table;
 

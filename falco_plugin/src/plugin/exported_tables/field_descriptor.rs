@@ -7,7 +7,7 @@ use crate::plugin::tables::data::FieldTypeId;
 ///
 /// **Note**: the data is stored as an enum capable of holding values of any type, but the table enforces
 /// the defined type on all incoming data.
-pub struct DynamicField {
+pub struct FieldDescriptor {
     pub(in crate::plugin::exported_tables) index: usize,
     pub(in crate::plugin::exported_tables) type_id: FieldTypeId,
     pub(in crate::plugin::exported_tables) read_only: bool,
