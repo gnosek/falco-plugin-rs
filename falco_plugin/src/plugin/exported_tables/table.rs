@@ -1,9 +1,9 @@
+use crate::plugin::exported_tables::entry::dynamic::DynamicEntry;
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
 use crate::plugin::exported_tables::field_descriptor::{FieldId, FieldRef};
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::tables::data::{FieldTypeId, Key};
-use crate::tables::export::DynamicFieldValues;
 use crate::FailureReason;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo,
@@ -21,7 +21,7 @@ use std::rc::Rc;
 ///
 /// To create a table that includes static fields, pass a type that implements
 /// [`Entry`] as the second generic parameter.
-pub struct Table<K: Key + Ord + Clone, E: Entry = DynamicFieldValues> {
+pub struct Table<K: Key + Ord + Clone, E: Entry = DynamicEntry> {
     name: &'static CStr,
     fields: BTreeMap<CString, Rc<FieldDescriptor>>,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,

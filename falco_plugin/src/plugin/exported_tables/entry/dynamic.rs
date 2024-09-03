@@ -8,9 +8,9 @@ use std::collections::BTreeMap;
 use std::ffi::CStr;
 
 /// A table value type that only has dynamic fields
-pub type DynamicFieldValues = BTreeMap<FieldId, DynamicFieldValue>;
+pub type DynamicEntry = BTreeMap<FieldId, DynamicFieldValue>;
 
-impl Entry for DynamicFieldValues {
+impl Entry for DynamicEntry {
     const STATIC_FIELDS: &'static [(&'static CStr, FieldTypeId, bool)] = &[];
     const HAS_DYNAMIC_FIELDS: bool = true;
 

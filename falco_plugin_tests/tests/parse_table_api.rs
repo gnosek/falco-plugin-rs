@@ -26,7 +26,7 @@ struct RemainingCounter {
     remaining: u64,
 
     #[dynamic]
-    dynamic: export::DynamicFieldValues,
+    dynamic: export::DynamicEntry,
 }
 
 // same table, but imported

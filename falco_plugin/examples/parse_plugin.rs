@@ -3,7 +3,7 @@ use std::ffi::{CStr, CString};
 use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
 use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
-use falco_plugin::tables::export::{DynamicFieldValues, Entry, Table};
+use falco_plugin::tables::export::{DynamicEntry, Entry, Table};
 use falco_plugin::tables::import::Field;
 use falco_plugin::tables::import::{RuntimeEntry, Table as ImportedTable};
 use falco_plugin::tables::TablesInput;
@@ -20,7 +20,7 @@ struct AnotherTable {
     secret: Vec<u8>,
 
     #[dynamic]
-    dynamic_fields: DynamicFieldValues,
+    dynamic_fields: DynamicEntry,
 }
 
 #[derive(Entry, Default)]

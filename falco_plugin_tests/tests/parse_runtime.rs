@@ -24,7 +24,7 @@ struct RemainingCounter {
     remaining: u64,
 
     #[dynamic]
-    dynamic: export::DynamicFieldValues,
+    dynamic: export::DynamicEntry,
 }
 
 struct DummyPlugin {
