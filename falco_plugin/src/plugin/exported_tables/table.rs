@@ -1,6 +1,5 @@
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
-use crate::plugin::exported_tables::field_value::traits::FieldValue;
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::tables::export::{DynamicField, DynamicFieldValues};
 use crate::FailureReason;

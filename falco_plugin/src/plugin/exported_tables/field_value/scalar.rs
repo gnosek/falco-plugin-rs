@@ -2,7 +2,7 @@ use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::exported_tables::field_value::traits::{seal, FieldValue, StaticField};
 use crate::plugin::tables::data::FieldTypeId;
 use falco_plugin_api::ss_plugin_state_data;
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 
 macro_rules! impl_field_value {
     ($ty:ty => $datafield:ident => $type_id:expr => $variant:ident) => {
@@ -24,17 +24,6 @@ macro_rules! impl_field_value {
 
                 out.$datafield = *self;
                 Ok(())
-            }
-
-            unsafe fn from_data(
-                value: &ss_plugin_state_data,
-                type_id: FieldTypeId,
-            ) -> Option<Self> {
-                if type_id != $type_id {
-                    return None;
-                }
-
-                Some(value.$datafield)
             }
         }
 
@@ -84,14 +73,6 @@ impl FieldValue for bool {
         out.b = if *self { 1 } else { 0 };
         Ok(())
     }
-
-    unsafe fn from_data(value: &ss_plugin_state_data, type_id: FieldTypeId) -> Option<Self> {
-        if type_id != FieldTypeId::Bool {
-            return None;
-        }
-
-        Some(value.b != 0)
-    }
 }
 
 impl StaticField for bool {
@@ -127,14 +108,6 @@ impl FieldValue for CString {
 
         out.str_ = self.as_ptr();
         Ok(())
-    }
-
-    unsafe fn from_data(value: &ss_plugin_state_data, type_id: FieldTypeId) -> Option<Self> {
-        if type_id != FieldTypeId::String {
-            return None;
-        }
-
-        Some(CStr::from_ptr(value.str_).to_owned())
     }
 }
 

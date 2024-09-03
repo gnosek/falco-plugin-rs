@@ -19,16 +19,6 @@ pub trait FieldValue: seal::Sealed + Sized {
         out: &mut ss_plugin_state_data,
         type_id: FieldTypeId,
     ) -> Result<(), anyhow::Error>;
-
-    /// Load value from a C representation in `value`
-    ///
-    /// This method must return `None` (and do nothing) if `Self` cannot represent
-    /// a value of type [`FieldTypeId`].
-    ///
-    /// # Safety
-    /// `value` must be a valid reference with the union member described by [`FieldTypeId`] filled
-    /// with valid data.
-    unsafe fn from_data(value: &ss_plugin_state_data, type_id: FieldTypeId) -> Option<Self>;
 }
 
 /// Trait implemented for types that can be static table fields
