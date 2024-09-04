@@ -3,8 +3,9 @@ use std::ffi::{CStr, CString};
 use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
 use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
-use falco_plugin::tables::export::{DynamicFieldValues, DynamicTable, Entry};
-use falco_plugin::tables::import::{Field, RuntimeEntry, Table};
+use falco_plugin::tables::export::{DynamicFieldValues, Entry, Table};
+use falco_plugin::tables::import::Field;
+use falco_plugin::tables::import::{RuntimeEntry, Table as ImportedTable};
 use falco_plugin::tables::TablesInput;
 use falco_plugin::{parse_plugin, plugin};
 
@@ -37,14 +38,14 @@ struct TableWithStaticFieldsOnly {
 struct ThreadTable;
 
 pub struct DummyPlugin {
-    thread_table: Table<i64, RuntimeEntry<ThreadTable>>,
+    thread_table: ImportedTable<i64, RuntimeEntry<ThreadTable>>,
     sample_field: Field<u64, RuntimeEntry<ThreadTable>>,
     #[allow(dead_code)]
-    new_table: &'static mut DynamicTable<u64>,
+    new_table: &'static mut Table<u64>,
     #[allow(dead_code)]
-    another_table: &'static mut DynamicTable<u64, AnotherTable>,
+    another_table: &'static mut Table<u64, AnotherTable>,
     #[allow(dead_code)]
-    table_with_static_fields_only: &'static mut DynamicTable<u64, TableWithStaticFieldsOnly>,
+    table_with_static_fields_only: &'static mut Table<u64, TableWithStaticFieldsOnly>,
 }
 
 impl Plugin for DummyPlugin {
@@ -57,13 +58,13 @@ impl Plugin for DummyPlugin {
     fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
         let input = input.ok_or_else(|| anyhow::anyhow!("did not get tables input"))?;
 
-        let thread_table: Table<i64, RuntimeEntry<ThreadTable>> = input.get_table(c"threads")?;
+        let thread_table: ImportedTable<i64, RuntimeEntry<ThreadTable>> =
+            input.get_table(c"threads")?;
         let sample_field = thread_table.add_field::<u64>(input, c"sample")?;
 
-        let new_table = input.add_table(DynamicTable::new(c"sample"))?;
-        let another_table = input.add_table(DynamicTable::new(c"another"))?;
-        let table_with_static_fields_only =
-            input.add_table(DynamicTable::new(c"static_fields_only"))?;
+        let new_table = input.add_table(Table::new(c"sample"))?;
+        let another_table = input.add_table(Table::new(c"another"))?;
+        let table_with_static_fields_only = input.add_table(Table::new(c"static_fields_only"))?;
 
         Ok(DummyPlugin {
             thread_table,

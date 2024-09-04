@@ -18,7 +18,7 @@ use std::io::Write;
 use std::rc::Rc;
 
 // exporting a table
-type RemainingEntryTable = export::DynamicTable<u64, RemainingCounter>;
+type RemainingEntryTable = export::Table<u64, RemainingCounter>;
 
 // TODO Entry vs TableMetadata is an ugly asymmetry
 #[derive(export::Entry, Default)]

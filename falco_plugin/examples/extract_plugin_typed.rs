@@ -7,7 +7,8 @@ use falco_plugin::base::Plugin;
 use falco_plugin::extract::{
     field, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin, ExtractRequest,
 };
-use falco_plugin::tables::import::{Field, RuntimeEntry, Table};
+use falco_plugin::tables::import::RuntimeEntry;
+use falco_plugin::tables::import::{Field, Table};
 use falco_plugin::tables::TablesInput;
 use falco_plugin::{extract_plugin, plugin};
 

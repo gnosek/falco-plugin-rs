@@ -17,7 +17,7 @@ use falco_plugin::{anyhow, static_plugin, FailureReason};
 use std::ffi::{CStr, CString};
 use std::io::Write;
 
-type RemainingEntryTable = export::DynamicTable<u64, RemainingCounter>;
+type RemainingEntryTable = export::Table<u64, RemainingCounter>;
 
 #[derive(export::Entry, Default)]
 struct RemainingCounter {

@@ -17,7 +17,7 @@ use std::ffi::{CStr, CString};
 use std::io::Write;
 use std::rc::Rc;
 
-type RemainingEntryTable = export::DynamicTable<u64, RemainingCounter>;
+type RemainingEntryTable = export::Table<u64, RemainingCounter>;
 
 #[derive(export::Entry, Default)]
 struct RemainingCounter {

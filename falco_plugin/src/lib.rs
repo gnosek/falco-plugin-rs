@@ -572,7 +572,7 @@ pub mod tables {
     /// Exporting tables to other plugins
     ///
     /// Exporting a table to other plugins is done using the [`crate::tables::export::Entry`] derive macro.
-    /// It lets you use a struct type as a parameter to [`export::DynamicTable`]. You can then create
+    /// It lets you use a struct type as a parameter to [`export::Table`]. You can then create
     /// a new table using [`TablesInput::add_table`].
     ///
     /// # Example
@@ -600,7 +600,7 @@ pub mod tables {
     /// struct MyPlugin {
     ///     // you can use methods on this instance to access fields bypassing the Falco table API
     ///     // (for performance within your own plugin)
-    ///     exported_table: &'static mut export::DynamicTable<u64, ExportedTable>,
+    ///     exported_table: &'static mut export::Table<u64, ExportedTable>,
     /// }
     ///
     /// // implement the base::Plugin trait
@@ -622,7 +622,7 @@ pub mod tables {
     ///         // create a new table called "exported"
     ///         //
     ///         // The concrete type is inferred from the field type the result is stored in.
-    ///         let exported_table = input.add_table(export::DynamicTable::new(c"exported"))?;
+    ///         let exported_table = input.add_table(export::Table::new(c"exported"))?;
     ///
     ///         Ok(MyPlugin { exported_table })
     ///     }
@@ -632,7 +632,7 @@ pub mod tables {
         pub use crate::plugin::exported_tables::entry::dynamic::DynamicFieldValues;
         pub use crate::plugin::exported_tables::field_descriptor::DynamicField;
         pub use crate::plugin::exported_tables::field_value::traits::FieldValue;
-        pub use crate::plugin::exported_tables::table::DynamicTable;
+        pub use crate::plugin::exported_tables::table::Table;
 
         /// Mark a struct type as a table value
         ///

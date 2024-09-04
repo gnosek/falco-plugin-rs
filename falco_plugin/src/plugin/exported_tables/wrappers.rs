@@ -15,7 +15,7 @@ use falco_plugin_api::{
 use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::tables::data::{FieldTypeId, Key};
-use crate::tables::export::{DynamicField, DynamicTable};
+use crate::tables::export::{DynamicField, Table};
 
 // SAFETY: `table` must be a valid pointer to Table<K,E>
 unsafe extern "C" fn get_table_name<K, E>(table: *mut ss_plugin_table_t) -> *const c_char
@@ -24,7 +24,7 @@ where
     E: Entry,
 {
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return std::ptr::null_mut();
         };
         table.name().as_ptr()
@@ -38,7 +38,7 @@ where
     E: Entry,
 {
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return 0;
         };
         table.size() as u64
@@ -56,7 +56,7 @@ where
     E: Entry,
 {
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return std::ptr::null_mut();
         };
         let Some(key) = key.as_ref() else {
@@ -83,7 +83,7 @@ where
     E: Entry,
 {
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(entry) = (entry as *mut Rc<RefCell<E>>).as_mut() else {
@@ -128,7 +128,7 @@ where
         return 0;
     };
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return 0;
         };
 
@@ -148,7 +148,7 @@ where
     E: Entry,
 {
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         table.clear();
@@ -167,7 +167,7 @@ where
     E: Entry,
 {
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(key) = key.as_ref() else {
@@ -187,7 +187,7 @@ where
     K: Key + Ord + Clone,
     E: Entry,
 {
-    Box::into_raw(Box::new(DynamicTable::<K, E>::create_entry())).cast()
+    Box::into_raw(Box::new(Table::<K, E>::create_entry())).cast()
 }
 
 // TODO(spec) what if the entry already exists?
@@ -206,7 +206,7 @@ where
     }
 
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return std::ptr::null_mut();
         };
         let Some(key) = key.as_ref() else {
@@ -234,7 +234,7 @@ where
     E: Entry,
 {
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(entry) = (entry as *mut Rc<RefCell<E>>).as_mut() else {
@@ -260,7 +260,7 @@ where
     E: Entry,
 {
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return std::ptr::null_mut();
         };
         let fields = table.list_fields();
@@ -280,7 +280,7 @@ where
     E: Entry,
 {
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return std::ptr::null_mut();
         };
         let Some(data_type) = FieldTypeId::from_usize(data_type as usize) else {
@@ -309,7 +309,7 @@ where
     E: Entry,
 {
     unsafe {
-        let Some(table) = (table as *mut DynamicTable<K, E>).as_mut() else {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return std::ptr::null_mut();
         };
         let Some(data_type) = FieldTypeId::from_usize(data_type as usize) else {

@@ -20,14 +20,14 @@ use std::rc::Rc;
 ///
 /// To create a table that includes static fields, pass a type that implements
 /// [`Entry`] as the second generic parameter.
-pub struct DynamicTable<K: Key + Ord + Clone, E: Entry = DynamicFieldValues> {
+pub struct Table<K: Key + Ord + Clone, E: Entry = DynamicFieldValues> {
     name: &'static CStr,
     fields: BTreeMap<CString, Rc<DynamicField>>,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,
     data: BTreeMap<K, Rc<RefCell<E>>>,
 }
 
-impl<K: Key + Ord + Clone, E: Entry> DynamicTable<K, E> {
+impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
     /// Create a new table
     pub fn new(name: &'static CStr) -> Self {
         let mut table = Self {
@@ -100,7 +100,7 @@ impl<K: Key + Ord + Clone, E: Entry> DynamicTable<K, E> {
 
     /// Create a new table entry.
     ///
-    /// This is a detached entry that can be later inserted into the table using [`DynamicTable::add`].
+    /// This is a detached entry that can be later inserted into the table using [`Table::add`].
     pub fn create_entry() -> Rc<RefCell<E>> {
         Rc::new(RefCell::new(E::default()))
     }
