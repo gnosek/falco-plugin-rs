@@ -4,8 +4,24 @@ use crate::plugin::tables::data::FieldTypeId;
 use falco_plugin_api::ss_plugin_state_data;
 use std::ffi::CString;
 
-macro_rules! impl_field_value {
-    ($ty:ty => $datafield:ident => $type_id:expr => $variant:ident) => {
+macro_rules! impl_primitive_field_value {
+    (bool, $self:ident) => {
+        if *$self {
+            1
+        } else {
+            0
+        }
+    };
+    (CString, $self:ident) => {
+        $self.as_ptr()
+    };
+    ($_:ty, $self:ident) => {
+        *$self
+    };
+}
+
+macro_rules! impl_scalar_field {
+    ($ty:tt => $datafield:ident => $type_id:expr => $variant:ident) => {
         impl seal::Sealed for $ty {}
 
         impl FieldValue for $ty {
@@ -22,7 +38,7 @@ macro_rules! impl_field_value {
                     )
                 }
 
-                out.$datafield = *self;
+                out.$datafield = impl_primitive_field_value!($ty, self);
                 Ok(())
             }
         }
@@ -49,83 +65,13 @@ macro_rules! impl_field_value {
     };
 }
 
-impl_field_value!(u8 => u8_ => FieldTypeId::U8 => U8);
-impl_field_value!(i8 => s8 => FieldTypeId::I8 => I8);
-impl_field_value!(u16 => u16_ => FieldTypeId::U16 => U16);
-impl_field_value!(i16 => s16 => FieldTypeId::I16 => I16);
-impl_field_value!(u32 => u32_ => FieldTypeId::U32 => U32);
-impl_field_value!(i32 => s32 => FieldTypeId::I32 => I32);
-impl_field_value!(u64 => u64_ => FieldTypeId::U64 => U64);
-impl_field_value!(i64 => s64 => FieldTypeId::I64 => I64);
-
-impl seal::Sealed for bool {}
-
-impl FieldValue for bool {
-    fn to_data(
-        &self,
-        out: &mut ss_plugin_state_data,
-        type_id: FieldTypeId,
-    ) -> Result<(), anyhow::Error> {
-        if type_id != FieldTypeId::Bool {
-            anyhow::bail!("Type mismatch, requested {:?}, got bool", type_id)
-        }
-
-        out.b = if *self { 1 } else { 0 };
-        Ok(())
-    }
-}
-
-impl StaticField for bool {
-    const TYPE_ID: FieldTypeId = FieldTypeId::Bool;
-}
-
-impl TryFrom<DynamicFieldValue> for bool {
-    type Error = anyhow::Error;
-
-    fn try_from(value: DynamicFieldValue) -> Result<Self, Self::Error> {
-        if let DynamicFieldValue::Bool(b) = value {
-            Ok(b)
-        } else {
-            Err(anyhow::anyhow!(
-                "Type mismatch, expected bool, got {:?}",
-                value
-            ))
-        }
-    }
-}
-
-impl seal::Sealed for CString {}
-
-impl FieldValue for CString {
-    fn to_data(
-        &self,
-        out: &mut ss_plugin_state_data,
-        type_id: FieldTypeId,
-    ) -> Result<(), anyhow::Error> {
-        if type_id != FieldTypeId::String {
-            anyhow::bail!("Type mismatch, requested {:?}, got string", type_id)
-        }
-
-        out.str_ = self.as_ptr();
-        Ok(())
-    }
-}
-
-impl StaticField for CString {
-    const TYPE_ID: FieldTypeId = FieldTypeId::String;
-}
-
-impl TryFrom<DynamicFieldValue> for CString {
-    type Error = anyhow::Error;
-
-    fn try_from(value: DynamicFieldValue) -> Result<Self, Self::Error> {
-        if let DynamicFieldValue::String(s) = value {
-            Ok(s)
-        } else {
-            Err(anyhow::anyhow!(
-                "Type mismatch, expected string, got {:?}",
-                value
-            ))
-        }
-    }
-}
+impl_scalar_field!(u8 => u8_ => FieldTypeId::U8 => U8);
+impl_scalar_field!(i8 => s8 => FieldTypeId::I8 => I8);
+impl_scalar_field!(u16 => u16_ => FieldTypeId::U16 => U16);
+impl_scalar_field!(i16 => s16 => FieldTypeId::I16 => I16);
+impl_scalar_field!(u32 => u32_ => FieldTypeId::U32 => U32);
+impl_scalar_field!(i32 => s32 => FieldTypeId::I32 => I32);
+impl_scalar_field!(u64 => u64_ => FieldTypeId::U64 => U64);
+impl_scalar_field!(i64 => s64 => FieldTypeId::I64 => I64);
+impl_scalar_field!(bool => b => FieldTypeId::Bool => Bool);
+impl_scalar_field!(CString => str_ => FieldTypeId::String => String);
