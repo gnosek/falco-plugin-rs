@@ -1,9 +1,8 @@
-use std::cell::RefCell;
-use std::ffi::{c_char, CStr};
-use std::rc::Rc;
-
-use num_traits::FromPrimitive;
-
+use crate::plugin::error::ffi_result::FfiResult;
+use crate::plugin::exported_tables::entry::traits::Entry;
+use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
+use crate::plugin::exported_tables::table::Table;
+use crate::plugin::tables::data::{FieldTypeId, Key};
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_rc, ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS,
     ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_entry_t, ss_plugin_table_field_t,
@@ -11,12 +10,10 @@ use falco_plugin_api::{
     ss_plugin_table_iterator_state_t, ss_plugin_table_reader_vtable_ext, ss_plugin_table_t,
     ss_plugin_table_writer_vtable_ext,
 };
-
-use crate::plugin::error::ffi_result::FfiResult;
-use crate::plugin::exported_tables::entry::traits::Entry;
-use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
-use crate::plugin::tables::data::{FieldTypeId, Key};
-use crate::tables::export::Table;
+use num_traits::FromPrimitive;
+use std::cell::RefCell;
+use std::ffi::{c_char, CStr};
+use std::rc::Rc;
 
 // SAFETY: `table` must be a valid pointer to Table<K,E>
 unsafe extern "C" fn get_table_name<K, E>(table: *mut ss_plugin_table_t) -> *const c_char
