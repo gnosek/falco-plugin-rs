@@ -101,13 +101,13 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
 
     /// Create a new table entry.
     ///
-    /// This is a detached entry that can be later inserted into the table using [`Table::add`].
+    /// This is a detached entry that can be later inserted into the table using [`Table::insert`].
     pub fn create_entry() -> Rc<RefCell<E>> {
         Rc::new(RefCell::new(E::default()))
     }
 
     /// Attach an entry to a table key
-    pub fn add(&mut self, key: &K, entry: Rc<RefCell<E>>) -> Option<Rc<RefCell<E>>> {
+    pub fn insert(&mut self, key: &K, entry: Rc<RefCell<E>>) -> Option<Rc<RefCell<E>>> {
         // note: different semantics from data.insert: we return the *new* entry
         self.data.insert(key.clone(), entry);
         self.lookup(key)

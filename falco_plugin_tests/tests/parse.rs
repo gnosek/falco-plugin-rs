@@ -130,7 +130,7 @@ impl ParsePlugin for DummyPlugin {
         // using our table directly, bypassing the table api
         let entry = RemainingEntryTable::create_entry();
         entry.borrow_mut().remaining = remaining;
-        self.remaining_table.add(&event_num, entry);
+        self.remaining_table.insert(&event_num, entry);
 
         Ok(())
     }
