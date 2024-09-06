@@ -684,13 +684,13 @@ pub mod tables {
     /// }
     /// ```
     pub mod export {
+        pub use crate::plugin::exported_tables::field_value::traits::FieldValue;
+        pub use crate::plugin::exported_tables::field_value::traits::StaticField;
         pub use crate::plugin::exported_tables::DynamicField;
         pub use crate::plugin::exported_tables::DynamicFieldValue;
         pub use crate::plugin::exported_tables::DynamicFieldValues;
         pub use crate::plugin::exported_tables::DynamicTable;
         pub use crate::plugin::exported_tables::ExportedTable;
-        pub use crate::plugin::exported_tables::FieldValue;
-        pub use crate::plugin::exported_tables::StaticField;
         pub use crate::plugin::exported_tables::TableValues;
     }
 
@@ -997,7 +997,7 @@ pub mod internals {
         pub use crate::plugin::tables::RawTable;
 
         pub mod export {
-            pub use crate::plugin::exported_tables::StaticField;
+            pub use crate::plugin::exported_tables::field_value::traits::StaticField;
             pub use crate::plugin::tables::data::FieldTypeId;
         }
     }
