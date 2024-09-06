@@ -550,4 +550,10 @@ pub mod internals {
     pub mod async_events {
         pub use crate::plugin::async_event::wrappers;
     }
+
+    pub mod tables {
+        pub mod export {
+            pub use crate::plugin::exported_tables::StaticField;
+        }
+    }
 }

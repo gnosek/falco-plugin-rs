@@ -10,6 +10,7 @@ use falco_plugin_api::{
 use crate::plugin::tables::data::{FieldTypeId, TableData};
 use crate::FailureReason;
 
+pub mod macros;
 pub(super) mod wrappers;
 
 mod seal {
