@@ -690,8 +690,8 @@ pub mod tables {
         pub use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
         pub use crate::plugin::exported_tables::field_value::traits::FieldValue;
         pub use crate::plugin::exported_tables::field_value::traits::StaticField;
-        pub use crate::plugin::exported_tables::DynamicTable;
-        pub use crate::plugin::exported_tables::ExportedTable;
+        pub use crate::plugin::exported_tables::table::DynamicTable;
+        pub use crate::plugin::exported_tables::table::ExportedTable;
     }
 
     /// # Importing tables from other plugins (or Falco core)

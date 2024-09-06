@@ -1,7 +1,7 @@
 use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::error::last_error::LastError;
+use crate::plugin::exported_tables::table::ExportedTable;
 use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, writer_vtable};
-use crate::plugin::exported_tables::ExportedTable;
 use crate::plugin::tables::data::Key;
 use crate::plugin::tables::table::raw::RawTable;
 use crate::plugin::tables::traits::{TableAccess, TableMetadata};
