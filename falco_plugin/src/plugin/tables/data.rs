@@ -106,7 +106,7 @@ pub struct Bool(pub(crate) ss_plugin_bool);
 
 impl From<bool> for Bool {
     fn from(value: bool) -> Self {
-        Self(if value { 1 } else { 0 })
+        Self(value as ss_plugin_bool)
     }
 }
 

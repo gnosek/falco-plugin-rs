@@ -3,10 +3,11 @@ use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
 use std::rc::Rc;
 
-use falco_plugin_api::{ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo};
+use falco_plugin_api::{
+    ss_plugin_bool, ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo,
+};
 
 use crate::plugin::tables::data::{FieldTypeId, TableData};
-use crate::tables::Bool;
 use crate::FailureReason;
 
 pub(super) mod wrappers;
@@ -583,7 +584,7 @@ impl<K: TableData + Ord + Clone, V: TableValues> ExportedTable for DynamicTable<
         self.field_descriptors.push(ss_plugin_table_fieldinfo {
             name: name.into_raw(),
             field_type: field_type as ss_plugin_state_type,
-            read_only: Bool::from(read_only).0,
+            read_only: read_only as ss_plugin_bool,
         });
 
         Some(field)
