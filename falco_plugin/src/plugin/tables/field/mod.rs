@@ -13,7 +13,7 @@ pub(in crate::plugin::tables) mod raw;
 /// field of a table, while also remembering which data type the field holds.
 ///
 /// You probably won't need to construct any values of this type, but you will receive
-/// them from [`tables::TypedTable<K>::get_field`](`crate::tables::Table::get_field`)
+/// them from [`crate::tables::import::Table::get_field`]
 pub struct Field<V: Value + ?Sized, T = RuntimeEntry<()>> {
     pub(in crate::plugin::tables) field: RawField<V>,
     pub(in crate::plugin::tables) validator: RuntimeTableValidator,

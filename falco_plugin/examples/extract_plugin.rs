@@ -7,8 +7,8 @@ use falco_plugin::base::Plugin;
 use falco_plugin::extract::{
     field, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin, ExtractRequest,
 };
-use falco_plugin::tables::Table;
-use falco_plugin::tables::{Field, TablesInput};
+use falco_plugin::tables::import::{Field, Table};
+use falco_plugin::tables::TablesInput;
 use falco_plugin::{extract_plugin, plugin};
 
 pub struct DummyPlugin {

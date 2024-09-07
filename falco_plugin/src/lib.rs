@@ -14,7 +14,7 @@ pub use serde;
 /// Tables in Falco plugins are effectively maps from a key
 /// to a (possibly dynamic) struct of values.
 ///
-/// The default implementation for tables ([`tables::DynamicFieldValues`]) uses
+/// The default implementation for tables ([`tables::export::DynamicFieldValues`]) uses
 /// dynamic fields only, but with this macro you can also define structs containing static
 /// (predefined) fields that are accessible to your plugin without going through the Falco
 /// plugin API.
@@ -23,8 +23,8 @@ pub use serde;
 /// with a `#[static_only]` attribute (to prevent accidental omission of the dynamic field values,
 /// which would only get caught at runtime, possibly much later).
 ///
-/// Alternatively, it can mark a single field as `#[dynamic]`. That field needs to implement
-/// [`tables::TableValues`] and it will generally be of type [`tables::DynamicFieldValues`].
+/// Alternatively, it can mark a single field as `#[dynamic]`. That field will generally be
+/// of type [`tables::export::DynamicFieldValues`].
 ///
 /// Fields tagged as `#[readonly]` won't be writable via the Falco API and fields tagged
 /// as `#[hidden]` won't be exposed to the API at all. This is useful if you want to store data
@@ -33,7 +33,7 @@ pub use serde;
 /// # Example
 /// ```
 /// use std::ffi::CString;
-/// use falco_plugin::tables::DynamicFieldValues;
+/// use falco_plugin::tables::export::DynamicFieldValues;
 /// use falco_plugin::TableValues;
 ///
 /// #[derive(TableValues, Default)]     // all table structs must implement Default
@@ -505,22 +505,91 @@ pub mod source {
 ///
 /// Tables are a mechanism to share data between plugins (and Falco core).
 pub mod tables {
-    pub use crate::plugin::exported_tables::DynamicField;
-    pub use crate::plugin::exported_tables::DynamicFieldValue;
-    pub use crate::plugin::exported_tables::DynamicFieldValues;
-    pub use crate::plugin::exported_tables::DynamicTable;
-    pub use crate::plugin::exported_tables::ExportedTable;
-    pub use crate::plugin::exported_tables::FieldValue;
-    pub use crate::plugin::exported_tables::StaticField;
-    pub use crate::plugin::exported_tables::TableValues;
-    pub use crate::plugin::tables::data::Bool;
-    pub use crate::plugin::tables::data::FieldTypeId;
-    pub use crate::plugin::tables::data::TableData;
-    pub use crate::plugin::tables::field::Field;
-    pub use crate::plugin::tables::table::Table;
     pub use crate::plugin::tables::vtable::TableReader;
     pub use crate::plugin::tables::vtable::TableWriter;
     pub use crate::plugin::tables::vtable::TablesInput;
+
+    /// Exporting tables to other plugins
+    ///
+    /// Exporting a table to other plugins is done using the [`crate::TableValues`] derive macro.
+    /// It lets you use a struct type as a parameter to [`export::DynamicTable`]. You can then create
+    /// a new table using [`TablesInput::add_table`].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use std::ffi::{CStr, CString};
+    /// use falco_plugin::base::Plugin;
+    /// use falco_plugin::tables::TablesInput;
+    /// use falco_plugin::tables::export;
+    /// use falco_plugin::TableValues;
+    ///
+    /// // define the struct representing each table entry
+    /// #[derive(TableValues, Default)]
+    /// struct ExportedTable {
+    ///     #[readonly]
+    ///     int_field: u64,        // do not allow writes via the plugin API
+    ///     string_field: CString, // allow writes via the plugin API
+    ///     #[hidden]
+    ///     secret: Vec<u8>,       // do not expose over the plugin API at all
+    ///
+    ///     #[dynamic]
+    ///     dynamic: export::DynamicFieldValues,
+    /// }
+    ///
+    /// // define the type holding the plugin state
+    /// struct MyPlugin {
+    ///     // you can use methods on this instance to access fields bypassing the Falco table API
+    ///     // (for performance within your own plugin)
+    ///     exported_table: &'static mut export::DynamicTable<u64, ExportedTable>,
+    /// }
+    ///
+    /// // implement the base::Plugin trait
+    /// impl Plugin for MyPlugin {
+    ///     // ...
+    ///#     const NAME: &'static CStr = c"sample-plugin-rs";
+    ///#     const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+    ///#     const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+    ///#     const CONTACT: &'static CStr = c"you@example.com";
+    ///#     type ConfigType = ();
+    ///
+    ///     fn new(input: Option<&TablesInput>, config: Self::ConfigType)
+    ///         -> Result<Self, anyhow::Error> {
+    ///
+    ///         let Some(input) = input else {
+    ///             anyhow::bail!("Did not get tables input");
+    ///         };
+    ///
+    ///         // create a new table called "exported"
+    ///         //
+    ///         // The concrete type is inferred from the field type the result is stored in.
+    ///         let exported_table = input.add_table(export::DynamicTable::new(c"exported"))?;
+    ///
+    ///         Ok(MyPlugin { exported_table })
+    ///     }
+    /// }
+    /// ```
+    pub mod export {
+        pub use crate::plugin::exported_tables::DynamicField;
+        pub use crate::plugin::exported_tables::DynamicFieldValue;
+        pub use crate::plugin::exported_tables::DynamicFieldValues;
+        pub use crate::plugin::exported_tables::DynamicTable;
+        pub use crate::plugin::exported_tables::ExportedTable;
+        pub use crate::plugin::exported_tables::FieldValue;
+        pub use crate::plugin::exported_tables::StaticField;
+        pub use crate::plugin::exported_tables::TableValues;
+    }
+
+    /// # Importing tables from other plugins (or Falco core)
+    ///
+    /// Your plugin can access tables exported by other plugins (or Falco core) by importing them.
+    /// The docs will arrive in the next commit, once we have the derive macro ready.
+    pub mod import {
+        pub use crate::plugin::tables::data::Bool;
+        pub use crate::plugin::tables::data::TableData;
+        pub use crate::plugin::tables::field::Field;
+        pub use crate::plugin::tables::table::Table;
+    }
 }
 
 mod plugin;
@@ -551,6 +620,7 @@ pub mod internals {
     pub mod tables {
         pub mod export {
             pub use crate::plugin::exported_tables::StaticField;
+            pub use crate::plugin::tables::data::FieldTypeId;
         }
     }
 }

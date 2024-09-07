@@ -3,8 +3,9 @@ use std::ffi::{CStr, CString};
 use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
 use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
-use falco_plugin::tables::{DynamicFieldValues, Field, TablesInput};
-use falco_plugin::tables::{DynamicTable, Table};
+use falco_plugin::tables::export::{DynamicFieldValues, DynamicTable};
+use falco_plugin::tables::import::{Field, Table};
+use falco_plugin::tables::TablesInput;
 use falco_plugin::{parse_plugin, plugin};
 use falco_plugin_derive::TableValues;
 
