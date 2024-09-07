@@ -218,7 +218,7 @@ where
     fn extract_fields<'a>(
         &'a mut self,
         event_input: &EventInput,
-        table_reader: TableReader,
+        table_reader: &TableReader,
         fields: &mut [ss_plugin_extract_field],
         storage: &'a mut FieldStorage,
     ) -> Result<(), anyhow::Error> {
@@ -232,7 +232,7 @@ where
             let request = ExtractRequest::<Self> {
                 context: &mut context,
                 event: event_input,
-                table_reader: &table_reader,
+                table_reader,
             };
 
             info.func

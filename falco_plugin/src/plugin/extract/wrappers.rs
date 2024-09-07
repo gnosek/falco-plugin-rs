@@ -108,7 +108,7 @@ pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
             .plugin
             .extract_fields(
                 &event_input,
-                table_reader,
+                &table_reader,
                 fields,
                 &mut plugin.field_storage,
             )
