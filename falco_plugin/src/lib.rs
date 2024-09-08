@@ -894,36 +894,7 @@ pub mod internals {
     }
 
     pub mod tables {
-        pub use crate::plugin::tables::data::FieldTypeId;
-
-        pub use crate::plugin::tables::data::Key;
-        pub use crate::plugin::tables::data::Value;
-        pub use crate::plugin::tables::traits::Entry;
-        pub use crate::plugin::tables::traits::EntryWrite;
-        pub use crate::plugin::tables::traits::RawFieldValueType;
-        pub use crate::plugin::tables::traits::TableAccess;
-        pub use crate::plugin::tables::traits::TableMetadata;
-        pub use crate::plugin::tables::RawTable;
-
-        pub mod export {
-            pub use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
-            pub use crate::plugin::exported_tables::entry::traits::Entry;
-            pub use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
-            pub use crate::plugin::exported_tables::field_descriptor::FieldId;
-            pub use crate::plugin::exported_tables::field_descriptor::FieldRef;
-            pub use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
-            pub use crate::plugin::exported_tables::metadata::HasMetadata;
-            pub use crate::plugin::exported_tables::metadata::Metadata;
-            pub use crate::plugin::exported_tables::ref_shared::RefShared;
-
-            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldCheck;
-            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldFallback;
-            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldGet;
-            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldGetFallback;
-            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldSet;
-            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldSetFallback;
-
-            pub use crate::plugin::tables::data::FieldTypeId;
-        }
+        crate::table_import_expose_internals!();
+        crate::table_export_expose_internals!();
     }
 }

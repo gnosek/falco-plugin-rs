@@ -1,5 +1,34 @@
 #[doc(hidden)]
 #[macro_export]
+macro_rules! table_import_expose_internals {
+    () => {
+        pub use $crate::plugin::tables::data::Key;
+        pub use $crate::plugin::tables::data::Value;
+        pub use $crate::plugin::tables::traits::Entry;
+        pub use $crate::plugin::tables::traits::EntryWrite;
+        pub use $crate::plugin::tables::traits::RawFieldValueType;
+        pub use $crate::plugin::tables::traits::TableAccess;
+
+        pub use $crate::plugin::tables::traits::TableMetadata;
+        pub use $crate::plugin::tables::RawTable;
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! table_import_use_internals {
+    () => {
+        use $crate::internals::tables::Entry;
+        use $crate::internals::tables::EntryWrite;
+        use $crate::internals::tables::Key;
+        use $crate::internals::tables::RawFieldValueType;
+        use $crate::internals::tables::TableAccess;
+        use $crate::internals::tables::Value;
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! impl_import_table_metadata {
     (for $meta:ident => { $($access_fn:ident($field:ident, $field_cstr:literal);)* }) => {
         impl $crate::internals::tables::TableMetadata for $meta {
@@ -72,12 +101,7 @@ macro_rules! impl_import_table_accessor_impls {
         $table_getter:ident,
         $setter:ident) => {
         const _: () = {
-            use $crate::internals::tables::Entry;
-            use $crate::internals::tables::EntryWrite;
-            use $crate::internals::tables::Key;
-            use $crate::internals::tables::RawFieldValueType;
-            use $crate::internals::tables::TableAccess;
-            use $crate::internals::tables::Value;
+            $crate::table_import_use_internals!();
             use $m::{$getter, $setter, $table_getter};
 
             impl<'a> $getter<'a> for $entry_ty {

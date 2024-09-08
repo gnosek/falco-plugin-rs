@@ -1,5 +1,57 @@
 #[doc(hidden)]
 #[macro_export]
+macro_rules! table_export_expose_internals {
+    () => {
+        pub mod export {
+            pub use $crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
+            pub use $crate::plugin::exported_tables::entry::traits::Entry;
+            pub use $crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
+            pub use $crate::plugin::exported_tables::field_descriptor::FieldId;
+            pub use $crate::plugin::exported_tables::field_descriptor::FieldRef;
+            pub use $crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
+            pub use $crate::plugin::exported_tables::metadata::HasMetadata;
+            pub use $crate::plugin::exported_tables::metadata::Metadata;
+            pub use $crate::plugin::exported_tables::ref_shared::RefShared;
+
+            pub use $crate::plugin::exported_tables::static_field_specialization::StaticFieldCheck;
+            pub use $crate::plugin::exported_tables::static_field_specialization::StaticFieldFallback;
+            pub use $crate::plugin::exported_tables::static_field_specialization::StaticFieldGet;
+            pub use $crate::plugin::exported_tables::static_field_specialization::StaticFieldGetFallback;
+            pub use $crate::plugin::exported_tables::static_field_specialization::StaticFieldSet;
+            pub use $crate::plugin::exported_tables::static_field_specialization::StaticFieldSetFallback;
+
+            pub use $crate::plugin::tables::data::FieldTypeId;
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! table_export_use_internals {
+    () => {
+        use $crate::internals::tables::export::DynamicFieldValue;
+        use $crate::internals::tables::export::FieldDescriptor;
+        use $crate::internals::tables::export::FieldId;
+        use $crate::internals::tables::export::FieldRef;
+        use $crate::internals::tables::export::FieldTypeId;
+        use $crate::internals::tables::export::HasMetadata;
+        use $crate::internals::tables::export::Metadata;
+        use $crate::internals::tables::export::RefShared;
+        use $crate::internals::tables::export::StaticFieldCheck;
+        use $crate::internals::tables::export::StaticFieldFallback;
+        use $crate::internals::tables::export::StaticFieldGet;
+        use $crate::internals::tables::export::StaticFieldGetFallback;
+        use $crate::internals::tables::export::StaticFieldSet;
+        use $crate::internals::tables::export::StaticFieldSetFallback;
+        use $crate::internals::tables::export::TableMetadata;
+
+        use $crate::api::ss_plugin_table_fieldinfo;
+        use $crate::phf;
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! impl_export_table_get {
     (
         $self:ident,
@@ -7,13 +59,10 @@ macro_rules! impl_export_table_get {
     ) => {
         fn get(
             &$self,
-            key: $crate::internals::tables::export::FieldId,
-            type_id: $crate::internals::tables::export::FieldTypeId,
+            key: FieldId,
+            type_id: FieldTypeId,
             out: &mut $crate::api::ss_plugin_state_data,
         ) -> Result<(), $crate::anyhow::Error> {
-            use $crate::internals::tables::export::FieldId;
-            use $crate::internals::tables::export::StaticFieldGet;
-            use $crate::internals::tables::export::StaticFieldGetFallback;
             match key {
                 $(FieldId::Static($i) => StaticFieldGet(&$self.$field_name).static_field_get(type_id, out),)*
                 _ => $crate::anyhow::bail!("Unknown field")
@@ -31,12 +80,9 @@ macro_rules! impl_export_table_set {
     ) => {
         fn set(
             &mut $self,
-            key: $crate::internals::tables::export::FieldId,
-            value: $crate::internals::tables::export::DynamicFieldValue)
+            key: FieldId,
+            value: DynamicFieldValue)
             -> std::result::Result<(), $crate::anyhow::Error> {
-            use $crate::internals::tables::export::FieldId;
-            use $crate::internals::tables::export::StaticFieldSet;
-            use $crate::internals::tables::export::StaticFieldSetFallback;
             match key {
                 $(FieldId::Static($i) => StaticFieldSet(&mut $self.$field_name).static_field_set(value),)*
                 _ => $crate::anyhow::bail!("Unknown field")
@@ -52,19 +98,7 @@ macro_rules! impl_export_table {
         $([$i:literal] $field_tag:literal ($field_name_bstr:literal) as $field_name:ident: $field_type:ty)*
     }) => {
         const _: () = {
-            use $crate::internals::tables::FieldTypeId;
-            use $crate::internals::tables::export::FieldDescriptor;
-            use $crate::internals::tables::export::FieldId;
-            use $crate::internals::tables::export::FieldRef;
-            use $crate::internals::tables::export::HasMetadata;
-            use $crate::internals::tables::export::Metadata;
-            use $crate::internals::tables::export::RefShared;
-            use $crate::internals::tables::export::StaticFieldCheck;
-            use $crate::internals::tables::export::StaticFieldFallback;
-            use $crate::internals::tables::export::TableMetadata;
-
-            use $crate::api::ss_plugin_table_fieldinfo;
-            use $crate::phf;
+            $crate::table_export_use_internals!();
 
             static STATIC_FIELDS: $crate::phf::Map<&'static [u8], std::option::Option<FieldDescriptor>> = $crate::phf::phf_map! {
                 $($field_name_bstr => FieldDescriptor::maybe_new(
