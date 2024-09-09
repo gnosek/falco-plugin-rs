@@ -6,4 +6,5 @@ pub mod macros;
 pub mod metadata;
 pub mod static_field_specialization;
 pub mod table;
+pub(crate) mod vtable;
 pub(super) mod wrappers;

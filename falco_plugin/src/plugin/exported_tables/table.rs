@@ -6,6 +6,7 @@ use crate::plugin::exported_tables::field_descriptor::{FieldDescriptor, FieldRef
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::exported_tables::metadata::HasMetadata;
 use crate::plugin::exported_tables::metadata::Metadata;
+use crate::plugin::exported_tables::vtable::Vtable;
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::FailureReason;
 use falco_plugin_api::{ss_plugin_state_data, ss_plugin_table_fieldinfo};
@@ -34,6 +35,8 @@ where
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,
     metadata: Rc<RefCell<ExtensibleEntryMetadata<E::Metadata>>>,
     data: BTreeMap<K, Rc<RefCell<ExtensibleEntry<E>>>>,
+
+    pub(in crate::plugin::exported_tables) vtable: RefCell<Option<Box<Vtable>>>,
 }
 
 impl<K, E> Table<K, E>
@@ -42,6 +45,25 @@ where
     E: Entry,
     E::Metadata: TableMetadata,
 {
+    /// Create a new table using provided metadata
+    ///
+    /// This is only expected to be used by the derive macro.
+    pub fn new_with_metadata(
+        tag: &'static CStr,
+        metadata: &Rc<RefCell<ExtensibleEntryMetadata<E::Metadata>>>,
+    ) -> Result<Self, anyhow::Error> {
+        let table = Self {
+            name: tag,
+            field_descriptors: vec![],
+            metadata: metadata.clone(),
+            data: BTreeMap::new(),
+
+            vtable: RefCell::new(None),
+        };
+
+        Ok(table)
+    }
+
     /// Create a new table
     pub fn new(name: &'static CStr) -> Result<Self, anyhow::Error> {
         Ok(Self {
@@ -49,6 +71,8 @@ where
             field_descriptors: vec![],
             metadata: Rc::new(RefCell::new(ExtensibleEntryMetadata::new()?)),
             data: BTreeMap::new(),
+
+            vtable: RefCell::new(None),
         })
     }
 

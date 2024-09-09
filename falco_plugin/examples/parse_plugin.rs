@@ -13,6 +13,19 @@ use falco_plugin::{parse_plugin, plugin};
 struct AnotherTable {
     int_field: Readonly<u64>,
     string_field: Public<CString>,
+    secret: Private<Vec<u8>>,
+}
+
+#[derive(Entry)]
+struct Nested {
+    bool_field: Public<bool>,
+}
+
+#[derive(Entry)]
+struct TableWithNestedSubtable {
+    int_field: Readonly<u64>,
+    string_field: Public<CString>,
+    nested: Box<Table<u64, Nested>>,
 
     #[allow(dead_code)]
     secret: Private<Vec<u8>>,
@@ -25,6 +38,7 @@ pub struct DummyPlugin {
     sample_field: Field<u64, RuntimeEntry<ThreadTable>>,
     #[allow(dead_code)]
     another_table: Box<Table<u64, AnotherTable>>,
+    table_with_static_fields_only: Box<Table<u64, TableWithNestedSubtable>>,
 }
 
 impl Plugin for DummyPlugin {
@@ -42,11 +56,13 @@ impl Plugin for DummyPlugin {
         let sample_field = thread_table.add_field::<u64>(input, c"sample")?;
 
         let another_table = input.add_table(Table::new(c"another")?)?;
+        let table_with_static_fields_only = input.add_table(Table::new(c"static_fields_only")?)?;
 
         Ok(DummyPlugin {
             thread_table,
             sample_field,
             another_table,
+            table_with_static_fields_only,
         })
     }
 }
@@ -63,6 +79,9 @@ impl ParsePlugin for DummyPlugin {
         let event = event_input.event()?;
         let event = event.load_any()?;
         let tid = event.metadata.tid;
+
+        let entry = self.table_with_static_fields_only.create_entry()?;
+        dbg!(entry.borrow_mut().nested.name());
 
         let entry = self.thread_table.get_entry(&parse_input.reader, &tid)?;
 
