@@ -1,10 +1,11 @@
 use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::error::last_error::LastError;
+use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, writer_vtable};
 use crate::plugin::tables::data::Key;
 use crate::plugin::tables::table::raw::RawTable;
 use crate::plugin::tables::traits::{TableAccess, TableMetadata};
-use crate::tables::export::{DynamicTable, Entry};
+use crate::tables::export::DynamicTable;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_init_input, ss_plugin_owner_t, ss_plugin_rc, ss_plugin_state_data,
     ss_plugin_state_type, ss_plugin_table_entry_t, ss_plugin_table_field_t,

@@ -26,7 +26,6 @@ macro_rules! impl_export_table_get {
             type_id: $crate::internals::tables::export::FieldTypeId,
             out: &mut $crate::api::ss_plugin_state_data,
         ) -> Result<(), $crate::anyhow::Error> {
-            use $crate::tables::export::Entry;
             use $crate::internals::tables::export::FieldValue;
             match key {
                 $($i => $self.$field_name.to_data(out, type_id),)*
@@ -46,11 +45,10 @@ macro_rules! impl_export_table_get {
             type_id: $crate::internals::tables::export::FieldTypeId,
             out: &mut $crate::api::ss_plugin_state_data,
         ) -> Result<(), $crate::anyhow::Error> {
-            use $crate::tables::export::Entry;
             use $crate::internals::tables::export::FieldValue;
             match key {
                 $($i => $self.$field_name.to_data(out, type_id),)*
-                _ => $crate::tables::export::Entry::get(&$self.$dynamic_field, key, type_id, out),
+                _ => $crate::internals::tables::export::Entry::get(&$self.$dynamic_field, key, type_id, out),
             }
         }
     };
@@ -94,7 +92,7 @@ macro_rules! impl_export_table {
     (for $name:ident; dynamic = $dynamic_field:ident {
         $([$i:literal] $field_name_str:literal as $field_name:ident: $field_type:ty; readonly = $readonly:literal)*
     }) => {
-        impl $crate::tables::export::Entry for $name {
+        impl $crate::internals::tables::export::Entry for $name {
             const STATIC_FIELDS: &'static [(&'static ::std::ffi::CStr, $crate::internals::tables::FieldTypeId, bool)] = &[
                 $(($field_name_str, <$field_type as $crate::internals::tables::export::StaticField>::TYPE_ID, $readonly),)*
             ];
@@ -117,7 +115,7 @@ macro_rules! impl_export_table {
     (for $name:ident; dynamic = {
         $([$i:literal] $field_name_str:literal as $field_name:ident: $field_type:ty; readonly = $readonly:literal)*
     }) => {
-        impl $crate::tables::export::Entry for $name {
+        impl $crate::internals::tables::export::Entry for $name {
             const STATIC_FIELDS: &'static [(&'static ::std::ffi::CStr, $crate::internals::tables::FieldTypeId, bool)] = &[
                 $(($field_name_str, <$field_type as $crate::internals::tables::export::StaticField>::TYPE_ID, $readonly),)*
             ];
