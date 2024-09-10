@@ -62,7 +62,7 @@ macro_rules! impl_export_table_set {
         static: $($i:literal: $field_name:ident,)*
         dynamic:,
     ) => {
-        fn set(&mut $self, key: usize, value: $crate::tables::export::DynamicFieldValue)
+        fn set(&mut $self, key: usize, value: $crate::internals::tables::export::DynamicFieldValue)
             -> std::result::Result<(), $crate::anyhow::Error> {
             match key {
                 $($i => Ok($self.$field_name = value.try_into()?),)*
@@ -76,7 +76,7 @@ macro_rules! impl_export_table_set {
         static: $($i:literal: $field_name:ident,)*
         dynamic: $dynamic_field:ident,
     ) => {
-        fn set(&mut $self, key: usize, value: $crate::tables::export::DynamicFieldValue)
+        fn set(&mut $self, key: usize, value: $crate::internals::tables::export::DynamicFieldValue)
             -> std::result::Result<(), $crate::anyhow::Error> {
             match key {
                 $($i => Ok($self.$field_name = value.try_into()?),)*

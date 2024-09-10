@@ -1,5 +1,5 @@
+use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::tables::data::FieldTypeId;
-use crate::tables::export::DynamicFieldValue;
 use falco_plugin_api::ss_plugin_state_data;
 use std::ffi::CStr;
 
