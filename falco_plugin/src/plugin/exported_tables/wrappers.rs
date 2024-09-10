@@ -14,8 +14,9 @@ use falco_plugin_api::{
 
 use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::exported_tables::entry::traits::Entry;
+use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
 use crate::plugin::tables::data::{FieldTypeId, Key};
-use crate::tables::export::{FieldDescriptor, Table};
+use crate::tables::export::Table;
 
 // SAFETY: `table` must be a valid pointer to Table<K,E>
 unsafe extern "C" fn get_table_name<K, E>(table: *mut ss_plugin_table_t) -> *const c_char
