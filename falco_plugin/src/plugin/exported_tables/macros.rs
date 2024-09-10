@@ -27,7 +27,7 @@ macro_rules! impl_export_table_get {
             out: &mut $crate::api::ss_plugin_state_data,
         ) -> Result<(), $crate::anyhow::Error> {
             use $crate::tables::export::Entry;
-            use $crate::tables::export::FieldValue;
+            use $crate::internals::tables::export::FieldValue;
             match key {
                 $($i => $self.$field_name.to_data(out, type_id),)*
                 _ => Err($crate::anyhow::anyhow!("Table does not have dynamic fields")
@@ -47,7 +47,7 @@ macro_rules! impl_export_table_get {
             out: &mut $crate::api::ss_plugin_state_data,
         ) -> Result<(), $crate::anyhow::Error> {
             use $crate::tables::export::Entry;
-            use $crate::tables::export::FieldValue;
+            use $crate::internals::tables::export::FieldValue;
             match key {
                 $($i => $self.$field_name.to_data(out, type_id),)*
                 _ => $crate::tables::export::Entry::get(&$self.$dynamic_field, key, type_id, out),

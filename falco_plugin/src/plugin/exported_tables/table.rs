@@ -1,7 +1,6 @@
+use crate::plugin::exported_tables::field_value::traits::FieldValue;
 use crate::plugin::tables::data::{FieldTypeId, Key};
-use crate::tables::export::{
-    DynamicField, DynamicFieldValue, DynamicFieldValues, Entry, FieldValue,
-};
+use crate::tables::export::{DynamicField, DynamicFieldValue, DynamicFieldValues, Entry};
 use crate::FailureReason;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo,

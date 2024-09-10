@@ -1,6 +1,6 @@
-use crate::plugin::exported_tables::field_value::traits::seal;
+use crate::plugin::exported_tables::field_value::traits::{seal, FieldValue, StaticField};
 use crate::plugin::tables::data::FieldTypeId;
-use crate::tables::export::{DynamicFieldValue, FieldValue, StaticField};
+use crate::tables::export::DynamicFieldValue;
 use falco_plugin_api::ss_plugin_state_data;
 use std::ffi::{CStr, CString};
 
