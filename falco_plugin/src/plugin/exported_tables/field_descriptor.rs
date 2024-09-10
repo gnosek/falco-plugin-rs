@@ -47,15 +47,22 @@ pub struct FieldDescriptor {
 }
 
 impl FieldDescriptor {
-    /// Create a field
+    /// Create a field if needed
     ///
-    /// This gets called by the derive macro for visible entry fields (excluding private ones)
-    /// and returns a field descriptor
-    pub const fn new(index: FieldId, type_id: FieldTypeId, read_only: bool) -> Self {
-        Self {
-            index,
-            type_id,
-            read_only,
+    /// This gets called by the derive macro for all entry fields, including private ones
+    /// and returns a field descriptor only for fields that do need to be exposed over the API
+    pub const fn maybe_new(
+        index: FieldId,
+        type_id: Option<FieldTypeId>,
+        read_only: bool,
+    ) -> Option<Self> {
+        match type_id {
+            Some(type_id) => Some(Self {
+                index,
+                type_id,
+                read_only,
+            }),
+            None => None,
         }
     }
 

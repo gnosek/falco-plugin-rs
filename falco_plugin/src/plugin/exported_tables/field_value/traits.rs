@@ -28,4 +28,6 @@ pub trait FieldValue: seal::Sealed + Sized {
 pub trait StaticField: FieldValue {
     /// The type id corresponding to the implementing type
     const TYPE_ID: FieldTypeId;
+
+    const READONLY: bool;
 }

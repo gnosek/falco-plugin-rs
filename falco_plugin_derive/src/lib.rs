@@ -2,7 +2,6 @@
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
-use syn::spanned::Spanned;
 use syn::{parse_macro_input, DeriveInput};
 
 fn ident_to_cstr(ident: &Ident) -> syn::LitCStr {
@@ -20,11 +19,9 @@ fn ident_to_bstr(ident: &Ident) -> syn::LitByteStr {
     syn::LitByteStr::new(name.as_bytes(), ident.span())
 }
 
-#[proc_macro_derive(Entry, attributes(readonly, hidden))]
+#[proc_macro_derive(Entry)]
 pub fn derive_entry(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    let hidden = syn::Ident::new("hidden", input.span());
-    let readonly = syn::Ident::new("readonly", input.span());
 
     let syn::Data::Struct(data) = input.data else {
         return TokenStream::from(
@@ -49,12 +46,7 @@ pub fn derive_entry(input: TokenStream) -> TokenStream {
 
     let fields = fields.named;
 
-    let visible_static_fields = fields
-        .iter()
-        .filter(|f| !f.attrs.iter().any(|a| a.meta.path().is_ident(&hidden)));
-
-    let static_fields = visible_static_fields.clone().enumerate().map(|(i, f)| {
-        let readonly = f.attrs.iter().any(|a| a.meta.path().is_ident(&readonly));
+    let static_fields = fields.iter().enumerate().map(|(i, f)| {
         let field_name = f.ident.as_ref().unwrap();
         let field_name_bstr = ident_to_bstr(field_name);
         let tag = format!("{}.{}\0", input.ident, field_name);
@@ -64,7 +56,7 @@ pub fn derive_entry(input: TokenStream) -> TokenStream {
         );
 
         let ty = &f.ty;
-        quote!( [#i] #field_tag (#field_name_bstr) as #field_name: #ty; readonly = #readonly )
+        quote!( [#i] #field_tag (#field_name_bstr) as #field_name: #ty)
     });
 
     quote!(::falco_plugin::impl_export_table!(

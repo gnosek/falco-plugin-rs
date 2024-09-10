@@ -21,9 +21,9 @@ use std::rc::Rc;
 type RemainingEntryTable = export::Table<u64, RemainingCounter>;
 
 // TODO Entry vs TableMetadata is an ugly asymmetry
-#[derive(export::Entry, Default)]
+#[derive(export::Entry)]
 struct RemainingCounter {
-    remaining: u64,
+    remaining: export::Public<u64>,
 }
 
 // same table, but imported

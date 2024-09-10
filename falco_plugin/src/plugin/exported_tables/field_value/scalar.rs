@@ -1,9 +1,7 @@
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::exported_tables::field_value::traits::{seal, FieldValue, StaticField};
-use crate::plugin::exported_tables::metadata::HasMetadata;
 use crate::plugin::tables::data::FieldTypeId;
 use falco_plugin_api::ss_plugin_state_data;
-use std::ffi::CStr;
 use std::ffi::CString;
 
 macro_rules! impl_primitive_field_value {
@@ -47,6 +45,7 @@ macro_rules! impl_scalar_field {
 
         impl StaticField for $ty {
             const TYPE_ID: FieldTypeId = $type_id;
+            const READONLY: bool = false;
         }
 
         impl TryFrom<DynamicFieldValue> for $ty {
@@ -62,17 +61,6 @@ macro_rules! impl_scalar_field {
                         value
                     ))
                 }
-            }
-        }
-
-        impl HasMetadata for $ty {
-            type Metadata = ();
-
-            fn new_with_metadata(
-                _tag: &'static CStr,
-                _meta: &Self::Metadata,
-            ) -> Result<Self, anyhow::Error> {
-                Ok(Default::default())
             }
         }
     };

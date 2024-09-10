@@ -11,10 +11,11 @@ macro_rules! impl_export_table_get {
             type_id: $crate::internals::tables::export::FieldTypeId,
             out: &mut $crate::api::ss_plugin_state_data,
         ) -> Result<(), $crate::anyhow::Error> {
-            use $crate::internals::tables::export::FieldValue;
             use $crate::internals::tables::export::FieldId;
+            use $crate::internals::tables::export::StaticFieldGet;
+            use $crate::internals::tables::export::StaticFieldGetFallback;
             match key {
-                $(FieldId::Static($i) => $self.$field_name.to_data(out, type_id),)*
+                $(FieldId::Static($i) => StaticFieldGet(&$self.$field_name).static_field_get(type_id, out),)*
                 _ => $crate::anyhow::bail!("Unknown field")
             }
         }
@@ -34,8 +35,10 @@ macro_rules! impl_export_table_set {
             value: $crate::internals::tables::export::DynamicFieldValue)
             -> std::result::Result<(), $crate::anyhow::Error> {
             use $crate::internals::tables::export::FieldId;
+            use $crate::internals::tables::export::StaticFieldSet;
+            use $crate::internals::tables::export::StaticFieldSetFallback;
             match key {
-                $(FieldId::Static($i) => Ok($self.$field_name = value.try_into()?),)*
+                $(FieldId::Static($i) => StaticFieldSet(&mut $self.$field_name).static_field_set(value),)*
                 _ => $crate::anyhow::bail!("Unknown field")
             }
         }
@@ -46,7 +49,7 @@ macro_rules! impl_export_table_set {
 #[macro_export]
 macro_rules! impl_export_table {
     (for $name:ident {
-        $([$i:literal] $field_tag:literal ($field_name_bstr:literal) as $field_name:ident: $field_type:ty; readonly = $readonly:literal)*
+        $([$i:literal] $field_tag:literal ($field_name_bstr:literal) as $field_name:ident: $field_type:ty)*
     }) => {
         const _: () = {
             use $crate::internals::tables::FieldTypeId;
@@ -55,16 +58,17 @@ macro_rules! impl_export_table {
             use $crate::internals::tables::export::FieldRef;
             use $crate::internals::tables::export::HasMetadata;
             use $crate::internals::tables::export::Metadata;
-            use $crate::internals::tables::export::StaticField;
+            use $crate::internals::tables::export::StaticFieldCheck;
+            use $crate::internals::tables::export::StaticFieldFallback;
             use $crate::internals::tables::export::TableMetadata;
             use $crate::api::ss_plugin_table_fieldinfo;
             use $crate::phf;
 
-            static STATIC_FIELDS: $crate::phf::Map<&'static [u8], FieldDescriptor> = $crate::phf::phf_map! {
-                $($field_name_bstr => FieldDescriptor::new(
+            static STATIC_FIELDS: $crate::phf::Map<&'static [u8], std::option::Option<FieldDescriptor>> = $crate::phf::phf_map! {
+                $($field_name_bstr => FieldDescriptor::maybe_new(
                     FieldId::Static($i),
-                    <$field_type as StaticField>::TYPE_ID,
-                    $readonly,
+                    StaticFieldCheck::<$field_type>::MAYBE_TYPE_ID,
+                    StaticFieldCheck::<$field_type>::READONLY,
                 ),)*
             };
 
@@ -84,7 +88,7 @@ macro_rules! impl_export_table {
                 fn get_field(&self, name: &::std::ffi::CStr) ->
                     std::option::Option<FieldRef>
                 {
-                    let field = STATIC_FIELDS.get(name.to_bytes_with_nul())?;
+                    let field = STATIC_FIELDS.get(name.to_bytes_with_nul())?.as_ref()?;
                     Some(FieldRef::Static(field))
                 }
 
@@ -102,7 +106,12 @@ macro_rules! impl_export_table {
                 fn list_fields(&self) -> std::vec::Vec<ss_plugin_table_fieldinfo> {
                     STATIC_FIELDS
                         .entries()
-                        .map(|(name, field)| field.to_raw(name))
+                        .filter_map(|(name, maybe_field)| {
+                            match maybe_field {
+                                Some(field) => Some(field.to_raw(name)),
+                                None => None,
+                            }
+                        })
                         .collect()
                 }
             }
@@ -113,7 +122,6 @@ macro_rules! impl_export_table {
                 fn new_with_metadata(tag: &'static std::ffi::CStr, meta: &Self::Metadata) -> ::std::result::Result<Self, $crate::anyhow::Error> {
                     Ok(Self {
                        $($field_name: HasMetadata::new_with_metadata($field_tag, &meta.borrow().$field_name)?,)*
-                        .. std::default::Default::default()
                     })
                 }
             }

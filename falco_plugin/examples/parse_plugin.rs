@@ -3,21 +3,19 @@ use std::ffi::{CStr, CString};
 use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
 use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
-use falco_plugin::tables::export::{Entry, Table};
+use falco_plugin::tables::export::{Entry, Private, Public, Readonly, Table};
 use falco_plugin::tables::import::Field;
 use falco_plugin::tables::import::{RuntimeEntry, Table as ImportedTable};
 use falco_plugin::tables::TablesInput;
 use falco_plugin::{parse_plugin, plugin};
 
-#[derive(Entry, Default)]
+#[derive(Entry)]
 struct AnotherTable {
-    #[readonly]
-    int_field: u64,
-    string_field: CString,
+    int_field: Readonly<u64>,
+    string_field: Public<CString>,
 
-    #[hidden]
     #[allow(dead_code)]
-    secret: Vec<u8>,
+    secret: Private<Vec<u8>>,
 }
 
 struct ThreadTable;

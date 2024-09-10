@@ -1,7 +1,9 @@
 pub mod entry;
+pub mod field;
 pub mod field_descriptor;
 pub mod field_value;
 pub mod macros;
 pub mod metadata;
+pub mod static_field_specialization;
 pub mod table;
 pub(super) mod wrappers;

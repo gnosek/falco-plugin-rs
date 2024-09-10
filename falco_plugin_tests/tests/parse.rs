@@ -19,9 +19,9 @@ use std::rc::Rc;
 
 type RemainingEntryTable = export::Table<u64, RemainingCounter>;
 
-#[derive(export::Entry, Default)]
+#[derive(export::Entry)]
 struct RemainingCounter {
-    remaining: u64,
+    remaining: export::Public<u64>,
 }
 
 struct DummyPlugin {
@@ -126,7 +126,7 @@ impl ParsePlugin for DummyPlugin {
 
         // using our table directly, bypassing the table api
         let entry = self.remaining_table.create_entry()?;
-        entry.borrow_mut().remaining = remaining;
+        *entry.borrow_mut().remaining = remaining;
         self.remaining_table.insert(&event_num, entry);
 
         Ok(())

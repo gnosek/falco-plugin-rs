@@ -585,13 +585,11 @@ pub mod tables {
     /// use falco_plugin::tables::export;
     ///
     /// // define the struct representing each table entry
-    /// #[derive(export::Entry, Default)]
+    /// #[derive(export::Entry)]
     /// struct ExportedTable {
-    ///     #[readonly]
-    ///     int_field: u64,        // do not allow writes via the plugin API
-    ///     string_field: CString, // allow writes via the plugin API
-    ///     #[hidden]
-    ///     secret: Vec<u8>,       // do not expose over the plugin API at all
+    ///     int_field: export::Readonly<u64>,      // do not allow writes via the plugin API
+    ///     string_field: export::Public<CString>, // allow writes via the plugin API
+    ///     secret: export::Private<Vec<u8>>,      // do not expose over the plugin API at all
     /// }
     ///
     /// // define the type holding the plugin state
@@ -627,7 +625,9 @@ pub mod tables {
     /// }
     /// ```
     pub mod export {
-        pub use crate::plugin::exported_tables::field_value::traits::FieldValue;
+        pub use crate::plugin::exported_tables::field::private::Private;
+        pub use crate::plugin::exported_tables::field::public::Public;
+        pub use crate::plugin::exported_tables::field::readonly::Readonly;
         pub use crate::plugin::exported_tables::table::Table;
 
         /// Mark a struct type as a table value
@@ -643,15 +643,16 @@ pub mod tables {
         /// ```
         /// use std::ffi::CString;
         /// use falco_plugin::tables::export::Entry;
+        /// use falco_plugin::tables::export::Private;
+        /// use falco_plugin::tables::export::Public;
+        /// use falco_plugin::tables::export::Readonly;
         ///
-        /// #[derive(Entry, Default)]     // all table structs must implement Default
+        /// #[derive(Entry)]
         /// struct ANewTable {
-        ///     #[readonly]
-        ///     int_field: u64,                 // this field cannot be modified with the Falco API
-        ///     string_field: CString,
+        ///     int_field: Readonly<u64>,        // this field cannot be modified with the Falco API
+        ///     string_field: Public<CString>,
         ///
-        ///     #[hidden]
-        ///     secret: Vec<u8>,                // this field is not visible via the Falco API
+        ///     secret: Private<Vec<u8>>,        // this field is not visible via the Falco API
         /// }
         /// # // make this doctest a module, not a function: https://github.com/rust-lang/rust/issues/83583#issuecomment-1083300448
         /// # fn main() {}
@@ -968,10 +969,15 @@ pub mod internals {
             pub use crate::plugin::exported_tables::field_descriptor::FieldId;
             pub use crate::plugin::exported_tables::field_descriptor::FieldRef;
             pub use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
-            pub use crate::plugin::exported_tables::field_value::traits::FieldValue;
-            pub use crate::plugin::exported_tables::field_value::traits::StaticField;
             pub use crate::plugin::exported_tables::metadata::HasMetadata;
             pub use crate::plugin::exported_tables::metadata::Metadata;
+
+            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldCheck;
+            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldFallback;
+            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldGet;
+            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldGetFallback;
+            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldSet;
+            pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldSetFallback;
 
             pub use crate::plugin::tables::data::FieldTypeId;
         }
