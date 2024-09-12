@@ -11,6 +11,7 @@ use falco_plugin::tables::import::{Entry, Field, Table, TableMetadata};
 use falco_plugin::tables::TablesInput;
 use std::collections::BTreeMap;
 use std::ffi::CStr;
+use std::ops::ControlFlow;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -115,14 +116,14 @@ impl ParsePlugin for DummyPlugin {
             let fds = thread.get_file_descriptors(&parse_input.reader)?;
             fds.iter_entries_mut(&parse_input.reader, |fd| {
                 let Ok(fd_num) = fd.get_fd(&parse_input.reader) else {
-                    return true;
+                    return ControlFlow::Continue(());
                 };
                 let Ok(fd_type) = fd.get_fd_type(&parse_input.reader) else {
-                    return true;
+                    return ControlFlow::Continue(());
                 };
 
                 fd_map.insert(fd_num, fd_type);
-                true
+                ControlFlow::Continue(())
             });
 
             if fd_map.len() != 33 {

@@ -10,6 +10,7 @@ use anyhow::Error;
 use falco_plugin_api::{ss_plugin_state_data, ss_plugin_table_field_t, ss_plugin_table_fieldinfo};
 use std::ffi::CStr;
 use std::marker::PhantomData;
+use std::ops::ControlFlow;
 
 pub(in crate::plugin::tables) mod raw;
 
@@ -238,10 +239,10 @@ where
     /// object as a parameter.
     ///
     /// The iteration stops when either all entries have been processed or the closure returns
-    /// false.
-    pub fn iter_entries_mut<F>(&self, reader_vtable: &TableReader, mut func: F) -> bool
+    /// [`ControlFlow::Break`].
+    pub fn iter_entries_mut<F>(&self, reader_vtable: &TableReader, mut func: F) -> ControlFlow<()>
     where
-        F: FnMut(&mut E) -> bool,
+        F: FnMut(&mut E) -> ControlFlow<()>,
     {
         self.raw_table.iter_entries_mut(reader_vtable, move |raw| {
             let mut entry = E::new(raw, self.raw_table.table, self.metadata.clone());

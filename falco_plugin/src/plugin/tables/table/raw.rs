@@ -12,6 +12,7 @@ use falco_plugin_api::{
     ss_plugin_table_iterator_func_t, ss_plugin_table_iterator_state_t, ss_plugin_table_t,
 };
 use std::ffi::CStr;
+use std::ops::ControlFlow;
 
 /// # A low-level representation of a table
 ///
@@ -203,10 +204,11 @@ impl RawTable {
     /// The closure is called once for each table entry with a corresponding [`RawEntry`]
     /// object as a parameter.
     ///
-    /// The iteration stops when either all entries have been processed or the closure returns `false`.
-    pub fn iter_entries_mut<F>(&self, reader_vtable: &TableReader, mut func: F) -> bool
+    /// The iteration stops when either all entries have been processed or the closure returns
+    /// [`ControlFlow::Break`].
+    pub fn iter_entries_mut<F>(&self, reader_vtable: &TableReader, mut func: F) -> ControlFlow<()>
     where
-        F: FnMut(RawEntry) -> bool,
+        F: FnMut(RawEntry) -> ControlFlow<()>,
     {
         iter_inner(
             self.table,
@@ -219,7 +221,7 @@ impl RawTable {
                     entry: s,
                     destructor: None,
                 };
-                func(raw_entry)
+                func(raw_entry).is_continue()
             },
         )
     }
@@ -283,7 +285,7 @@ fn iter_inner<F>(
         s: *mut ss_plugin_table_iterator_state_t,
     ) -> ss_plugin_bool,
     mut func: F,
-) -> bool
+) -> ControlFlow<()>
 where
     F: FnMut(*mut ss_plugin_table_entry_t) -> bool,
 {
@@ -307,11 +309,16 @@ where
         }
     }
 
-    unsafe {
+    let finished = unsafe {
         iterate_entries(
             table,
             Some(iter_wrapper::<F>),
             &mut func as *mut _ as *mut ss_plugin_table_iterator_state_t,
         ) != 0
+    };
+
+    match finished {
+        true => ControlFlow::Continue(()),
+        false => ControlFlow::Break(()),
     }
 }
