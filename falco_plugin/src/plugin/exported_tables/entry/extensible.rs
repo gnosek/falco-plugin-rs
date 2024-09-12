@@ -4,13 +4,12 @@ use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::field_descriptor::FieldId;
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::exported_tables::metadata::HasMetadata;
+use crate::plugin::exported_tables::ref_shared::RefShared;
 use crate::plugin::tables::data::FieldTypeId;
 use anyhow::Error;
 use falco_plugin_api::ss_plugin_state_data;
-use std::cell::RefCell;
 use std::ffi::CStr;
 use std::ops::{Deref, DerefMut};
-use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct ExtensibleEntry<E> {
@@ -36,11 +35,11 @@ impl<E> HasMetadata for ExtensibleEntry<E>
 where
     E: HasMetadata,
 {
-    type Metadata = Rc<RefCell<ExtensibleEntryMetadata<E::Metadata>>>;
+    type Metadata = RefShared<ExtensibleEntryMetadata<E::Metadata>>;
 
     fn new_with_metadata(tag: &'static CStr, meta: &Self::Metadata) -> Result<Self, Error> {
         Ok(Self {
-            inner: E::new_with_metadata(tag, &meta.borrow().inner)?,
+            inner: E::new_with_metadata(tag, &meta.read_arc().inner)?,
             custom_fields: Default::default(),
         })
     }

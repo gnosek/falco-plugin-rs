@@ -1,7 +1,6 @@
+use crate::plugin::exported_tables::ref_shared::{new_shared_ref, RefShared};
 use anyhow::Error;
-use std::cell::RefCell;
 use std::ffi::CStr;
-use std::rc::Rc;
 
 /// Metadata
 ///
@@ -20,9 +19,9 @@ impl Metadata for () {
     }
 }
 
-impl<M: Metadata> Metadata for Rc<RefCell<M>> {
+impl<M: Metadata> Metadata for RefShared<M> {
     fn new() -> Result<Self, anyhow::Error> {
-        Ok(Rc::new(RefCell::new(M::new()?)))
+        Ok(new_shared_ref(M::new()?))
     }
 }
 
@@ -39,10 +38,10 @@ pub trait HasMetadata: Sized {
     fn new_with_metadata(tag: &'static CStr, meta: &Self::Metadata) -> Result<Self, Error>;
 }
 
-impl<T: HasMetadata> HasMetadata for Rc<RefCell<T>> {
+impl<T: HasMetadata> HasMetadata for RefShared<T> {
     type Metadata = T::Metadata;
 
     fn new_with_metadata(tag: &'static CStr, meta: &Self::Metadata) -> Result<Self, Error> {
-        Ok(Rc::new(RefCell::new(T::new_with_metadata(tag, meta)?)))
+        Ok(new_shared_ref(T::new_with_metadata(tag, meta)?))
     }
 }

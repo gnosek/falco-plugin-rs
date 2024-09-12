@@ -171,10 +171,11 @@ impl RawTable {
     /// (especially using a number if the real key type is a string) will lead to UB.
     pub unsafe fn insert<K: Key>(
         &self,
+        reader_vtable: &TableReader,
         writer_vtable: &TableWriter,
         key: &K,
         mut entry: RawEntry,
-    ) -> Result<(), anyhow::Error> {
+    ) -> Result<RawEntry, anyhow::Error> {
         let ret =
             (writer_vtable.add_table_entry)(self.table, &key.to_data() as *const _, entry.entry);
 
@@ -182,7 +183,11 @@ impl RawTable {
             Err(anyhow::anyhow!("Failed to attach entry"))
         } else {
             entry.destructor.take();
-            Ok(())
+            Ok(RawEntry {
+                table: self.table,
+                entry: ret,
+                destructor: Some(reader_vtable.release_table_entry),
+            })
         }
     }
 

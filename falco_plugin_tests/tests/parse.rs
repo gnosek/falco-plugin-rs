@@ -126,8 +126,8 @@ impl ParsePlugin for DummyPlugin {
         let remaining: u64 = first_char.parse()?;
 
         // using our table directly, bypassing the table api
-        let entry = self.remaining_table.create_entry()?;
-        *entry.borrow_mut().remaining = remaining;
+        let mut entry = self.remaining_table.create_entry()?;
+        *entry.remaining = remaining;
         self.remaining_table.insert(&event_num, entry);
 
         Ok(())

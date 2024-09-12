@@ -726,17 +726,19 @@ pub mod tables {
     ///     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput)
     ///         -> anyhow::Result<()> {
     ///         // creating and accessing entries
+    ///         let reader = &parse_input.reader;
+    ///         let writer = &parse_input.writer;
     ///
     ///         // create a new entry (not yet attached to a table key)
-    ///         let entry = self.things.create_entry(&parse_input.writer)?;
-    ///         entry.set_imported(&parse_input.writer, &5u64)?;
+    ///         let entry = self.things.create_entry(writer)?;
+    ///         entry.set_imported(writer, &5u64)?;
     ///
     ///         // attach the entry to a table key
-    ///         self.things.insert(&parse_input.writer, &1u64, entry)?;
+    ///         self.things.insert(reader, writer, &1u64, entry)?;
     ///
     ///         // look up the entry we have just added
-    ///         let entry = self.things.get_entry(&parse_input.reader, &1u64)?;
-    ///         assert_eq!(entry.get_imported(&parse_input.reader).ok(), Some(5u64));
+    ///         let entry = self.things.get_entry(reader, &1u64)?;
+    ///         assert_eq!(entry.get_imported(reader).ok(), Some(5u64));
     ///
     ///         Ok(())
     ///     }
@@ -814,18 +816,20 @@ pub mod tables {
     ///     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput)
     ///         -> anyhow::Result<()> {
     ///         // creating and accessing entries
+    ///         let reader = &parse_input.reader;
+    ///         let writer = &parse_input.writer;
     ///
     ///         // create a new entry (not yet attached to a table key)
-    ///         let entry = self.things.create_entry(&parse_input.writer)?;
-    ///         entry.write_field(&parse_input.writer, &self.thing_imported_field, &5u64)?;
+    ///         let entry = self.things.create_entry(writer)?;
+    ///         entry.write_field(writer, &self.thing_imported_field, &5u64)?;
     ///
     ///         // attach the entry to a table key
-    ///         self.things.insert(&parse_input.writer, &1u64, entry)?;
+    ///         self.things.insert(reader, writer, &1u64, entry)?;
     ///
     ///         // look up the entry we have just added
-    ///         let entry = self.things.get_entry(&parse_input.reader, &1u64)?;
+    ///         let entry = self.things.get_entry(reader, &1u64)?;
     ///         assert_eq!(
-    ///             entry.read_field(&parse_input.reader, &self.thing_imported_field).ok(),
+    ///             entry.read_field(reader, &self.thing_imported_field).ok(),
     ///             Some(5u64),
     ///         );
     ///
@@ -903,6 +907,7 @@ pub mod internals {
             pub use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
             pub use crate::plugin::exported_tables::metadata::HasMetadata;
             pub use crate::plugin::exported_tables::metadata::Metadata;
+            pub use crate::plugin::exported_tables::ref_shared::RefShared;
 
             pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldCheck;
             pub use crate::plugin::exported_tables::static_field_specialization::StaticFieldFallback;

@@ -4,6 +4,7 @@ pub mod field_descriptor;
 pub mod field_value;
 pub mod macros;
 pub mod metadata;
+pub(crate) mod ref_shared;
 pub mod static_field_specialization;
 pub mod table;
 pub(crate) mod vtable;

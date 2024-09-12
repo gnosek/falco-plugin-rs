@@ -75,8 +75,22 @@ where
     }
 
     /// Attach an entry to a table key (insert an entry to the table)
-    pub fn insert(&self, writer_vtable: &TableWriter, key: &K, entry: E) -> Result<(), Error> {
-        unsafe { self.raw_table.insert(writer_vtable, key, entry.into_raw()) }
+    pub fn insert(
+        &self,
+        reader_vtable: &TableReader,
+        writer_vtable: &TableWriter,
+        key: &K,
+        entry: E,
+    ) -> Result<E, Error> {
+        let raw_entry = unsafe {
+            self.raw_table
+                .insert(reader_vtable, writer_vtable, key, entry.into_raw())
+        }?;
+        Ok(E::new(
+            raw_entry,
+            self.raw_table.table,
+            self.metadata.clone(),
+        ))
     }
 }
 

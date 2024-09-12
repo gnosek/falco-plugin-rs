@@ -189,11 +189,13 @@ dependencies = [
  "falco_event",
  "falco_plugin_api",
  "falco_plugin_derive",
+ "lock_api",
  "log",
  "memchr",
  "num-derive",
  "num-traits",
  "phf",
+ "refcell-lock-api",
  "schemars",
  "serde",
  "serde_json",
@@ -293,6 +295,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d240c6f7e1ba3a28b0249f774e6a9dd0175054b52dfbb61b16eb8505c3785c9"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "lock_api"
+version = "0.4.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07af8b9cdd281b7915f413fa73f29ebd5d55d0d3f0155584dade1ff18cea1b17"
+dependencies = [
+ "autocfg",
+ "scopeguard",
 ]
 
 [[package]]
@@ -427,6 +439,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 
 [[package]]
+name = "refcell-lock-api"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aef5aec54439264f95d29cba927a8546d1950a38948ee4c80aba74fbfaea1116"
+dependencies = [
+ "cfg_aliases",
+ "lock_api",
+]
+
+[[package]]
 name = "ryu"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -455,6 +477,12 @@ dependencies = [
  "serde_derive_internals",
  "syn 1.0.109",
 ]
+
+[[package]]
+name = "scopeguard"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "scratch"

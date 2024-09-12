@@ -25,7 +25,7 @@ where
     #[allow(clippy::borrowed_box)]
     pub(crate) fn get_boxed_vtable(self: &Box<Self>) -> *mut ss_plugin_table_input {
         let table_ptr = self.as_ref() as *const Table<K, E> as *mut Table<K, E>;
-        let mut vtable_place = self.vtable.borrow_mut();
+        let mut vtable_place = self.vtable.write();
 
         if let Some(ref mut vtable) = *vtable_place {
             // the ss_plugin_table_t value should never change

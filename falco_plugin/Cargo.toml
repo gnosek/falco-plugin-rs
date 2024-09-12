@@ -26,3 +26,5 @@ log = { version = "0.4.21", features = ["std"] }
 num-derive = "0.4.2"
 num-traits = "0.2.18"
 phf = { version = "0.11.2", features = ["macros"] }
+lock_api = { version = "0.4.12", features = ["arc_lock"] }
+refcell-lock-api = "0.1.0"

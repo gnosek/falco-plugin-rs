@@ -6,15 +6,16 @@ use crate::plugin::exported_tables::field_descriptor::{FieldDescriptor, FieldRef
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::exported_tables::metadata::HasMetadata;
 use crate::plugin::exported_tables::metadata::Metadata;
+use crate::plugin::exported_tables::ref_shared::{
+    new_counted_ref, new_shared_ref, RefCounted, RefGuard, RefShared,
+};
 use crate::plugin::exported_tables::vtable::Vtable;
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::FailureReason;
 use falco_plugin_api::{ss_plugin_state_data, ss_plugin_table_fieldinfo};
-use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter};
-use std::rc::Rc;
 
 /// # A table exported to other plugins
 ///
@@ -32,7 +33,7 @@ use std::rc::Rc;
 ///
 /// See [`crate::tables::export`] for details.
 ///
-/// Since the implementation uses [`Rc`], it's *not* thread-safe.
+/// The implementation it's *not* thread-safe.
 pub struct Table<K, E>
 where
     K: Key + Ord + Clone,
@@ -41,10 +42,10 @@ where
 {
     name: &'static CStr,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,
-    metadata: Rc<RefCell<ExtensibleEntryMetadata<E::Metadata>>>,
-    data: BTreeMap<K, Rc<RefCell<ExtensibleEntry<E>>>>,
+    metadata: RefShared<ExtensibleEntryMetadata<E::Metadata>>,
+    data: BTreeMap<K, RefShared<ExtensibleEntry<E>>>,
 
-    pub(in crate::plugin::exported_tables) vtable: RefCell<Option<Box<Vtable>>>,
+    pub(in crate::plugin::exported_tables) vtable: RefCounted<Option<Box<Vtable>>>,
 }
 
 impl<K, E> Debug for Table<K, E>
@@ -62,8 +63,8 @@ where
     }
 }
 
-type TableMetadataType<E> = Rc<RefCell<ExtensibleEntryMetadata<<E as HasMetadata>::Metadata>>>;
-pub(in crate::plugin::exported_tables) type TableEntryType<E> = Rc<RefCell<ExtensibleEntry<E>>>;
+type TableMetadataType<E> = RefShared<ExtensibleEntryMetadata<<E as HasMetadata>::Metadata>>;
+pub(in crate::plugin::exported_tables) type TableEntryType<E> = RefGuard<ExtensibleEntry<E>>;
 
 impl<K, E> Table<K, E>
 where
@@ -84,7 +85,7 @@ where
             metadata: metadata.clone(),
             data: BTreeMap::new(),
 
-            vtable: RefCell::new(None),
+            vtable: new_counted_ref(None),
         };
 
         Ok(table)
@@ -95,10 +96,10 @@ where
         Ok(Self {
             name,
             field_descriptors: vec![],
-            metadata: Rc::new(RefCell::new(ExtensibleEntryMetadata::new()?)),
+            metadata: new_shared_ref(ExtensibleEntryMetadata::new()?),
             data: BTreeMap::new(),
 
-            vtable: RefCell::new(None),
+            vtable: new_counted_ref(None),
         })
     }
 
@@ -114,7 +115,7 @@ where
 
     /// Get an entry corresponding to a particular key.
     pub fn lookup(&self, key: &K) -> Option<TableEntryType<E>> {
-        self.data.get(key).cloned()
+        Some(self.data.get(key)?.write_arc())
     }
 
     /// Get the value for a field in an entry.
@@ -126,7 +127,7 @@ where
     ) -> Result<(), anyhow::Error> {
         let (type_id, index) = { (field.type_id, field.index) };
 
-        entry.borrow().get(index, type_id, out)
+        entry.get(index, type_id, out)
     }
 
     /// Execute a closure on all entries in the table with read-only access.
@@ -138,7 +139,7 @@ where
         F: FnMut(&mut TableEntryType<E>) -> bool,
     {
         for value in &mut self.data.values_mut() {
-            if !func(value) {
+            if !func(&mut value.write_arc()) {
                 return false;
             }
         }
@@ -152,23 +153,26 @@ where
 
     /// Erase an entry by key.
     pub fn erase(&mut self, key: &K) -> Option<TableEntryType<E>> {
-        self.data.remove(key)
+        Some(self.data.remove(key)?.write_arc())
     }
 
     /// Create a new table entry.
     ///
     /// This is a detached entry that can be later inserted into the table using [`Table::insert`].
     pub fn create_entry(&self) -> Result<TableEntryType<E>, anyhow::Error> {
-        Ok(Rc::new(RefCell::new(ExtensibleEntry::new_with_metadata(
+        Ok(new_shared_ref(ExtensibleEntry::new_with_metadata(
             self.name,
             &self.metadata,
-        )?)))
+        )?)
+        .write_arc())
     }
 
     /// Attach an entry to a table key
     pub fn insert(&mut self, key: &K, entry: TableEntryType<E>) -> Option<TableEntryType<E>> {
         // note: different semantics from data.insert: we return the *new* entry
-        self.data.insert(key.clone(), entry);
+        self.data
+            .insert(key.clone(), std::sync::Arc::clone(RefGuard::rwlock(&entry)));
+        drop(entry);
         self.lookup(key)
     }
 
@@ -192,7 +196,6 @@ where
             ))?
         };
 
-        let mut entry = entry.borrow_mut();
         entry.set(index, value)
     }
 

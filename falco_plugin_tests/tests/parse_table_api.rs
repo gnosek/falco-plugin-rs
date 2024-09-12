@@ -143,10 +143,13 @@ impl ParsePlugin for DummyPlugin {
         let remaining: u64 = first_char.parse()?;
 
         // use table API
+        let r = &parse_input.reader;
         let w = &parse_input.writer;
         let entry = self.remaining_table_import.create_entry(w)?;
         entry.set_remaining(w, &remaining)?;
-        self.remaining_table_import.insert(w, &event_num, entry)?;
+        let _ = self
+            .remaining_table_import
+            .insert(r, w, &event_num, entry)?;
 
         Ok(())
     }

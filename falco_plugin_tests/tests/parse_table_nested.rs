@@ -136,22 +136,23 @@ impl ParsePlugin for DummyPlugin {
         let first_char = std::str::from_utf8(first_char)?;
         let remaining: u64 = first_char.parse()?;
 
-        let entry = self.remaining_table.create_entry()?;
-        *entry.borrow_mut().remaining = remaining;
+        let mut entry = self.remaining_table.create_entry()?;
+        *entry.remaining = remaining;
 
         {
-            let countdown_table = &mut entry.borrow_mut().countdown;
+            let countdown_table = &mut entry.countdown;
             for i in 0..=remaining {
-                let countdown_entry = countdown_table.create_entry()?;
-                *countdown_entry.borrow_mut().count = remaining - i;
+                let mut countdown_entry = countdown_table.create_entry()?;
+                *countdown_entry.count = remaining - i;
 
-                countdown_table
+                let _ = countdown_table
                     .insert(&i, countdown_entry)
                     .ok_or_else(|| anyhow::anyhow!("boo"))?;
             }
         }
 
-        self.remaining_table
+        let _ = self
+            .remaining_table
             .insert(&event_num, entry)
             .ok_or_else(|| anyhow::anyhow!("boo"))?;
         Ok(())
@@ -214,34 +215,32 @@ impl ParsePlugin for DummyParsePlugin {
     const EVENT_SOURCES: &'static [&'static str] = &["dummy"];
 
     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput) -> anyhow::Result<()> {
+        let reader = &parse_input.reader;
+        let writer = &parse_input.writer;
         let event_num = event.event_number() as u64;
 
-        let entry = self
-            .remaining_table
-            .get_entry(&parse_input.reader, &event_num)?;
-        let remaining = entry.get_remaining(&parse_input.reader)?;
+        let entry = self.remaining_table.get_entry(reader, &event_num)?;
+        let remaining = entry.get_remaining(reader)?;
 
         let is_even = (remaining % 2 == 0).into();
         let mut string_rep = CString::default();
         string_rep.write_into(|w| write!(w, "{} events remaining", remaining))?;
 
-        entry.set_is_even(&parse_input.writer, &is_even)?;
-        entry.set_as_string(&parse_input.writer, string_rep.as_c_str())?;
+        entry.set_is_even(writer, &is_even)?;
+        entry.set_as_string(writer, string_rep.as_c_str())?;
 
-        entry
-            .get_countdown(&parse_input.reader)?
-            .iter_entries_mut(&parse_input.reader, |c| {
-                // TODO: some error handling support would be nice
-                let Ok(count) = c.get_count(&parse_input.reader) else {
-                    return ControlFlow::Continue(());
-                };
+        entry.get_countdown(reader)?.iter_entries_mut(reader, |c| {
+            // TODO: some error handling support would be nice
+            let Ok(count) = c.get_count(reader) else {
+                return ControlFlow::Continue(());
+            };
 
-                let is_final = (count == 0).into();
-                // TODO again, error handling
-                c.set_is_final(&parse_input.writer, &is_final).ok();
+            let is_final = (count == 0).into();
+            // TODO again, error handling
+            c.set_is_final(writer, &is_final).ok();
 
-                ControlFlow::Continue(())
-            });
+            ControlFlow::Continue(())
+        });
 
         Ok(())
     }

@@ -125,8 +125,8 @@ impl ParsePlugin for DummyPlugin {
         let remaining: u64 = first_char.parse()?;
 
         // using our table directly, bypassing the table api
-        let entry = self.remaining_table.create_entry()?;
-        *entry.borrow_mut().remaining = remaining;
+        let mut entry = self.remaining_table.create_entry()?;
+        *entry.remaining = remaining;
         self.remaining_table.insert(&event_num, entry);
 
         Ok(())
@@ -148,7 +148,7 @@ impl Plugin for DummyExtractPlugin {
     fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, Error> {
         let input = input.ok_or_else(|| anyhow::anyhow!("did not get table input"))?;
         let remaining_table: import::Table<u64> = input.get_table(c"remaining")?;
-        let remaining_field = remaining_table.get_field(&input, c"remaining")?;
+        let remaining_field = remaining_table.get_field(input, c"remaining")?;
 
         Ok(Self {
             remaining_table,

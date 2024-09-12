@@ -4,18 +4,17 @@ use crate::plugin::exported_tables::field_descriptor::FieldId;
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::exported_tables::field_value::traits::FieldValue;
 use crate::plugin::exported_tables::metadata::HasMetadata;
+use crate::plugin::exported_tables::ref_shared::RefShared;
 use crate::plugin::tables::data::FieldTypeId;
 use falco_plugin_api::ss_plugin_state_data;
-use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::ffi::CStr;
-use std::rc::Rc;
 
 /// A table value type that only has dynamic fields
 pub type DynamicEntry = BTreeMap<FieldId, DynamicFieldValue>;
 
 impl HasMetadata for DynamicEntry {
-    type Metadata = Rc<RefCell<DynamicFieldsOnly>>;
+    type Metadata = RefShared<DynamicFieldsOnly>;
 
     fn new_with_metadata(
         _tag: &'static CStr,

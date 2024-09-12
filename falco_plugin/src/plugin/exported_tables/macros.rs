@@ -58,9 +58,11 @@ macro_rules! impl_export_table {
             use $crate::internals::tables::export::FieldRef;
             use $crate::internals::tables::export::HasMetadata;
             use $crate::internals::tables::export::Metadata;
+            use $crate::internals::tables::export::RefShared;
             use $crate::internals::tables::export::StaticFieldCheck;
             use $crate::internals::tables::export::StaticFieldFallback;
             use $crate::internals::tables::export::TableMetadata;
+
             use $crate::api::ss_plugin_table_fieldinfo;
             use $crate::phf;
 
@@ -117,11 +119,11 @@ macro_rules! impl_export_table {
             }
 
             impl HasMetadata for $name {
-                type Metadata = ::std::rc::Rc<::std::cell::RefCell<EntryMetadata>>;
+                type Metadata = RefShared<EntryMetadata>;
 
                 fn new_with_metadata(tag: &'static std::ffi::CStr, meta: &Self::Metadata) -> ::std::result::Result<Self, $crate::anyhow::Error> {
                     Ok(Self {
-                       $($field_name: HasMetadata::new_with_metadata($field_tag, &meta.borrow().$field_name)?,)*
+                       $($field_name: HasMetadata::new_with_metadata($field_tag, &meta.read().$field_name)?,)*
                     })
                 }
             }
