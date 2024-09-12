@@ -1,0 +1,46 @@
+use falco_plugin::anyhow::Error;
+use falco_plugin::base::Plugin;
+use falco_plugin::tables::TablesInput;
+use falco_plugin::{anyhow, static_plugin};
+use std::ffi::CStr;
+
+struct DummyPlugin;
+
+impl Plugin for DummyPlugin {
+    const NAME: &'static CStr = c"dummy";
+    const PLUGIN_VERSION: &'static CStr = c"0.0.0";
+    const DESCRIPTION: &'static CStr = c"dummy no-op plugin";
+    const CONTACT: &'static CStr = c"rust@localdomain.pl";
+    type ConfigType = String;
+
+    fn new(_input: Option<&TablesInput>, config: Self::ConfigType) -> Result<Self, Error> {
+        if config != "testing" {
+            anyhow::bail!("I only accept \"testing\" as the config string");
+        }
+
+        Ok(Self)
+    }
+
+    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), Error> {
+        if config != "testing" {
+            anyhow::bail!("I only accept \"testing\" as the config string, even in an update");
+        }
+
+        Ok(())
+    }
+}
+
+static_plugin!(DUMMY_PLUGIN_API = DummyPlugin);
+
+#[cfg(test)]
+mod tests {
+    use falco_plugin_tests::init_plugin;
+
+    #[test]
+    fn test_dummy_init() {
+        let res = init_plugin(super::DUMMY_PLUGIN_API, c"testing");
+
+        // Exception { what: "cannot load plugin with custom vtable: plugin does not implement any capability" }
+        assert!(res.is_err())
+    }
+}
