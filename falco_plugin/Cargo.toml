@@ -10,38 +10,6 @@ readme = "README.md"
 keywords = ["falco", "security"]
 categories = ["api-bindings"]
 
-[[example]]
-name = "source_plugin"
-crate-type = ["dylib"]
-
-[[example]]
-name = "static_source_plugin"
-crate-type = ["staticlib"]
-
-[[example]]
-name = "extract_plugin_derive"
-crate-type = ["dylib"]
-
-[[example]]
-name = "extract_plugin_typed"
-crate-type = ["dylib"]
-
-[[example]]
-name = "extract_plugin_typed_no_tag"
-crate-type = ["dylib"]
-
-[[example]]
-name = "parse_plugin"
-crate-type = ["dylib"]
-
-[[example]]
-name = "extract2_plugin"
-crate-type = ["dylib"]
-
-[[example]]
-name = "async_plugin"
-crate-type = ["dylib"]
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
