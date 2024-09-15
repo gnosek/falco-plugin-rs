@@ -87,6 +87,22 @@ impl TableReader {
 /// It's used as a token to prove you're allowed to write tables in a particular context
 #[derive(Debug)]
 pub struct TableWriter {
+    pub(in crate::plugin::tables) clear_table:
+        unsafe extern "C" fn(t: *mut ss_plugin_table_t) -> ss_plugin_rc,
+    pub(in crate::plugin::tables) erase_table_entry: unsafe extern "C" fn(
+        t: *mut ss_plugin_table_t,
+        key: *const ss_plugin_state_data,
+    ) -> ss_plugin_rc,
+    pub(in crate::plugin::tables) create_table_entry:
+        unsafe extern "C" fn(t: *mut ss_plugin_table_t) -> *mut ss_plugin_table_entry_t,
+    pub(in crate::plugin::tables) destroy_table_entry:
+        unsafe extern "C" fn(t: *mut ss_plugin_table_t, e: *mut ss_plugin_table_entry_t),
+    pub(in crate::plugin::tables) add_table_entry:
+        unsafe extern "C" fn(
+            t: *mut ss_plugin_table_t,
+            key: *const ss_plugin_state_data,
+            entry: *mut ss_plugin_table_entry_t,
+        ) -> *mut ss_plugin_table_entry_t,
     pub(in crate::plugin::tables) write_entry_field: unsafe extern "C" fn(
         t: *mut ss_plugin_table_t,
         e: *mut ss_plugin_table_entry_t,
@@ -103,6 +119,21 @@ impl TableWriter {
         last_error: LastError,
     ) -> Result<Self, TableError> {
         Ok(TableWriter {
+            clear_table: writer_ext
+                .clear_table
+                .ok_or(TableError::BadVtable("clear_table"))?,
+            erase_table_entry: writer_ext
+                .erase_table_entry
+                .ok_or(TableError::BadVtable("erase_table_entry"))?,
+            create_table_entry: writer_ext
+                .create_table_entry
+                .ok_or(TableError::BadVtable("create_table_entry"))?,
+            destroy_table_entry: writer_ext
+                .destroy_table_entry
+                .ok_or(TableError::BadVtable("destroy_table_entry"))?,
+            add_table_entry: writer_ext
+                .add_table_entry
+                .ok_or(TableError::BadVtable("add_table_entry"))?,
             write_entry_field: writer_ext
                 .write_entry_field
                 .ok_or(TableError::BadVtable("write_entry_field"))?,

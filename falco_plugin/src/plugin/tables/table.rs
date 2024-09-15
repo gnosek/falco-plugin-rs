@@ -4,7 +4,8 @@ use crate::plugin::tables::runtime_table_validator::RuntimeTableValidator;
 use crate::plugin::tables::table::raw::RawTable;
 use crate::plugin::tables::vtable::{TableFields, TableReader};
 use crate::strings::from_ptr::FromPtrError;
-use crate::tables::{Field, TablesInput};
+use crate::tables::{Field, TableWriter, TablesInput};
+use anyhow::Error;
 use falco_plugin_api::ss_plugin_table_fieldinfo;
 use std::ffi::CStr;
 use std::marker::PhantomData;
@@ -39,6 +40,27 @@ impl<K: Key> TypedTable<K> {
         RuntimeTableValidator::new(self.raw_table.table)
     }
 
+    /// Create a new table entry (not yet attached to a key)
+    pub fn create_entry(&self, writer_vtable: &TableWriter) -> Result<Entry, Error> {
+        let raw_entry = self.raw_table.create_entry(writer_vtable)?;
+        Ok(Entry::new(raw_entry, self.raw_table.table))
+    }
+
+    /// Remove all entries from the table
+    pub fn clear(&self, writer_vtable: &TableWriter) -> Result<(), Error> {
+        self.raw_table.clear(writer_vtable)
+    }
+
+    /// Erase a table entry by key
+    pub fn erase(&self, writer_vtable: &TableWriter, key: &K) -> Result<(), Error> {
+        unsafe { self.raw_table.erase(writer_vtable, key) }
+    }
+
+    /// Attach an entry to a table key (insert an entry to the table)
+    pub fn insert(&self, writer_vtable: &TableWriter, key: &K, entry: Entry) -> Result<(), Error> {
+        unsafe { self.raw_table.insert(writer_vtable, key, entry.into_raw()) }
+    }
+
     /// # List the available fields
     ///
     /// **Note**: this method is of limited utility in actual plugin code (you know the fields you
@@ -59,7 +81,7 @@ impl<K: Key> TypedTable<K> {
         &self,
         tables_input: &TablesInput,
         name: &CStr,
-    ) -> Result<Field<V>, anyhow::Error> {
+    ) -> Result<Field<V>, Error> {
         let field = self.raw_table.get_field(tables_input, name)?;
         Ok(Field::new(field, self.table_validator()))
     }
@@ -74,7 +96,7 @@ impl<K: Key> TypedTable<K> {
         &self,
         tables_input: &TablesInput,
         name: &CStr,
-    ) -> Result<Field<V>, anyhow::Error> {
+    ) -> Result<Field<V>, Error> {
         let field = self.raw_table.add_field(tables_input, name)?;
         Ok(Field::new(field, self.table_validator()))
     }

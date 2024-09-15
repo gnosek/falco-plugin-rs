@@ -1,9 +1,9 @@
-use crate::plugin::error::as_result::WithLastError;
+use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::tables::data::{Key, Value};
 use crate::plugin::tables::entry::raw::RawEntry;
 use crate::plugin::tables::field::raw::RawField;
 use crate::plugin::tables::vtable::TableFields;
-use crate::plugin::tables::vtable::{TableReader, TablesInput};
+use crate::plugin::tables::vtable::{TableReader, TableWriter, TablesInput};
 use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_state_type, ss_plugin_table_entry_t, ss_plugin_table_fieldinfo,
@@ -123,6 +123,64 @@ impl RawTable {
         }
     }
 
+    /// # Erase a table entry by key
+    ///
+    /// # Safety
+    /// The key type must be the same as actually used by the table. Using the wrong type
+    /// (especially using a number if the real key type is a string) will lead to UB.
+    pub unsafe fn erase<K: Key>(
+        &self,
+        writer_vtable: &TableWriter,
+        key: &K,
+    ) -> Result<(), anyhow::Error> {
+        Ok(
+            (writer_vtable.erase_table_entry)(self.table, &key.to_data() as *const _)
+                .as_result()?,
+        )
+    }
+
+    /// # Create a table entry
+    ///
+    /// This creates an entry that's not attached to any particular key. To insert it into
+    /// the table, pass it to [`RawTable::insert`]
+    pub fn create_entry(&self, writer_vtable: &TableWriter) -> Result<RawEntry, anyhow::Error> {
+        let entry = unsafe { (writer_vtable.create_table_entry)(self.table) };
+
+        if entry.is_null() {
+            Err(anyhow::anyhow!("Failed to create table entry"))
+        } else {
+            Ok(RawEntry {
+                table: self.table,
+                entry,
+                destructor: Some(writer_vtable.destroy_table_entry),
+            })
+        }
+    }
+
+    /// # Insert an entry into the table
+    ///
+    /// This attaches an entry to a table key, making it accessible to other plugins
+    ///
+    /// # Safety
+    /// The key type must be the same as actually used by the table. Using the wrong type
+    /// (especially using a number if the real key type is a string) will lead to UB.
+    pub unsafe fn insert<K: Key>(
+        &self,
+        writer_vtable: &TableWriter,
+        key: &K,
+        mut entry: RawEntry,
+    ) -> Result<(), anyhow::Error> {
+        let ret =
+            (writer_vtable.add_table_entry)(self.table, &key.to_data() as *const _, entry.entry);
+
+        if ret.is_null() {
+            Err(anyhow::anyhow!("Failed to attach entry"))
+        } else {
+            entry.destructor.take();
+            Ok(())
+        }
+    }
+
     /// # Get the table name
     ///
     /// This method returns an error if the name cannot be represented as UTF-8
@@ -161,6 +219,13 @@ impl RawTable {
                 func(raw_entry)
             },
         )
+    }
+
+    /// # Clear the table
+    ///
+    /// Removes all entries from the table
+    pub fn clear(&self, writer_vtable: &TableWriter) -> Result<(), anyhow::Error> {
+        unsafe { Ok((writer_vtable.clear_table)(self.table).as_result()?) }
     }
 }
 

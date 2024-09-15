@@ -28,6 +28,10 @@ impl Entry {
         Self { raw_entry, table }
     }
 
+    pub(in crate::plugin::tables) fn into_raw(self) -> RawEntry {
+        self.raw_entry
+    }
+
     /// Get a field value for this entry
     pub fn read_field<V: Value + ?Sized>(
         &self,
