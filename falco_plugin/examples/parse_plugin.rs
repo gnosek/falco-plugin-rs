@@ -18,6 +18,7 @@ struct AnotherTable {
     string_field: CString,
 
     #[hidden]
+    #[allow(dead_code)]
     secret: Vec<u8>,
 
     #[dynamic]
@@ -32,14 +33,18 @@ struct TableWithStaticFieldsOnly {
     string_field: CString,
 
     #[hidden]
+    #[allow(dead_code)]
     secret: Vec<u8>,
 }
 
 pub struct DummyPlugin {
     thread_table: TypedTable<i64>,
     sample_field: TypedTableField<u64>,
+    #[allow(dead_code)]
     new_table: &'static mut DynamicTable<u64>,
+    #[allow(dead_code)]
     another_table: &'static mut DynamicTable<u64, AnotherTable>,
+    #[allow(dead_code)]
     table_with_static_fields_only: &'static mut DynamicTable<u64, TableWithStaticFieldsOnly>,
 }
 
