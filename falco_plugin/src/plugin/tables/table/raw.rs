@@ -6,7 +6,8 @@ use crate::plugin::tables::vtable::TableFields;
 use crate::plugin::tables::vtable::{TableReader, TableWriter, TablesInput};
 use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
 use falco_plugin_api::{
-    ss_plugin_bool, ss_plugin_state_type, ss_plugin_table_entry_t, ss_plugin_table_fieldinfo,
+    ss_plugin_bool, ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_state_data, ss_plugin_state_type,
+    ss_plugin_table_entry_t, ss_plugin_table_field_t, ss_plugin_table_fieldinfo,
     ss_plugin_table_iterator_func_t, ss_plugin_table_iterator_state_t, ss_plugin_table_t,
 };
 use std::ffi::CStr;
@@ -226,6 +227,35 @@ impl RawTable {
     /// Removes all entries from the table
     pub fn clear(&self, writer_vtable: &TableWriter) -> Result<(), anyhow::Error> {
         unsafe { Ok((writer_vtable.clear_table)(self.table).as_result()?) }
+    }
+
+    pub(in crate::plugin::tables) unsafe fn with_subtable<F, R>(
+        &self,
+        field: *mut ss_plugin_table_field_t,
+        tables_input: &TablesInput,
+        func: F,
+    ) -> Result<R, anyhow::Error>
+    where
+        F: FnOnce(&RawTable) -> R,
+    {
+        let entry = unsafe { (tables_input.writer_ext.create_table_entry)(self.table) };
+        if entry.is_null() {
+            anyhow::bail!("Failed to create temporary table entry");
+        }
+
+        let mut val = ss_plugin_state_data { u64_: 0 };
+        let rc = unsafe {
+            (tables_input.reader_ext.read_entry_field)(self.table, entry, field, &mut val as *mut _)
+        };
+
+        if rc != ss_plugin_rc_SS_PLUGIN_SUCCESS {
+            anyhow::bail!("Failed to get field value for temporary table entry")
+        }
+
+        let raw_table = unsafe { RawTable { table: val.table } };
+        let ret = func(&raw_table);
+        unsafe { (tables_input.writer_ext.destroy_table_entry)(self.table, entry) };
+        Ok(ret)
     }
 }
 

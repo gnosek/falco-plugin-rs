@@ -202,6 +202,12 @@ pub struct TablesInput {
         in_: *const ss_plugin_table_input,
     ) -> ss_plugin_rc,
 
+    /// accessor object for reading tables
+    pub(in crate::plugin::tables) reader_ext: TableReader,
+
+    /// accessor object for writing tables
+    pub(in crate::plugin::tables) writer_ext: TableWriter,
+
     /// accessor object for manipulating fields
     pub(in crate::plugin::tables) fields_ext: TableFields,
 }
@@ -209,6 +215,18 @@ pub struct TablesInput {
 impl TablesInput {
     pub(crate) fn try_from(value: &ss_plugin_init_input) -> Result<Option<Self>, TableError> {
         if let Some(table_init_input) = unsafe { value.tables.as_ref() } {
+            let reader_ext = unsafe {
+                table_init_input
+                    .reader_ext
+                    .as_ref()
+                    .ok_or(TableError::BadVtable("reader_ext"))?
+            };
+            let writer_ext = unsafe {
+                table_init_input
+                    .writer_ext
+                    .as_ref()
+                    .ok_or(TableError::BadVtable("writer_ext"))?
+            };
             let fields_ext = unsafe {
                 table_init_input
                     .fields_ext
@@ -233,6 +251,8 @@ impl TablesInput {
                 add_table: table_init_input
                     .add_table
                     .ok_or(TableError::BadVtable("add_table"))?,
+                reader_ext: TableReader::try_from(reader_ext, last_error.clone())?,
+                writer_ext: TableWriter::try_from(writer_ext, last_error)?,
                 fields_ext: TableFields::try_from(fields_ext)?,
             }))
         } else {
@@ -274,7 +294,7 @@ impl TablesInput {
         } else {
             // Safety: we pass the data directly from FFI, the framework would never lie to us, right?
             let table = RawTable { table };
-            Ok(unsafe { Table::<K>::new(table) })
+            Ok(unsafe { Table::<K>::new(table, false) })
         }
     }
 
