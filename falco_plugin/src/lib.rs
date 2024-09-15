@@ -596,7 +596,7 @@ pub mod tables {
     /// struct MyPlugin {
     ///     // you can use methods on this instance to access fields bypassing the Falco table API
     ///     // (for performance within your own plugin)
-    ///     exported_table: &'static mut export::Table<u64, ExportedTable>,
+    ///     exported_table: Box<export::Table<u64, ExportedTable>>,
     /// }
     ///
     /// // implement the base::Plugin trait

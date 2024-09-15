@@ -40,7 +40,7 @@ struct DummyPlugin {
     num_batches: usize,
     batch_count: MetricLabel,
     #[allow(unused)]
-    remaining_table: &'static mut RemainingEntryTable,
+    remaining_table: Box<RemainingEntryTable>,
     remaining_table_import: RemainingCounterImportTable,
 }
 

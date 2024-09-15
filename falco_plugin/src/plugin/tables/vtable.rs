@@ -307,10 +307,11 @@ impl TablesInput {
     }
 
     /// # Export a table to the Falco plugin API
-    pub fn add_table<K, E>(
-        &self,
-        table: Table<K, E>,
-    ) -> Result<&'static mut Table<K, E>, anyhow::Error>
+    ///
+    /// This method returns a Box, which you need to store in your plugin instance
+    /// even if you don't intend to use the table yourself (the table is destroyed when
+    /// going out of scope, which will lead to crashes in plugins using your table).
+    pub fn add_table<K, E>(&self, table: Table<K, E>) -> Result<Box<Table<K, E>>, anyhow::Error>
     where
         K: Key + Ord + Clone,
         E: Entry,
@@ -357,8 +358,6 @@ impl TablesInput {
         unsafe { (self.add_table)(self.owner, &table_input as *const _) }
             .as_result()
             .with_last_error(&self.last_error)?;
-        // There is no API for destroying a table, so we leak the pointer. At least we can have
-        // a &'static back
-        Ok(Box::leak(table))
+        Ok(table)
     }
 }

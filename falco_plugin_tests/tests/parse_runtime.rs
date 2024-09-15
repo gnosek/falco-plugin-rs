@@ -27,7 +27,7 @@ struct RemainingCounter {
 struct DummyPlugin {
     num_batches: usize,
     batch_count: MetricLabel,
-    remaining_table: &'static mut RemainingEntryTable,
+    remaining_table: Box<RemainingEntryTable>,
 }
 
 impl Plugin for DummyPlugin {

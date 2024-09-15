@@ -24,7 +24,7 @@ pub struct DummyPlugin {
     thread_table: ImportedTable<i64, RuntimeEntry<ThreadTable>>,
     sample_field: Field<u64, RuntimeEntry<ThreadTable>>,
     #[allow(dead_code)]
-    another_table: &'static mut Table<u64, AnotherTable>,
+    another_table: Box<Table<u64, AnotherTable>>,
 }
 
 impl Plugin for DummyPlugin {
