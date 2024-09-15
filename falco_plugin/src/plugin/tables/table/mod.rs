@@ -1,8 +1,9 @@
 use crate::plugin::tables::data::{seal, FieldTypeId, Key, TableData, Value};
 use crate::plugin::tables::field::Field;
+use crate::plugin::tables::runtime::NoMetadata;
 use crate::plugin::tables::runtime_table_validator::RuntimeTableValidator;
 use crate::plugin::tables::table::raw::RawTable;
-use crate::plugin::tables::traits::{Entry, TableAccess};
+use crate::plugin::tables::traits::{Entry, TableAccess, TableMetadata};
 use crate::plugin::tables::vtable::{TableFields, TableReader, TableWriter, TablesInput};
 use crate::strings::from_ptr::FromPtrError;
 use anyhow::Error;
@@ -13,20 +14,28 @@ use std::marker::PhantomData;
 pub(in crate::plugin::tables) mod raw;
 
 /// # A handle for a specific table
-pub struct Table<K, E = super::entry::Entry> {
+pub struct Table<K, E = super::entry::Entry<NoMetadata<()>>, M = <E as Entry>::Metadata> {
     pub(in crate::plugin::tables) raw_table: RawTable,
+    pub(in crate::plugin::tables) metadata: M,
     pub(in crate::plugin::tables) is_nested: bool,
     pub(in crate::plugin::tables) key_type: PhantomData<K>,
     pub(in crate::plugin::tables) entry_type: PhantomData<E>,
 }
 
-impl<K: Key, E: Entry> TableAccess for Table<K, E> {
+impl<K, E, M> TableAccess for Table<K, E, M>
+where
+    K: Key,
+    E: Entry<Metadata = M>,
+    M: TableMetadata + Clone,
+{
     type Key = K;
     type Entry = E;
+    type Metadata = M;
 
-    fn new(raw_table: RawTable, is_nested: bool) -> Self {
+    fn new(raw_table: RawTable, metadata: Self::Metadata, is_nested: bool) -> Self {
         Self {
             raw_table,
+            metadata,
             is_nested,
             key_type: PhantomData,
             entry_type: PhantomData,
@@ -42,11 +51,20 @@ impl<K: Key, E: Entry> TableAccess for Table<K, E> {
     }
 }
 
-impl<K: Key, E: Entry> Table<K, E> {
+impl<K, E, M> Table<K, E, M>
+where
+    K: Key,
+    E: Entry<Metadata = M>,
+    M: TableMetadata + Clone,
+{
     /// Look up an entry in `table` corresponding to `key`
     pub fn get_entry(&self, reader_vtable: &TableReader, key: &K) -> Result<E, Error> {
         let raw_entry = unsafe { self.raw_table.get_entry(reader_vtable, key)? };
-        Ok(E::new(raw_entry, self.raw_table.table))
+        Ok(E::new(
+            raw_entry,
+            self.raw_table.table,
+            self.metadata.clone(),
+        ))
     }
 
     /// Erase a table entry by key
@@ -60,10 +78,19 @@ impl<K: Key, E: Entry> Table<K, E> {
     }
 }
 
-impl<K, E: Entry> Table<K, E> {
-    pub(crate) unsafe fn new_without_key(raw_table: RawTable, is_nested: bool) -> Self {
-        Table {
+impl<K, E, M> Table<K, E, M>
+where
+    E: Entry<Metadata = M>,
+    M: TableMetadata + Clone,
+{
+    pub(in crate::plugin::tables) fn new_without_key(
+        raw_table: RawTable,
+        metadata: E::Metadata,
+        is_nested: bool,
+    ) -> Self {
+        Self {
             raw_table,
+            metadata,
             is_nested,
             key_type: PhantomData,
             entry_type: PhantomData,
@@ -82,7 +109,11 @@ impl<K, E: Entry> Table<K, E> {
     /// Create a new table entry (not yet attached to a key)
     pub fn create_entry(&self, writer_vtable: &TableWriter) -> Result<E, Error> {
         let raw_entry = self.raw_table.create_entry(writer_vtable)?;
-        Ok(E::new(raw_entry, self.raw_table.table))
+        Ok(E::new(
+            raw_entry,
+            self.raw_table.table,
+            self.metadata.clone(),
+        ))
     }
 
     /// Remove all entries from the table
@@ -144,12 +175,16 @@ impl<K, E: Entry> Table<K, E> {
         tables_input: &TablesInput,
         name: &CStr,
         func: F,
-    ) -> Result<(Field<V>, R), Error>
+    ) -> Result<(Field<V, E>, R), Error>
     where
+        for<'a> V::AssocData: From<&'a M>,
         V: Value + ?Sized,
-        F: FnOnce(&Table<()>) -> Result<R, Error>,
+        U: Entry,
+        U::Metadata: for<'a> From<&'a V::AssocData>,
+        F: FnOnce(&Table<(), U>) -> Result<R, Error>,
     {
         let field = self.raw_table.get_field::<V>(tables_input, name)?;
+        let metadata = U::Metadata::from(&field.assoc_data);
 
         let fields = unsafe {
             self.raw_table
@@ -157,7 +192,7 @@ impl<K, E: Entry> Table<K, E> {
                     let owned = RawTable {
                         table: subtable.table,
                     };
-                    let table = Table::new_without_key(owned, true);
+                    let table = Table::new_without_key(owned, metadata, true);
                     func(&table)
                 })??
         };
@@ -209,15 +244,15 @@ impl<K, E: Entry> Table<K, E> {
         F: FnMut(&mut E) -> bool,
     {
         self.raw_table.iter_entries_mut(reader_vtable, move |raw| {
-            let mut entry = E::new(raw, self.raw_table.table);
+            let mut entry = E::new(raw, self.raw_table.table, self.metadata.clone());
             func(&mut entry)
         })
     }
 }
 
-impl<K> seal::Sealed for Table<K> {}
+impl<K, E, M> seal::Sealed for Table<K, E, M> {}
 
-impl<K> TableData for Table<K> {
+impl<K, E, M> TableData for Table<K, E, M> {
     const TYPE_ID: FieldTypeId = FieldTypeId::Table;
 
     fn to_data(&self) -> ss_plugin_state_data {
@@ -227,29 +262,32 @@ impl<K> TableData for Table<K> {
     }
 }
 
-impl<K> Value for Table<K>
+impl<K, E, M> Value for Table<K, E, M>
 where
     K: Key + 'static,
+    E: Entry<Metadata = M> + 'static,
+    M: TableMetadata + Clone + 'static,
 {
-    type AssocData = ();
-
+    type AssocData = M;
     type Value<'a> = Self
     where
         Self: 'a;
 
     unsafe fn from_data_with_assoc<'a>(
         data: &ss_plugin_state_data,
-        _assoc: &Self::AssocData,
+        assoc: &Self::AssocData,
     ) -> Self::Value<'a> {
         let table = unsafe { RawTable { table: data.table } };
-        Table::new(table, true)
+        Table::new(table, assoc.clone(), true)
     }
 
     unsafe fn get_assoc_from_raw_table(
-        _table: &RawTable,
-        _field: *mut ss_plugin_table_field_t,
-        _tables_input: &TablesInput,
+        table: &RawTable,
+        field: *mut ss_plugin_table_field_t,
+        tables_input: &TablesInput,
     ) -> Result<Self::AssocData, Error> {
-        Ok(())
+        table.with_subtable(field, tables_input, |subtable| {
+            M::new(subtable, tables_input)
+        })?
     }
 }

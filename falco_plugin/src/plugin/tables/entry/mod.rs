@@ -5,6 +5,7 @@ use crate::plugin::tables::vtable::{TableReader, TableWriter};
 use falco_plugin_api::ss_plugin_table_t;
 
 pub(in crate::plugin::tables) mod raw;
+use crate::plugin::tables::traits::TableMetadata;
 use raw::RawEntry;
 
 /// # An entry in a Falco plugin table
@@ -14,14 +15,25 @@ use raw::RawEntry;
 ///
 /// You can add methods to this type using the `#[derive(TableMetadata)]` macro.
 /// See the [module documentation](`crate::tables::import`) for details.
-pub struct Entry {
+pub struct Entry<M> {
     pub(in crate::plugin::tables) raw_entry: RawEntry,
     pub(in crate::plugin::tables) table: *mut ss_plugin_table_t,
+    pub(in crate::plugin::tables) metadata: M,
 }
 
-impl crate::plugin::tables::traits::Entry for Entry {
-    fn new(raw_entry: RawEntry, table: *mut ss_plugin_table_t) -> Self {
-        Self { raw_entry, table }
+impl<M: TableMetadata + Clone> crate::plugin::tables::traits::Entry for Entry<M> {
+    type Metadata = M;
+
+    fn new(raw_entry: RawEntry, table: *mut ss_plugin_table_t, metadata: Self::Metadata) -> Self {
+        Self {
+            raw_entry,
+            table,
+            metadata,
+        }
+    }
+
+    fn get_metadata(&self) -> &Self::Metadata {
+        &self.metadata
     }
 
     fn into_raw(self) -> RawEntry {
@@ -29,12 +41,12 @@ impl crate::plugin::tables::traits::Entry for Entry {
     }
 }
 
-impl Entry {
+impl<M> Entry<M> {
     /// Get a field value for this entry
     pub fn read_field<V: Value + ?Sized>(
         &self,
         reader: &TableReader,
-        field: &Field<V, Entry>,
+        field: &Field<V, Entry<M>>,
     ) -> Result<V::Value<'_>, anyhow::Error> {
         field.validator.check(self.table)?;
         unsafe {
@@ -49,7 +61,7 @@ impl Entry {
     pub fn write_field<V: Value<AssocData = ()> + ?Sized>(
         &self,
         writer: &TableWriter,
-        field: &Field<V, Entry>,
+        field: &Field<V, Entry<M>>,
         val: &V,
     ) -> Result<(), anyhow::Error> {
         field.validator.check(self.table)?;

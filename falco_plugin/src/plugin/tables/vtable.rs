@@ -3,7 +3,7 @@ use crate::plugin::error::last_error::LastError;
 use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, writer_vtable};
 use crate::plugin::tables::data::Key;
 use crate::plugin::tables::table::raw::RawTable;
-use crate::plugin::tables::traits::TableAccess;
+use crate::plugin::tables::traits::{TableAccess, TableMetadata};
 use crate::tables::ExportedTable;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_init_input, ss_plugin_owner_t, ss_plugin_rc, ss_plugin_state_data,
@@ -299,7 +299,8 @@ impl TablesInput {
         } else {
             // Safety: we pass the data directly from FFI, the framework would never lie to us, right?
             let table = RawTable { table };
-            Ok(T::new(table, false))
+            let metadata = T::Metadata::new(&table, self)?;
+            Ok(T::new(table, metadata, false))
         }
     }
 
