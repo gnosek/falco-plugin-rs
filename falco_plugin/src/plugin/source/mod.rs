@@ -1,12 +1,10 @@
-use std::ffi::{CStr, CString};
-
-use falco_event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
-use falco_event::events::Event;
-use falco_event::events::EventMetadata;
-
 use crate::plugin::base::Plugin;
 use crate::plugin::source::event_batch::EventBatchStorage;
 use crate::source::{EventBatch, EventInput};
+use falco_event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
+use falco_event::events::Event;
+use falco_event::events::EventMetadata;
+use std::ffi::{CStr, CString};
 
 pub mod event_batch;
 pub mod open_params;
