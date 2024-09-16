@@ -13,13 +13,13 @@ use falco_plugin::source::{
 use falco_plugin::tables::export;
 use falco_plugin::tables::import;
 use falco_plugin::tables::TablesInput;
-use falco_plugin::{anyhow, static_plugin, Entry, FailureReason};
+use falco_plugin::{anyhow, static_plugin, FailureReason};
 use std::ffi::{CStr, CString};
 use std::io::Write;
 
 type RemainingEntryTable = export::DynamicTable<u64, RemainingCounter>;
 
-#[derive(Entry, Default)]
+#[derive(export::Entry, Default)]
 struct RemainingCounter {
     remaining: u64,
 

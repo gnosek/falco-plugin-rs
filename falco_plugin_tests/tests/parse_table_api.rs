@@ -12,7 +12,7 @@ use falco_plugin::source::{
 use falco_plugin::tables::export;
 use falco_plugin::tables::import;
 use falco_plugin::tables::TablesInput;
-use falco_plugin::{anyhow, static_plugin, Entry, FailureReason};
+use falco_plugin::{anyhow, static_plugin, FailureReason};
 use std::ffi::{CStr, CString};
 use std::io::Write;
 use std::rc::Rc;
@@ -21,7 +21,7 @@ use std::rc::Rc;
 type RemainingEntryTable = export::DynamicTable<u64, RemainingCounter>;
 
 // TODO Entry vs TableMetadata is an ugly asymmetry
-#[derive(Entry, Default)]
+#[derive(export::Entry, Default)]
 struct RemainingCounter {
     remaining: u64,
 

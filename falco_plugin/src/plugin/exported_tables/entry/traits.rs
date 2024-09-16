@@ -6,7 +6,7 @@ use std::ffi::CStr;
 /// # A trait for structs that can be stored as table values
 ///
 /// For tables with dynamic fields only, it's easiest to use the [`crate::tables::export::DynamicFieldValues`] type
-/// directly, for other types, you'll probably want to use the [`crate::Entry`] derive macro.
+/// directly, for other types, you'll probably want to use the [`crate::tables::export::Entry`] derive macro.
 pub trait Entry: Default {
     /// A list of all static fields in this table
     const STATIC_FIELDS: &'static [(&'static CStr, FieldTypeId, bool)];
