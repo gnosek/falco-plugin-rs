@@ -21,6 +21,8 @@ pub trait AsyncEventPlugin: Plugin {
     ///
     /// This is optional--if NULL or an empty array, then async events produced by this plugin will
     /// be injected in the event stream of any data source.
+    ///
+    /// **Note**: one notable event source is called `syscall`
     const EVENT_SOURCES: &'static [&'static str];
 
     /// # Start asynchronous event generation
@@ -30,8 +32,10 @@ pub trait AsyncEventPlugin: Plugin {
     /// to inject events to the main event loop.
     ///
     /// **Note**: you must provide a mechanism to shut down the thread upon a call to [`AsyncEventPlugin::stop_async`].
-    /// This may involve e.g. a [`std::sync::atomic::AtomicBool`] flag that's set by [`AsyncEventPlugin::stop_async`]
-    /// and periodically checked by the thread.
+    /// This may involve e.g. a [`std::sync::Condvar`] that's checked via [`std::sync::Condvar::wait_timeout`]
+    /// by the thread.
+    ///
+    /// **Note**: one notable event source is called `syscall`
     fn start_async(&mut self, handler: AsyncHandler) -> Result<(), anyhow::Error>;
 
     /// # Stop asynchronous event generation
