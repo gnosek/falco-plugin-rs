@@ -64,6 +64,38 @@ impl<P: Plugin> PluginWrapper<P> {
 ///
 /// There are several constants you need to set to describe the metadata for your plugin, described
 /// below. All the constants are C-style strings: you can initialize the fields with `c"foo"`.
+///
+/// For example, a plugin that doesn't support any capabilities (which is
+/// useless and would fail to load, but is a necessary step to building an actually useful plugin)
+/// might look like:
+///
+/// ```
+/// use std::ffi::CStr;
+/// use falco_plugin::base::{Metric, Plugin};
+/// use falco_plugin::plugin;
+/// use falco_plugin::FailureReason;
+/// use falco_plugin::tables::TablesInput;
+///
+/// // define the type holding the plugin state
+/// struct NoOpPlugin;
+///
+/// // implement the base::Plugin trait
+/// impl Plugin for NoOpPlugin {
+///     const NAME: &'static CStr = c"sample-plugin-rs";
+///     const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+///     const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+///     const CONTACT: &'static CStr = c"you@example.com";
+///     type ConfigType = ();
+///
+///     fn new(input: Option<&TablesInput>, config: Self::ConfigType)
+///         -> Result<Self, anyhow::Error> {
+///         Ok(NoOpPlugin)
+///     }
+/// }
+///
+/// // generate the actual plugin wrapper code
+/// plugin!(NoOpPlugin);
+/// ```
 pub trait Plugin: Sized {
     /// the name of your plugin, must match the plugin name in the Falco config file
     const NAME: &'static CStr;

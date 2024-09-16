@@ -15,44 +15,7 @@ pub use crate::plugin::error::FailureReason;
 /// # The common foundation for all Falco plugins
 ///
 /// All plugins must implement the [`base::Plugin`] trait which specifies some basic metadata
-/// about the plugin. For example, a plugin that doesn't support any capabilities (which is
-/// useless and would fail to load, but is a necessary step to building an actually useful plugin)
-/// might look like:
-///
-/// ```
-/// use std::ffi::CStr;
-/// use falco_plugin::base::{Metric, Plugin};
-/// use falco_plugin::plugin;
-/// use falco_plugin::tables::TablesInput;
-///
-/// // define the type holding the plugin state
-/// struct NoOpPlugin;
-///
-/// // implement the base::Plugin trait
-/// impl Plugin for NoOpPlugin {
-///     const NAME: &'static CStr = c"sample-plugin-rs";
-///     const PLUGIN_VERSION: &'static CStr = c"0.0.1";
-///     const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
-///     const CONTACT: &'static CStr = c"you@example.com";
-///     type ConfigType = ();
-///
-///     fn new(input: Option<&TablesInput>, config: Self::ConfigType)
-///         -> Result<Self, anyhow::Error> {
-///         Ok(NoOpPlugin)
-///     }
-///
-///     fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
-///         Ok(())
-///     }
-///
-///     fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
-///         []
-///     }
-/// }
-///
-/// // generate the actual plugin wrapper code
-/// plugin!(NoOpPlugin);
-/// ```
+/// about the plugin.
 ///
 /// See the [`base::Plugin`] trait documentation for details.
 pub mod base {
