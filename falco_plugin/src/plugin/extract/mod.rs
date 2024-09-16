@@ -116,6 +116,10 @@ where
     ///
     /// If empty, the plugin will get invoked for all event types, otherwise it will only
     /// get invoked for event types from this list.
+    ///
+    /// **Note**: some notable event types are:
+    /// - [`EventType::ASYNCEVENT_E`], generated from async plugins
+    /// - [`EventType::PLUGINEVENT_E`], generated from source plugins
     const EVENT_TYPES: &'static [EventType];
     /// The set of event sources supported by this plugin
     ///
@@ -133,30 +137,44 @@ where
     ///
     /// If you do not need a context to share between extracting fields of the same event, use `()`
     /// as the type.
+    ///
+    /// Since the context is created using the [`Default`] trait, you may prefer to use an Option
+    /// wrapping the actual context type:
+    ///
+    /// ```ignore
+    /// impl ExtractPlugin for MyPlugin {
+    ///     type ExtractContext = Option<ActualContext>;
+    ///     // ...
+    /// }
+    ///
+    /// impl MyPlugin {
+    ///     fn make_context(&mut self, ...) -> ActualContext { /* ... */ }
+    ///
+    ///     fn extract_field_one(
+    ///         &mut self,
+    ///         req: ExtractContext<Self>,
+    ///         arg: ExtractRequestArg) -> ... {
+    ///         let context = req.context.get_or_insert_with(|| self.make_context(...));
+    ///
+    ///         // use context
+    ///     }
+    /// }
+    /// ```
     type ExtractContext: Default + 'static;
 
     /// The actual list of extractable fields
     ///
-    /// The required signature corresponds to a method like:
-    /// TODO: outdated
-    /// ```
+    /// An extraction method is a method with the following signature:
+    /// ```ignore
     /// use anyhow::Error;
-    /// use falco_plugin::extract::{EventInput, ExtractFieldRequestArg};
+    /// use falco_plugin::extract::{EventInput, ExtractFieldRequestArg, ExtractRequest};
     /// use falco_plugin::tables::TableReader;
     ///
-    /// # type R = u32;
-    /// # struct Plugin;
-    /// # impl Plugin {
     /// fn extract_sample(
     ///     &mut self,
-    ///     context: &mut (),
+    ///     req: ExtractRequest<Self>,
     ///     arg: ExtractFieldRequestArg,
-    ///     event: &EventInput,
-    ///     tables: &TableReader,
-    /// ) -> Result<R, Error> {
-    /// #   Ok(0)
-    /// }
-    /// # }
+    /// ) -> Result<R, Error>;
     ///
     /// ```
     /// where `R` is one of the following types or a [`Vec`] of them:
@@ -165,14 +183,73 @@ where
     /// - [`bool`]
     /// - [`CString`]
     ///
-    /// The `context` may be shared between all extractions for a particular event.
+    /// `req` is the extraction request ([`ExtractRequest`]), containing the context in which
+    /// the plugin is doing the work.
     ///
     /// `arg` is the actual argument passed along with the field (see [`ExtractFieldRequestArg`])
     ///
-    /// `event` is the event being processed (see [`EventInput`](`crate::extract::EventInput`))
+    /// To register extracted fields, add them to the [`ExtractPlugin::EXTRACT_FIELDS`] array, wrapped via [`crate::extract::field`]:
+    /// ```
+    /// use std::ffi::CStr;
+    /// use falco_plugin::event::events::types::EventType;
+    /// use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
+    /// use falco_plugin::anyhow::Error;
+    /// use falco_plugin::base::Plugin;
+    /// use falco_plugin::extract::{
+    ///     field,
+    ///     ExtractArgType,
+    ///     ExtractFieldInfo,
+    ///     ExtractFieldRequestArg,
+    ///     ExtractPlugin,
+    ///     ExtractRequest};
+    /// use falco_plugin::tables::TablesInput;
     ///
-    /// `tables` is an interface to access tables exposed from Falco core and other plugins (see
-    /// [`tables`](`crate::tables`))
+    /// struct SampleExtractPlugin;
+    ///
+    /// impl Plugin for SampleExtractPlugin {
+    ///      const NAME: &'static CStr = c"dummy";
+    ///      const PLUGIN_VERSION: &'static CStr = c"0.0.0";
+    ///      const DESCRIPTION: &'static CStr = c"test plugin";
+    ///      const CONTACT: &'static CStr = c"rust@localdomain.pl";
+    ///      type ConfigType = ();
+    ///
+    ///      fn new(_input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, Error> {
+    ///          Ok(Self)
+    ///      }
+    /// }
+    ///
+    /// impl SampleExtractPlugin {
+    ///     fn extract_sample(
+    ///         &mut self,
+    ///         _req: ExtractRequest<Self>,
+    ///         _arg: ExtractFieldRequestArg,
+    ///     ) -> Result<u64, Error> {
+    ///         Ok(10u64)
+    ///     }
+    ///
+    ///     fn extract_arg(
+    ///         &mut self,
+    ///         _req: ExtractRequest<Self>,
+    ///         arg: ExtractFieldRequestArg,
+    ///     ) -> Result<u64, Error> {
+    ///         match arg {
+    ///             ExtractFieldRequestArg::Int(i) => Ok(i),
+    ///             _ => anyhow::bail!("wanted an int argument, got {:?}", arg)
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// impl ExtractPlugin for SampleExtractPlugin {
+    ///     const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
+    ///     const EVENT_SOURCES: &'static [&'static str] = &["dummy"];
+    ///     type ExtractContext = ();
+    ///     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
+    ///         field("sample.always_10", &Self::extract_sample),
+    ///         field("sample.arg", &Self::extract_arg).with_arg(ExtractArgType::RequiredIndex),
+    ///     ];
+    /// }
+    ///
+    /// ```
     ///
     /// **Note**: while the returned field type is automatically determined based on the return type
     /// of the function, the argument type defaults to [`ExtractArgType::None`] and must be explicitly specified
@@ -183,6 +260,8 @@ where
     ///
     /// The default implementation inspects all fields from [`Self::EXTRACT_FIELDS`] and generates
     /// a JSON description in the format expected by the framework.
+    ///
+    /// You probably won't need to provide your own implementation.
     fn get_fields() -> &'static CStr {
         static FIELD_SCHEMA: Mutex<BTreeMap<TypeId, CString>> = Mutex::new(BTreeMap::new());
 
@@ -213,6 +292,8 @@ where
     ///
     /// The default implementation creates an empty context and loops over all extraction
     /// requests, invoking the relevant function to actually generate the field value.
+    ///
+    /// You probably won't need to provide your own implementation.
     fn extract_fields<'a>(
         &'a mut self,
         event_input: &EventInput,
