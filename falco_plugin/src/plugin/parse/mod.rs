@@ -1,9 +1,8 @@
 use crate::parse::{EventInput, ParseInput};
 use crate::plugin::base::Plugin;
-use crate::plugin::tables::data::Key;
-use crate::plugin::tables::entry::TableEntry;
-use crate::plugin::tables::table::TypedTable;
-use crate::plugin::tables::vtable::{TableReader, TableWriter};
+use crate::plugin::error::last_error::LastError;
+use crate::plugin::tables::vtable::TableReader;
+use crate::tables::TableWriter;
 use falco_event::events::types::EventType;
 
 #[doc(hidden)]
@@ -51,62 +50,25 @@ pub trait ParsePlugin: Plugin {
 ///
 /// See [`crate::tables::TablesInput`] for details
 pub trait EventParseInput {
-    /// # Look up an entry in `table` corresponding to `key`
-    ///
-    /// See [`crate::tables::TablesInput`] for details
-    fn table_entry<K: Key>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry>;
-
     /// # Build a TableReader from the parse input
-    ///
-    /// This is normally not necessary (since [`EventParseInput::table_entry`] is more powerful
-    /// as it also gives you write access) but might be useful for sharing code between
-    /// parse and extract plugins.
-    fn table_reader<K: Key>(&self) -> Option<TableReader>;
+    fn table_reader(&self) -> Option<TableReader>;
 
-    /// # Iterate over all entries in a table with mutable access
-    ///
-    /// The closure is called once for each table entry with a corresponding [`TableEntry`]
-    /// object as a parameter.
-    ///
-    /// The iteration stops when either all entries have been processed or the closure returns `false`.
-    fn iter_entries_mut<F, K>(&self, table: &TypedTable<K>, func: F) -> bool
-    where
-        F: FnMut(&mut TableEntry) -> bool,
-        K: Key;
+    /// # Build a TableWriter from the parse input
+    fn table_writer(&self) -> Option<TableWriter>;
 }
 
 impl EventParseInput for ParseInput {
-    fn table_entry<K: Key>(&self, table: &TypedTable<K>, key: &K) -> Option<TableEntry> {
+    fn table_reader(&self) -> Option<TableReader> {
         unsafe {
-            let reader = TableReader::try_from(self.table_reader_ext.as_ref()?).ok()?;
-            let writer = TableWriter::try_from(self.table_writer_ext.as_ref()?).ok()?;
-
-            Some(table.get_entry(reader, key)?.with_writer(writer))
+            let last_error = LastError::new(self.owner, self.get_owner_last_error?);
+            TableReader::try_from(self.table_reader_ext.as_ref()?, last_error).ok()
         }
     }
 
-    fn table_reader<K: Key>(&self) -> Option<TableReader> {
-        unsafe { TableReader::try_from(self.table_reader_ext.as_ref()?).ok() }
-    }
-
-    fn iter_entries_mut<F, K>(&self, table: &TypedTable<K>, func: F) -> bool
-    where
-        F: FnMut(&mut TableEntry) -> bool,
-        K: Key,
-    {
-        let rw = unsafe {
-            (|| -> Option<(TableReader, TableWriter)> {
-                let reader = TableReader::try_from(self.table_reader_ext.as_ref()?).ok()?;
-                let writer = TableWriter::try_from(self.table_writer_ext.as_ref()?).ok()?;
-
-                Some((reader, writer))
-            })()
-        };
-
-        let Some((reader_vtable, writer_vtable)) = rw else {
-            return false;
-        };
-
-        table.iter_entries_mut(&reader_vtable, &writer_vtable, func)
+    fn table_writer(&self) -> Option<TableWriter> {
+        unsafe {
+            let last_error = LastError::new(self.owner, self.get_owner_last_error?);
+            TableWriter::try_from(self.table_writer_ext.as_ref()?, last_error).ok()
+        }
     }
 }

@@ -89,13 +89,25 @@ impl ParsePlugin for DummyPlugin {
         let event = event.load_any()?;
         let tid = event.metadata.tid;
 
-        let mut entry = parse_input
-            .table_entry(&self.thread_table, &tid)
+        let reader = parse_input
+            .table_reader()
+            .ok_or_else(|| anyhow!("could not get table reader"))?;
+
+        let writer = parse_input
+            .table_writer()
+            .ok_or_else(|| anyhow!("could not get table writer"))?;
+
+        let entry = self
+            .thread_table
+            .get_entry(&reader, &tid)
             .ok_or_else(|| anyhow!("tid not found"))?;
 
-        let mut num = entry.read_field(&self.sample_field).unwrap_or_default();
+        let mut num = entry
+            .read_field(&reader, &self.sample_field)
+            .unwrap_or_default();
         num += 1;
-        entry.write_field(&self.sample_field, &num)?;
+
+        entry.write_field(&writer, &self.sample_field, &num)?;
         Ok(())
     }
 }

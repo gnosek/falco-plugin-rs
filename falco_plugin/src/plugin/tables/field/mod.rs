@@ -1,6 +1,6 @@
 use crate::plugin::tables::data::Value;
 use crate::plugin::tables::field::raw::RawField;
-use falco_plugin_api::ss_plugin_table_t;
+use crate::plugin::tables::runtime_table_validator::RuntimeTableValidator;
 
 pub(in crate::plugin::tables) mod raw;
 
@@ -13,11 +13,11 @@ pub(in crate::plugin::tables) mod raw;
 /// them from [`tables::TypedTable<K>::get_field`](`crate::tables::TypedTable::get_field`)
 pub struct Field<V: Value + ?Sized> {
     pub(in crate::plugin::tables) field: RawField<V>,
-    pub(in crate::plugin::tables) table: *mut ss_plugin_table_t, // used only for validation at call site
+    pub(in crate::plugin::tables) validator: RuntimeTableValidator,
 }
 
 impl<V: Value + ?Sized> Field<V> {
-    pub(crate) fn new(field: RawField<V>, table: *mut ss_plugin_table_t) -> Self {
-        Self { field, table }
+    pub(crate) fn new(field: RawField<V>, validator: RuntimeTableValidator) -> Self {
+        Self { field, validator }
     }
 }

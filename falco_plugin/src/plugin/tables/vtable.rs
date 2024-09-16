@@ -22,7 +22,10 @@ pub enum TableError {
     BadVtable(&'static str),
 }
 
-#[derive(Debug, Clone)]
+/// A vtable containing table read access methods
+///
+/// It's used as a token to prove you're allowed to read tables in a particular context
+#[derive(Debug)]
 pub struct TableReader {
     pub(in crate::plugin::tables) get_table_name:
         unsafe extern "C" fn(t: *mut ss_plugin_table_t) -> *const ::std::os::raw::c_char,
@@ -46,11 +49,14 @@ pub struct TableReader {
         it: ss_plugin_table_iterator_func_t,
         s: *mut ss_plugin_table_iterator_state_t,
     ) -> ss_plugin_bool,
+
+    pub(in crate::plugin::tables) last_error: LastError,
 }
 
 impl TableReader {
     pub(crate) fn try_from(
         reader_ext: &ss_plugin_table_reader_vtable_ext,
+        last_error: LastError,
     ) -> Result<Self, TableError> {
         Ok(TableReader {
             get_table_name: reader_ext
@@ -71,11 +77,15 @@ impl TableReader {
             iterate_entries: reader_ext
                 .iterate_entries
                 .ok_or(TableError::BadVtable("iterate_entries"))?,
+            last_error,
         })
     }
 }
 
-#[derive(Debug, Clone)]
+/// A vtable containing table write access methods
+///
+/// It's used as a token to prove you're allowed to write tables in a particular context
+#[derive(Debug)]
 pub struct TableWriter {
     pub(in crate::plugin::tables) write_entry_field: unsafe extern "C" fn(
         t: *mut ss_plugin_table_t,
@@ -83,16 +93,20 @@ pub struct TableWriter {
         f: *const ss_plugin_table_field_t,
         in_: *const ss_plugin_state_data,
     ) -> ss_plugin_rc,
+
+    pub(in crate::plugin::tables) last_error: LastError,
 }
 
 impl TableWriter {
     pub(crate) fn try_from(
         writer_ext: &ss_plugin_table_writer_vtable_ext,
+        last_error: LastError,
     ) -> Result<Self, TableError> {
         Ok(TableWriter {
             write_entry_field: writer_ext
                 .write_entry_field
                 .ok_or(TableError::BadVtable("write_entry_field"))?,
+            last_error,
         })
     }
 }
@@ -229,7 +243,7 @@ impl TablesInput {
         } else {
             // Safety: we pass the data directly from FFI, the framework would never lie to us, right?
             let table = RawTable { table };
-            Ok(unsafe { TypedTable::<K>::new(table, self.last_error.clone()) })
+            Ok(unsafe { TypedTable::<K>::new(table) })
         }
     }
 

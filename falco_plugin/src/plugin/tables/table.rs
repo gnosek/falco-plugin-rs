@@ -1,8 +1,8 @@
-use crate::plugin::error::last_error::LastError;
 use crate::plugin::tables::data::{Key, Value};
-use crate::plugin::tables::entry::{TableEntry, TableEntryReader};
+use crate::plugin::tables::entry::Entry;
+use crate::plugin::tables::runtime_table_validator::RuntimeTableValidator;
 use crate::plugin::tables::table::raw::RawTable;
-use crate::plugin::tables::vtable::{TableFields, TableReader, TableWriter};
+use crate::plugin::tables::vtable::{TableFields, TableReader};
 use crate::strings::from_ptr::FromPtrError;
 use crate::tables::{Field, TablesInput};
 use falco_plugin_api::ss_plugin_table_fieldinfo;
@@ -15,7 +15,6 @@ pub(in crate::plugin::tables) mod raw;
 /// # A handle for a specific table
 pub struct TypedTable<K: Key> {
     pub(in crate::plugin::tables) raw_table: RawTable,
-    pub(in crate::plugin::tables) last_error: LastError,
     pub(in crate::plugin::tables) key_type: PhantomData<K>,
 }
 
@@ -29,12 +28,15 @@ pub enum TableError {
 }
 
 impl<K: Key> TypedTable<K> {
-    pub(crate) unsafe fn new(raw_table: RawTable, last_error: LastError) -> TypedTable<K> {
+    pub(crate) unsafe fn new(raw_table: RawTable) -> TypedTable<K> {
         TypedTable {
             raw_table,
             key_type: PhantomData,
-            last_error,
         }
+    }
+
+    pub(in crate::plugin::tables) fn table_validator(&self) -> RuntimeTableValidator {
+        RuntimeTableValidator::new(self.raw_table.table)
     }
 
     /// # List the available fields
@@ -59,7 +61,7 @@ impl<K: Key> TypedTable<K> {
         name: &CStr,
     ) -> Result<Field<V>, anyhow::Error> {
         let field = self.raw_table.get_field(tables_input, name)?;
-        Ok(Field::new(field, self.raw_table.table))
+        Ok(Field::new(field, self.table_validator()))
     }
 
     /// # Add a table field
@@ -74,7 +76,7 @@ impl<K: Key> TypedTable<K> {
         name: &CStr,
     ) -> Result<Field<V>, anyhow::Error> {
         let field = self.raw_table.add_field(tables_input, name)?;
-        Ok(Field::new(field, self.raw_table.table))
+        Ok(Field::new(field, self.table_validator()))
     }
 
     /// # Get the table name
@@ -91,52 +93,25 @@ impl<K: Key> TypedTable<K> {
         Ok(self.raw_table.get_size(reader_vtable))
     }
 
-    pub(crate) fn get_entry(
-        &self,
-        reader_vtable: TableReader,
-        key: &K,
-    ) -> Option<TableEntryReader> {
-        let raw_entry = unsafe { self.raw_table.get_entry(&reader_vtable, key).ok()? };
-        Some(TableEntryReader {
-            table: self.raw_table.table,
-            reader_vtable,
-            entry: raw_entry,
-            last_error: self.last_error.clone(),
-        })
+    /// Look up an entry in `table` corresponding to `key`
+    pub fn get_entry(&self, reader_vtable: &TableReader, key: &K) -> Option<Entry> {
+        let raw_entry = unsafe { self.raw_table.get_entry(reader_vtable, key).ok()? };
+        Some(Entry::new(raw_entry, self.raw_table.table))
     }
 
-    pub(crate) fn iter_entries<F>(&self, reader_vtable: &TableReader, mut func: F) -> bool
+    /// # Iterate over all entries in a table with mutable access
+    ///
+    /// The closure is called once for each table entry with a corresponding entry
+    /// object as a parameter.
+    ///
+    /// The iteration stops when either all entries have been processed or the closure returns
+    /// false.
+    pub fn iter_entries_mut<F>(&self, reader_vtable: &TableReader, mut func: F) -> bool
     where
-        F: FnMut(&mut TableEntryReader) -> bool,
+        F: FnMut(&mut Entry) -> bool,
     {
         self.raw_table.iter_entries_mut(reader_vtable, move |raw| {
-            let mut entry = TableEntryReader {
-                table: self.raw_table.table,
-                entry: raw,
-                reader_vtable: reader_vtable.clone(),
-                last_error: self.last_error.clone(),
-            };
-            func(&mut entry)
-        })
-    }
-
-    pub(crate) fn iter_entries_mut<F>(
-        &self,
-        reader_vtable: &TableReader,
-        writer_vtable: &TableWriter,
-        mut func: F,
-    ) -> bool
-    where
-        F: FnMut(&mut TableEntry) -> bool,
-    {
-        self.raw_table.iter_entries_mut(reader_vtable, |raw| {
-            let mut entry = TableEntryReader {
-                table: self.raw_table.table,
-                entry: raw,
-                reader_vtable: reader_vtable.clone(),
-                last_error: self.last_error.clone(),
-            }
-            .with_writer(writer_vtable.clone());
+            let mut entry = Entry::new(raw, self.raw_table.table);
             func(&mut entry)
         })
     }

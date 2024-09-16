@@ -72,11 +72,12 @@ impl DummyPlugin {
         _arg: ExtractFieldRequestArg,
     ) -> Result<u64, Error> {
         let tid = event.event()?.metadata.tid;
-        let mut reader = table_reader
-            .table_entry(&self.thread_table, &tid)
+        let entry = self
+            .thread_table
+            .get_entry(table_reader, &tid)
             .ok_or_else(|| anyhow!("tid not found"))?;
 
-        reader.read_field(&self.sample_field)
+        entry.read_field(table_reader, &self.sample_field)
     }
 }
 

@@ -1,5 +1,6 @@
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
+use crate::plugin::error::last_error::LastError;
 use crate::plugin::event::EventInput;
 use crate::plugin::extract::ExtractPlugin;
 use crate::tables::TableReader;
@@ -95,7 +96,17 @@ pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
         let fields =
             std::slice::from_raw_parts_mut(extract_input.fields, extract_input.num_fields as usize);
 
-        let Some(table_reader) = TableReader::new(extract_input.table_reader_ext) else {
+        let Some(get_owner_last_error) = extract_input.get_owner_last_error else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+
+        let last_error = LastError::new(extract_input.owner, get_owner_last_error);
+
+        let Some(reader_ext) = extract_input.table_reader_ext.as_ref() else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+
+        let Ok(table_reader) = TableReader::try_from(reader_ext, last_error) else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 

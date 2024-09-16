@@ -11,7 +11,7 @@ use crate::extract::{EventInput, ExtractArgType};
 use crate::plugin::base::Plugin;
 use crate::plugin::extract::schema::ExtractFieldInfo;
 use crate::plugin::storage::FieldStorage;
-use crate::plugin::tables::table_reader::TableReader;
+use crate::tables::TableReader;
 
 pub mod fields;
 pub mod schema;
