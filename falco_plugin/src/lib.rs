@@ -595,31 +595,7 @@ pub mod tables {
 
         /// Mark a struct type as a table value
         ///
-        /// Tables in Falco plugins are effectively maps from a key
-        /// to a (possibly dynamic) struct of values.
-        ///
-        /// Fields tagged as `#[readonly]` won't be writable via the Falco API and fields tagged
-        /// as `#[hidden]` won't be exposed to the API at all. This is useful if you want to store data
-        /// that's incompatible with the Falco plugin API in your table.
-        ///
-        /// # Example
-        /// ```
-        /// use std::ffi::CString;
-        /// use falco_plugin::tables::export::Entry;
-        /// use falco_plugin::tables::export::Private;
-        /// use falco_plugin::tables::export::Public;
-        /// use falco_plugin::tables::export::Readonly;
-        ///
-        /// #[derive(Entry)]
-        /// struct ANewTable {
-        ///     int_field: Readonly<u64>,        // this field cannot be modified with the Falco API
-        ///     string_field: Public<CString>,
-        ///
-        ///     secret: Private<Vec<u8>>,        // this field is not visible via the Falco API
-        /// }
-        /// # // make this doctest a module, not a function: https://github.com/rust-lang/rust/issues/83583#issuecomment-1083300448
-        /// # fn main() {}
-        /// ```
+        /// See the [module documentation](`crate::tables::export`) for details.
         pub use falco_plugin_derive::Entry;
     }
 
