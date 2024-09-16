@@ -243,14 +243,14 @@ pub unsafe extern "C" fn plugin_event_to_string<T: SourcePlugin>(
     let plugin = plugin as *mut PluginWrapper<T>;
     unsafe {
         let Some(plugin) = plugin.as_mut() else {
-            return std::ptr::null_mut();
+            return std::ptr::null();
         };
         let Some(ref mut actual_plugin) = &mut plugin.plugin else {
-            return std::ptr::null_mut();
+            return std::ptr::null();
         };
 
         let Some(event) = event.as_ref() else {
-            return std::ptr::null_mut();
+            return std::ptr::null();
         };
         let event = EventInput(*event);
 
