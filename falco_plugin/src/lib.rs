@@ -135,18 +135,13 @@ pub mod extract {
 /// trait and invoke the [`parse_plugin`] macro, for example:
 ///
 /// ```
-/// use std::ffi::{CStr, CString};
-/// use std::sync::Arc;
-/// use std::sync::atomic::{AtomicBool, Ordering};
-/// use std::thread::JoinHandle;
-/// use anyhow::Error;
-/// use falco_event::{ };
-/// use falco_event::events::types::EventType;
-/// use falco_plugin::base::{Metric, Plugin};
+///# use std::ffi::CStr;
+/// use falco_plugin::anyhow::Error;
+/// use falco_plugin::event::events::types::EventType;
+/// use falco_plugin::base::Plugin;
 /// use falco_plugin::{parse_plugin, plugin};
 /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
-/// use falco_plugin::tables::TablesInput;
-/// use falco_plugin_api::{ss_plugin_event_input, ss_plugin_event_parse_input};
+///# use falco_plugin::tables::TablesInput;
 ///
 /// struct MyParsePlugin;
 ///
@@ -159,7 +154,7 @@ pub mod extract {
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
-/// #        -> Result<Self, anyhow::Error> {
+/// #        -> Result<Self, Error> {
 /// #        Ok(MyParsePlugin)
 /// #    }
 /// }
@@ -169,7 +164,7 @@ pub mod extract {
 ///     const EVENT_SOURCES: &'static [&'static str] = &[]; // ... from all event sources
 ///
 ///     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput)
-///         -> anyhow::Result<()> {
+///         -> Result<(), Error> {
 ///         let event = event.event()?;
 ///         let event = event.load_any()?;
 ///
@@ -211,12 +206,12 @@ pub mod parse {
 /// use std::sync::Arc;
 /// use std::sync::atomic::{AtomicBool, Ordering};
 /// use std::thread::JoinHandle;
-/// use anyhow::Error;
-/// use falco_event::events::Event;
-/// use falco_event::events::EventMetadata;
-/// use falco_plugin::base::{Metric, Plugin};
+/// use falco_plugin::anyhow::Error;
+/// use falco_plugin::event::events::Event;
+/// use falco_plugin::event::events::EventMetadata;
+/// use falco_plugin::base::Plugin;
 /// use falco_plugin::{async_event_plugin, plugin};
-/// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};///
+/// use falco_plugin::async_event::{AsyncEvent, AsyncEventPlugin, AsyncHandler};
 /// use falco_plugin::tables::TablesInput;
 ///
 /// struct MyAsyncPlugin {
@@ -233,7 +228,7 @@ pub mod parse {
 /// #    type ConfigType = ();
 /// #
 /// #    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
-/// #        -> Result<Self, anyhow::Error> {
+/// #        -> Result<Self, Error> {
 /// #        Ok(MyAsyncPlugin {
 /// #            stop_request: Arc::new(Default::default()),
 /// #            thread: None,
@@ -317,9 +312,6 @@ pub mod async_event {
 ///
 /// ```
 /// use std::ffi::{CStr, CString};
-/// use std::sync::Arc;
-/// use std::sync::atomic::{AtomicBool, Ordering};
-/// use std::thread::JoinHandle;
 /// use anyhow::Error;
 /// use falco_event::events::Event;
 /// use falco_plugin::base::{Metric, Plugin};
