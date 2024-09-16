@@ -7,9 +7,9 @@ use falco_plugin::tables::export::{DynamicFieldValues, DynamicTable};
 use falco_plugin::tables::import::{Field, RuntimeEntry, Table};
 use falco_plugin::tables::TablesInput;
 use falco_plugin::{parse_plugin, plugin};
-use falco_plugin_derive::TableValues;
+use falco_plugin_derive::Entry;
 
-#[derive(TableValues, Default)]
+#[derive(Entry, Default)]
 struct AnotherTable {
     #[readonly]
     int_field: u64,
@@ -23,7 +23,7 @@ struct AnotherTable {
     dynamic_fields: DynamicFieldValues,
 }
 
-#[derive(TableValues, Default)]
+#[derive(Entry, Default)]
 #[static_only]
 struct TableWithStaticFieldsOnly {
     #[readonly]

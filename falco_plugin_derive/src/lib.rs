@@ -14,8 +14,8 @@ fn ident_to_cstr(ident: &Ident) -> syn::LitCStr {
     )
 }
 
-#[proc_macro_derive(TableValues, attributes(static_only, dynamic, readonly, hidden))]
-pub fn derive_table_values(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(Entry, attributes(static_only, dynamic, readonly, hidden))]
+pub fn derive_entry(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let static_only = syn::Ident::new("static_only", input.span());
     let hidden = syn::Ident::new("hidden", input.span());
@@ -31,7 +31,7 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
         return TokenStream::from(
             syn::Error::new(
                 input.ident.span(),
-                "Only structs with named fields can derive `TableValues`",
+                "Only structs with named fields can derive `Entry`",
             )
             .to_compile_error(),
         );
@@ -42,7 +42,7 @@ pub fn derive_table_values(input: TokenStream) -> TokenStream {
         return TokenStream::from(
             syn::Error::new(
                 input.ident.span(),
-                "Only structs with named fields can derive `TableValues`",
+                "Only structs with named fields can derive `Entry`",
             )
             .to_compile_error(),
         );

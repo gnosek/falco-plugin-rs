@@ -4,7 +4,7 @@ use crate::plugin::exported_tables::wrappers::{fields_vtable, reader_vtable, wri
 use crate::plugin::tables::data::Key;
 use crate::plugin::tables::table::raw::RawTable;
 use crate::plugin::tables::traits::{TableAccess, TableMetadata};
-use crate::tables::export::{DynamicTable, TableValues};
+use crate::tables::export::{DynamicTable, Entry};
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_init_input, ss_plugin_owner_t, ss_plugin_rc, ss_plugin_state_data,
     ss_plugin_state_type, ss_plugin_table_entry_t, ss_plugin_table_field_t,
@@ -305,16 +305,16 @@ impl TablesInput {
     }
 
     /// # Export a table to the Falco plugin API
-    pub fn add_table<K: Key + Ord + Clone, V: TableValues>(
+    pub fn add_table<K: Key + Ord + Clone, E: Entry>(
         &self,
-        table: DynamicTable<K, V>,
-    ) -> Result<&'static mut DynamicTable<K, V>, anyhow::Error> {
-        let mut reader_vtable_ext = reader_vtable::<K, V>();
-        let mut writer_vtable_ext = writer_vtable::<K, V>();
-        let mut fields_vtable_ext = fields_vtable::<K, V>();
+        table: DynamicTable<K, E>,
+    ) -> Result<&'static mut DynamicTable<K, E>, anyhow::Error> {
+        let mut reader_vtable_ext = reader_vtable::<K, E>();
+        let mut writer_vtable_ext = writer_vtable::<K, E>();
+        let mut fields_vtable_ext = fields_vtable::<K, E>();
 
         let mut table = Box::new(table);
-        let table_ptr = table.as_mut() as *mut DynamicTable<K, V>;
+        let table_ptr = table.as_mut() as *mut DynamicTable<K, E>;
 
         // Note: we lend the ss_plugin_table_input to the FFI api and do not need
         // to hold on to it (everything is copied out), but the name field is copied

@@ -1,4 +1,4 @@
-use crate::plugin::exported_tables::entry::traits::TableValues;
+use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::tables::data::FieldTypeId;
 use crate::tables::export::{DynamicFieldValue, FieldValue};
 use falco_plugin_api::ss_plugin_state_data;
@@ -8,7 +8,7 @@ use std::ffi::CStr;
 /// A table value type that only has dynamic fields
 pub type DynamicFieldValues = BTreeMap<usize, DynamicFieldValue>;
 
-impl TableValues for DynamicFieldValues {
+impl Entry for DynamicFieldValues {
     const STATIC_FIELDS: &'static [(&'static CStr, FieldTypeId, bool)] = &[];
     const HAS_DYNAMIC_FIELDS: bool = true;
 

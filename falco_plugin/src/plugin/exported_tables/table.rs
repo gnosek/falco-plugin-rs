@@ -1,6 +1,6 @@
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::tables::export::{
-    DynamicField, DynamicFieldValue, DynamicFieldValues, FieldValue, TableValues,
+    DynamicField, DynamicFieldValue, DynamicFieldValues, Entry, FieldValue,
 };
 use crate::FailureReason;
 use falco_plugin_api::{
@@ -18,15 +18,15 @@ use std::rc::Rc;
 /// [`tables::TablesInput::add_table`](`crate::tables::TablesInput::add_table`)
 ///
 /// To create a table that includes static fields, pass a type that implements
-/// [`TableValues`] as the second generic parameter.
-pub struct DynamicTable<K: Key + Ord + Clone, V: TableValues = DynamicFieldValues> {
+/// [`Entry`] as the second generic parameter.
+pub struct DynamicTable<K: Key + Ord + Clone, E: Entry = DynamicFieldValues> {
     name: &'static CStr,
     fields: BTreeMap<CString, Rc<DynamicField>>,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,
-    data: BTreeMap<K, Rc<RefCell<V>>>,
+    data: BTreeMap<K, Rc<RefCell<E>>>,
 }
 
-impl<K: Key + Ord + Clone, V: TableValues> DynamicTable<K, V> {
+impl<K: Key + Ord + Clone, E: Entry> DynamicTable<K, E> {
     /// Create a new table
     pub fn new(name: &'static CStr) -> Self {
         let mut table = Self {
@@ -36,7 +36,7 @@ impl<K: Key + Ord + Clone, V: TableValues> DynamicTable<K, V> {
             data: BTreeMap::new(),
         };
 
-        for (name, field_type, read_only) in V::STATIC_FIELDS {
+        for (name, field_type, read_only) in E::STATIC_FIELDS {
             table.add_field(name, *field_type, *read_only);
         }
 
@@ -54,14 +54,14 @@ impl<K: Key + Ord + Clone, V: TableValues> DynamicTable<K, V> {
     }
 
     /// Get an entry corresponding to a particular key.
-    pub fn lookup(&self, key: &K) -> Option<Rc<RefCell<V>>> {
+    pub fn lookup(&self, key: &K) -> Option<Rc<RefCell<E>>> {
         self.data.get(key).cloned()
     }
 
     /// Get the value for a field in an entry.
     pub fn get_field_value(
         &self,
-        entry: &Rc<RefCell<V>>,
+        entry: &Rc<RefCell<E>>,
         field: &Rc<DynamicField>,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
@@ -76,7 +76,7 @@ impl<K: Key + Ord + Clone, V: TableValues> DynamicTable<K, V> {
     // TODO(upstream) the closure cannot store away the entry but we could use explicit docs
     pub fn iterate_entries<F>(&mut self, mut func: F) -> bool
     where
-        F: FnMut(&mut Rc<RefCell<V>>) -> bool,
+        F: FnMut(&mut Rc<RefCell<E>>) -> bool,
     {
         for value in &mut self.data.values_mut() {
             if !func(value) {
@@ -93,19 +93,19 @@ impl<K: Key + Ord + Clone, V: TableValues> DynamicTable<K, V> {
     }
 
     /// Erase an entry by key.
-    pub fn erase(&mut self, key: &K) -> Option<Rc<RefCell<V>>> {
+    pub fn erase(&mut self, key: &K) -> Option<Rc<RefCell<E>>> {
         self.data.remove(key)
     }
 
     /// Create a new table entry.
     ///
     /// This is a detached entry that can be later inserted into the table using [`DynamicTable::add`].
-    pub fn create_entry() -> Rc<RefCell<V>> {
-        Rc::new(RefCell::new(V::default()))
+    pub fn create_entry() -> Rc<RefCell<E>> {
+        Rc::new(RefCell::new(E::default()))
     }
 
     /// Attach an entry to a table key
-    pub fn add(&mut self, key: &K, entry: Rc<RefCell<V>>) -> Option<Rc<RefCell<V>>> {
+    pub fn add(&mut self, key: &K, entry: Rc<RefCell<E>>) -> Option<Rc<RefCell<E>>> {
         // note: different semantics from data.insert: we return the *new* entry
         self.data.insert(key.clone(), entry);
         self.lookup(key)
@@ -114,7 +114,7 @@ impl<K: Key + Ord + Clone, V: TableValues> DynamicTable<K, V> {
     /// Write a value to a field of an entry
     pub fn write(
         &self,
-        entry: &mut Rc<RefCell<V>>,
+        entry: &mut Rc<RefCell<E>>,
         field: &Rc<DynamicField>,
         value: &ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
@@ -165,7 +165,7 @@ impl<K: Key + Ord + Clone, V: TableValues> DynamicTable<K, V> {
             return None;
         }
 
-        if !V::HAS_DYNAMIC_FIELDS {
+        if !E::HAS_DYNAMIC_FIELDS {
             return None;
         }
 

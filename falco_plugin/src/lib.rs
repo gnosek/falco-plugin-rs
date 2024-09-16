@@ -23,8 +23,8 @@ pub use serde;
 /// with a `#[static_only]` attribute (to prevent accidental omission of the dynamic field values,
 /// which would only get caught at runtime, possibly much later).
 ///
-/// Alternatively, it can mark a single field as `#[dynamic]`. That field will generally be
-/// of type [`tables::export::DynamicFieldValues`].
+/// Alternatively, it can mark a single field as `#[dynamic]`. That field needs to implement
+/// [`plugin::exported_tables::entry::traits::Entry`] and it will generally be of type [`plugin::exported_tables::entry::dynamic::DynamicFieldValues`].
 ///
 /// Fields tagged as `#[readonly]` won't be writable via the Falco API and fields tagged
 /// as `#[hidden]` won't be exposed to the API at all. This is useful if you want to store data
@@ -34,9 +34,9 @@ pub use serde;
 /// ```
 /// use std::ffi::CString;
 /// use falco_plugin::tables::export::DynamicFieldValues;
-/// use falco_plugin::TableValues;
+/// use falco_plugin::Entry;
 ///
-/// #[derive(TableValues, Default)]     // all table structs must implement Default
+/// #[derive(Entry, Default)]     // all table structs must implement Default
 /// #[static_only]                      // no dynamic fields in this one
 /// struct TableWithStaticFieldsOnly {
 ///     #[readonly]
@@ -47,7 +47,7 @@ pub use serde;
 ///     secret: Vec<u8>,                // this field is not visible via the Falco API
 /// }
 ///
-/// #[derive(TableValues, Default)]
+/// #[derive(Entry, Default)]
 /// struct AnotherTable {
 ///     #[readonly]
 ///     int_field: u64,                 // this field cannot be modified with the Falco API
@@ -60,7 +60,7 @@ pub use serde;
 ///     dynamic_fields: DynamicFieldValues, // dynamically added fields have their values here
 /// }
 /// ```
-pub use falco_plugin_derive::TableValues;
+pub use falco_plugin_derive::Entry;
 
 
 pub use crate::plugin::error::FailureReason;
@@ -625,7 +625,7 @@ pub mod tables {
 
     /// Exporting tables to other plugins
     ///
-    /// Exporting a table to other plugins is done using the [`crate::TableValues`] derive macro.
+    /// Exporting a table to other plugins is done using the [`crate::Entry`] derive macro.
     /// It lets you use a struct type as a parameter to [`export::DynamicTable`]. You can then create
     /// a new table using [`TablesInput::add_table`].
     ///
@@ -636,10 +636,10 @@ pub mod tables {
     /// use falco_plugin::base::Plugin;
     /// use falco_plugin::tables::TablesInput;
     /// use falco_plugin::tables::export;
-    /// use falco_plugin::TableValues;
+    /// use falco_plugin::Entry;
     ///
     /// // define the struct representing each table entry
-    /// #[derive(TableValues, Default)]
+    /// #[derive(Entry, Default)]
     /// struct ExportedTable {
     ///     #[readonly]
     ///     int_field: u64,        // do not allow writes via the plugin API
@@ -685,7 +685,7 @@ pub mod tables {
     /// ```
     pub mod export {
         pub use crate::plugin::exported_tables::entry::dynamic::DynamicFieldValues;
-        pub use crate::plugin::exported_tables::entry::traits::TableValues;
+        pub use crate::plugin::exported_tables::entry::traits::Entry;
         pub use crate::plugin::exported_tables::field_descriptor::DynamicField;
         pub use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
         pub use crate::plugin::exported_tables::field_value::traits::FieldValue;
