@@ -1,16 +1,16 @@
 use crate::plugin::exported_tables::entry::dynamic::DynamicEntry;
+use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
-use crate::plugin::exported_tables::field_descriptor::{FieldId, FieldRef};
+use crate::plugin::exported_tables::field_descriptor::FieldRef;
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
+use crate::plugin::exported_tables::metadata::Metadata;
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::FailureReason;
-use falco_plugin_api::{
-    ss_plugin_bool, ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo,
-};
+use falco_plugin_api::{ss_plugin_state_data, ss_plugin_table_fieldinfo};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::rc::Rc;
 
 // TODO(sdk) maybe use tinyvec (here, for storage and for extractions)
@@ -21,28 +21,32 @@ use std::rc::Rc;
 ///
 /// To create a table that includes static fields, pass a type that implements
 /// [`Entry`] as the second generic parameter.
-pub struct Table<K: Key + Ord + Clone, E: Entry = DynamicEntry> {
+pub struct Table<K, E = DynamicEntry>
+where
+    K: Key + Ord + Clone,
+    E: Entry,
+    E::Metadata: TableMetadata,
+{
     name: &'static CStr,
-    fields: BTreeMap<CString, Rc<FieldDescriptor>>,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,
+    metadata: Rc<RefCell<E::Metadata>>,
     data: BTreeMap<K, Rc<RefCell<E>>>,
 }
 
-impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
+impl<K, E> Table<K, E>
+where
+    K: Key + Ord + Clone,
+    E: Entry,
+    E::Metadata: TableMetadata,
+{
     /// Create a new table
-    pub fn new(name: &'static CStr) -> Self {
-        let mut table = Self {
+    pub fn new(name: &'static CStr) -> Result<Self, anyhow::Error> {
+        Ok(Self {
             name,
-            fields: Default::default(),
             field_descriptors: vec![],
+            metadata: Rc::new(RefCell::new(E::Metadata::new()?)),
             data: BTreeMap::new(),
-        };
-
-        for (name, field_type, read_only) in E::STATIC_FIELDS {
-            table.add_field(name, *field_type, *read_only);
-        }
-
-        table
+        })
     }
 
     /// Return the table name.
@@ -102,8 +106,11 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
     /// Create a new table entry.
     ///
     /// This is a detached entry that can be later inserted into the table using [`Table::insert`].
-    pub fn create_entry() -> Rc<RefCell<E>> {
-        Rc::new(RefCell::new(E::default()))
+    pub fn create_entry(&self) -> Result<Rc<RefCell<E>>, anyhow::Error> {
+        Ok(Rc::new(RefCell::new(E::new_with_metadata(
+            self.name,
+            &self.metadata.borrow(),
+        )?)))
     }
 
     /// Attach an entry to a table key
@@ -139,6 +146,8 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
 
     /// Return a list of fields as a slice of raw FFI objects
     pub fn list_fields(&mut self) -> &[ss_plugin_table_fieldinfo] {
+        self.field_descriptors.clear();
+        self.field_descriptors.extend(self.metadata.list_fields());
         self.field_descriptors.as_slice()
     }
 
@@ -146,11 +155,9 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
     ///
     /// The requested `field_type` must match the actual type of the field
     pub fn get_field(&self, name: &CStr, field_type: FieldTypeId) -> Option<FieldRef> {
-        let field = self.fields.get(name)?;
-        if field.type_id != field_type {
-            return None;
-        }
-        Some(FieldRef::Dynamic(Rc::clone(field)))
+        self.metadata
+            .get_field(name)
+            .filter(|f| f.as_ref().type_id == field_type)
     }
 
     /// Add a new field to the table
@@ -160,33 +167,6 @@ impl<K: Key + Ord + Clone, E: Entry> Table<K, E> {
         field_type: FieldTypeId,
         read_only: bool,
     ) -> Option<FieldRef> {
-        if let Some(existing_field) = self.fields.get(name) {
-            if existing_field.type_id == field_type && existing_field.read_only == read_only {
-                return Some(FieldRef::Dynamic(Rc::clone(existing_field)));
-            }
-            return None;
-        }
-
-        if !E::HAS_DYNAMIC_FIELDS {
-            return None;
-        }
-
-        let index = self.field_descriptors.len();
-        let name = name.to_owned();
-
-        let field = Rc::new(FieldDescriptor {
-            index: FieldId::Dynamic(index),
-            type_id: field_type,
-            read_only,
-        });
-        self.fields.insert(name.clone(), Rc::clone(&field));
-
-        self.field_descriptors.push(ss_plugin_table_fieldinfo {
-            name: name.into_raw(),
-            field_type: field_type as ss_plugin_state_type,
-            read_only: read_only as ss_plugin_bool,
-        });
-
-        Some(FieldRef::Dynamic(field))
+        self.metadata.add_field(name, field_type, read_only)
     }
 }

@@ -14,6 +14,12 @@ fn ident_to_cstr(ident: &Ident) -> syn::LitCStr {
     )
 }
 
+fn ident_to_bstr(ident: &Ident) -> syn::LitByteStr {
+    let mut name = ident.to_string();
+    name.push('\0');
+    syn::LitByteStr::new(name.as_bytes(), ident.span())
+}
+
 #[proc_macro_derive(Entry, attributes(static_only, dynamic, readonly, hidden))]
 pub fn derive_entry(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -78,9 +84,15 @@ pub fn derive_entry(input: TokenStream) -> TokenStream {
     let static_fields = visible_static_fields.clone().enumerate().map(|(i, f)| {
         let readonly = f.attrs.iter().any(|a| a.meta.path().is_ident(&readonly));
         let field_name = f.ident.as_ref().unwrap();
-        let field_name_str = ident_to_cstr(field_name);
+        let field_name_bstr = ident_to_bstr(field_name);
+        let tag = format!("{}.{}\0", input.ident, field_name);
+        let field_tag = syn::LitCStr::new(
+            std::ffi::CStr::from_bytes_with_nul(tag.as_bytes()).unwrap(),
+            field_name.span(),
+        );
+
         let ty = &f.ty;
-        quote!( [#i] #field_name_str as #field_name: #ty; readonly = #readonly )
+        quote!( [#i] #field_tag (#field_name_bstr) as #field_name: #ty; readonly = #readonly )
     });
 
     quote!(::falco_plugin::impl_export_table!(

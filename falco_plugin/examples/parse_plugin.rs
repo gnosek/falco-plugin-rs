@@ -62,9 +62,9 @@ impl Plugin for DummyPlugin {
             input.get_table(c"threads")?;
         let sample_field = thread_table.add_field::<u64>(input, c"sample")?;
 
-        let new_table = input.add_table(Table::new(c"sample"))?;
-        let another_table = input.add_table(Table::new(c"another"))?;
-        let table_with_static_fields_only = input.add_table(Table::new(c"static_fields_only"))?;
+        let new_table = input.add_table(Table::new(c"sample")?)?;
+        let another_table = input.add_table(Table::new(c"another")?)?;
+        let table_with_static_fields_only = input.add_table(Table::new(c"static_fields_only")?)?;
 
         Ok(DummyPlugin {
             thread_table,

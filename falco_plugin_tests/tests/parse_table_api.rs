@@ -58,7 +58,7 @@ impl Plugin for DummyPlugin {
         let input = input.ok_or_else(|| anyhow::anyhow!("did not get table input"))?;
 
         // add the table (must hold the resulting Box to keep the table alive)
-        let remaining_table = input.add_table(RemainingEntryTable::new(c"remaining"))?;
+        let remaining_table = input.add_table(RemainingEntryTable::new(c"remaining")?)?;
         let remaining_table_import = input.get_table(c"remaining")?;
 
         Ok(Self {

@@ -1,4 +1,5 @@
 use crate::plugin::error::ffi_result::FfiResult;
+use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
 use crate::plugin::exported_tables::table::Table;
@@ -20,6 +21,7 @@ unsafe extern "C" fn get_table_name<K, E>(table: *mut ss_plugin_table_t) -> *con
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     unsafe {
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
@@ -34,6 +36,7 @@ unsafe extern "C" fn get_table_size<K, E>(table: *mut ss_plugin_table_t) -> u64
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     unsafe {
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
@@ -52,6 +55,7 @@ unsafe extern "C" fn get_table_entry<K, E>(
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     unsafe {
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
@@ -79,6 +83,7 @@ unsafe extern "C" fn read_entry_field<K, E>(
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     unsafe {
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
@@ -121,6 +126,7 @@ unsafe extern "C" fn iterate_entries<K, E>(
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     let Some(func) = func else {
         return 0;
@@ -144,6 +150,7 @@ unsafe extern "C" fn clear_table<K, E>(table: *mut ss_plugin_table_t) -> ss_plug
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     unsafe {
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
@@ -163,6 +170,7 @@ unsafe extern "C" fn erase_table_entry<K, E>(
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     unsafe {
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
@@ -178,14 +186,24 @@ where
 }
 
 // SAFETY: `table` must be a valid pointer to Table<K,E>
-extern "C" fn create_table_entry<K, E>(
-    _table: *mut ss_plugin_table_t,
+unsafe extern "C" fn create_table_entry<K, E>(
+    table: *mut ss_plugin_table_t,
 ) -> *mut ss_plugin_table_entry_t
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
-    Box::into_raw(Box::new(Table::<K, E>::create_entry())).cast()
+    unsafe {
+        let Some(table) = (table as *mut Table<K, E>).as_mut() else {
+            return std::ptr::null_mut();
+        };
+
+        match table.create_entry() {
+            Ok(e) => Box::into_raw(Box::new(e)).cast(),
+            Err(_) => std::ptr::null_mut(), // todo report error
+        }
+    }
 }
 
 // TODO(spec) what if the entry already exists?
@@ -198,6 +216,7 @@ unsafe extern "C" fn add_table_entry<K, E>(
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     if entry.is_null() {
         return std::ptr::null_mut();
@@ -230,6 +249,7 @@ unsafe extern "C" fn write_entry_field<K, E>(
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     unsafe {
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
@@ -256,6 +276,7 @@ unsafe extern "C" fn list_table_fields<K, E>(
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     unsafe {
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
@@ -276,6 +297,7 @@ unsafe extern "C" fn get_table_field<K, E>(
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     unsafe {
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
@@ -305,6 +327,7 @@ unsafe extern "C" fn add_table_field<K, E>(
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     unsafe {
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
@@ -329,6 +352,7 @@ pub(crate) fn reader_vtable<K, E>() -> ss_plugin_table_reader_vtable_ext
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     ss_plugin_table_reader_vtable_ext {
         get_table_name: Some(get_table_name::<K, E>),
@@ -344,6 +368,7 @@ pub(crate) fn writer_vtable<K, E>() -> ss_plugin_table_writer_vtable_ext
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     ss_plugin_table_writer_vtable_ext {
         clear_table: Some(clear_table::<K, E>),
@@ -359,6 +384,7 @@ pub(crate) fn fields_vtable<K, E>() -> ss_plugin_table_fields_vtable_ext
 where
     K: Key + Ord + Clone,
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     ss_plugin_table_fields_vtable_ext {
         list_table_fields: Some(list_table_fields::<K, E>),

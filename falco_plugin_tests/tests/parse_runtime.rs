@@ -43,7 +43,7 @@ impl Plugin for DummyPlugin {
     fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, Error> {
         let input = input.ok_or_else(|| anyhow::anyhow!("did not get table input"))?;
 
-        let remaining_table = input.add_table(RemainingEntryTable::new(c"remaining"))?;
+        let remaining_table = input.add_table(RemainingEntryTable::new(c"remaining")?)?;
 
         Ok(Self {
             num_batches: 0,
@@ -128,7 +128,7 @@ impl ParsePlugin for DummyPlugin {
         let remaining: u64 = first_char.parse()?;
 
         // using our table directly, bypassing the table api
-        let entry = RemainingEntryTable::create_entry();
+        let entry = self.remaining_table.create_entry()?;
         entry.borrow_mut().remaining = remaining;
         self.remaining_table.insert(&event_num, entry);
 

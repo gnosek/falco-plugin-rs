@@ -6,6 +6,7 @@
 pub use anyhow;
 pub use falco_event as event;
 pub use falco_plugin_api as api;
+pub use phf;
 pub use schemars;
 pub use serde;
 
@@ -622,7 +623,7 @@ pub mod tables {
     ///         // create a new table called "exported"
     ///         //
     ///         // The concrete type is inferred from the field type the result is stored in.
-    ///         let exported_table = input.add_table(export::Table::new(c"exported"))?;
+    ///         let exported_table = input.add_table(export::Table::new(c"exported")?)?;
     ///
     ///         Ok(MyPlugin { exported_table })
     ///     }
@@ -992,11 +993,18 @@ pub mod internals {
         pub use crate::plugin::tables::RawTable;
 
         pub mod export {
+            pub use crate::plugin::exported_tables::entry::table_metadata::dynamic::DynamicFieldsOnly;
+            pub use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
             pub use crate::plugin::exported_tables::entry::traits::Entry;
+            pub use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
             pub use crate::plugin::exported_tables::field_descriptor::FieldId;
+            pub use crate::plugin::exported_tables::field_descriptor::FieldRef;
             pub use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
             pub use crate::plugin::exported_tables::field_value::traits::FieldValue;
             pub use crate::plugin::exported_tables::field_value::traits::StaticField;
+            pub use crate::plugin::exported_tables::metadata::HasMetadata;
+            pub use crate::plugin::exported_tables::metadata::Metadata;
+
             pub use crate::plugin::tables::data::FieldTypeId;
         }
     }
