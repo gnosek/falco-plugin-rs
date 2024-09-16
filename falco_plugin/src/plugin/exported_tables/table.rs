@@ -15,14 +15,21 @@ use std::collections::BTreeMap;
 use std::ffi::CStr;
 use std::rc::Rc;
 
-// TODO review
-/// # A table with dynamic fields only by default
+/// # A table exported to other plugins
 ///
 /// An instance of this type can be exposed to other plugins via
 /// [`tables::TablesInput::add_table`](`crate::tables::TablesInput::add_table`)
 ///
-/// To create a table that includes static fields, pass a type that implements
-/// [`Entry`] as the second generic parameter.
+/// The generic parameters are: key type and entry type. The key type is anything
+/// usable as a table key, while the entry type is a type that can be stored in the table.
+/// You can obtain such a type by `#[derive]`ing Entry on a struct describing all the table fields.
+///
+/// Supported key types include:
+/// - integer types (u8/i8, u16/i16, u32/i32, u64/i64)
+/// - [`crate::tables::import::Bool`] (an API equivalent of bool)
+/// - &CStr (spelled as just `CStr` when used as a generic argument)
+///
+/// See [`crate::tables::export`] for details.
 ///
 /// Since the implementation uses [`Rc`], it's *not* thread-safe.
 pub struct Table<K, E>
