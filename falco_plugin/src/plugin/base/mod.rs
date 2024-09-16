@@ -217,6 +217,98 @@ pub trait Plugin: Sized {
     }
 
     /// Return the plugin metrics
+    ///
+    /// Metrics are described by:
+    /// - a name (just a string)
+    /// - a type (monotonic vs non-monotonic: [`crate::base::MetricType`])
+    /// - a value of one of the supported types ([`crate::base::MetricValue`])
+    ///
+    /// **Note**: The plugin name is prepended to the metric name, so a metric called `foo`
+    /// in a plugin called `bar` will be emitted by the plugin framework as `bar.foo`.
+    ///
+    /// **Note**: Metrics aren't registered in the framework in any way and there is no
+    /// requirement to report the same metrics on each call to `get_metrics`. However, it's
+    /// probably a good idea to do so, or at least not to change the type of metric or the type
+    /// of its value from call to call.
+    ///
+    /// There are two general patterns to use when emitting metrics from a plugin:
+    ///
+    /// 1. Predefined metrics
+    /// ```
+    ///# use std::ffi::CStr;
+    ///# use falco_plugin::base::{Metric, MetricLabel, MetricType, MetricValue, Plugin};
+    ///# use falco_plugin::plugin;
+    ///# use falco_plugin::FailureReason;
+    ///# use falco_plugin::tables::TablesInput;
+    ///#
+    ///# // define the type holding the plugin state
+    ///struct MyPlugin {
+    ///    // ...
+    ///    my_metric: MetricLabel,
+    ///}
+    ///#
+    ///# // implement the base::Plugin trait
+    ///# impl Plugin for MyPlugin {
+    ///#     const NAME: &'static CStr = c"sample-plugin-rs";
+    ///#     const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+    ///#     const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+    ///#     const CONTACT: &'static CStr = c"you@example.com";
+    ///#     type ConfigType = ();
+    ///#
+    ///     fn new(input: Option<&TablesInput>, config: Self::ConfigType)
+    ///         -> Result<Self, anyhow::Error> {
+    ///         Ok(MyPlugin {
+    ///             // ...
+    ///             my_metric: MetricLabel::new(c"my_metric", MetricType::Monotonic),
+    ///         })
+    ///     }
+    ///
+    ///#     fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+    ///#         Ok(())
+    ///#     }
+    ///#
+    ///     fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+    ///         [self.my_metric.with_value(MetricValue::U64(10u64))]
+    ///     }
+    ///# }
+    /// ```
+    ///
+    /// 2. Inline metrics
+    /// ```
+    ///# use std::ffi::CStr;
+    ///# use falco_plugin::base::{Metric, MetricLabel, MetricType, MetricValue, Plugin};
+    ///# use falco_plugin::plugin;
+    ///# use falco_plugin::FailureReason;
+    ///# use falco_plugin::tables::TablesInput;
+    ///#
+    ///# // define the type holding the plugin state
+    ///# struct NoOpPlugin;
+    ///#
+    ///# // implement the base::Plugin trait
+    ///# impl Plugin for NoOpPlugin {
+    ///#     const NAME: &'static CStr = c"sample-plugin-rs";
+    ///#     const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+    ///#     const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+    ///#     const CONTACT: &'static CStr = c"you@example.com";
+    ///#     type ConfigType = ();
+    ///#
+    ///#     fn new(input: Option<&TablesInput>, config: Self::ConfigType)
+    ///#         -> Result<Self, anyhow::Error> {
+    ///#         Ok(NoOpPlugin)
+    ///#     }
+    ///#
+    ///#     fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+    ///#         Ok(())
+    ///#     }
+    ///#
+    ///     fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+    ///         [Metric::new(
+    ///             MetricLabel::new(c"my_metric", MetricType::Monotonic),
+    ///             MetricValue::U64(10u64),
+    ///         )]
+    ///     }
+    ///# }
+    /// ```
     fn get_metrics(&mut self) -> impl IntoIterator<Item = Metric> {
         []
     }
