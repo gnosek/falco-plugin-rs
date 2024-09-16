@@ -11,6 +11,8 @@ pub mod wrappers;
 
 /// # Support for event parse plugins
 pub trait ParsePlugin: Plugin {
+    // TODO: document event_type vs anyevent vs individual event types somewhere prominent
+
     /// # Supported event types
     ///
     /// This list contains the event types that this plugin will receive
@@ -27,6 +29,10 @@ pub trait ParsePlugin: Plugin {
     /// - the plugin will receive every event type if [`ParsePlugin::EVENT_SOURCES`]
     ///   is compatible with the "syscall" event source, otherwise
     /// - the plugin will only receive events of plugin type [`source::PluginEvent`](`crate::source::PluginEvent`)
+    ///
+    /// **Note**: some notable event types are:
+    /// - [`EventType::ASYNCEVENT_E`], generated from async plugins
+    /// - [`EventType::PLUGINEVENT_E`], generated from source plugins
     const EVENT_TYPES: &'static [EventType];
 
     /// # Supported event sources
@@ -36,6 +42,8 @@ pub trait ParsePlugin: Plugin {
     /// If this list is empty, then if plugin has sourcing capability, and implements a specific
     /// event source, it will only receive events matching its event source, otherwise it will
     /// receive events from all event sources.
+    ///
+    /// **Note**: one notable event source is called `syscall`
     const EVENT_SOURCES: &'static [&'static str];
 
     /// # Parse an event
