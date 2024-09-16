@@ -316,7 +316,94 @@ macro_rules! plugin {
 
 /// # Automatically generate the Falco plugin API structure for static plugins
 ///
-// TODO actually document
+/// This macro generates a [`falco_plugin_api::plugin_api`] structure, usable as a statically
+/// linked plugin. It automatically handles all supported capabilities, so you need just one
+/// invocation, regardless of how many capabilities your plugin supports.
+///
+/// ## Basic usage
+///
+/// ```
+///# use std::ffi::CStr;
+///# use falco_plugin::base::Metric;
+/// use falco_plugin::base::Plugin;
+/// use falco_plugin::static_plugin;
+///# use falco_plugin::tables::TablesInput;
+///
+///# struct MyPlugin;
+///#
+/// impl Plugin for MyPlugin {
+///     // ...
+///#     const NAME: &'static CStr = c"sample-plugin-rs";
+///#     const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+///#     const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+///#     const CONTACT: &'static CStr = c"you@example.com";
+///#     type ConfigType = ();
+///#
+///#     fn new(input: Option<&TablesInput>, config: Self::ConfigType)
+///#         -> Result<Self, anyhow::Error> {
+///#         Ok(MyPlugin)
+///#     }
+///#
+///#     fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+///#         Ok(())
+///#     }
+///#
+///#     fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+///#         []
+///#     }
+/// }
+///
+/// static_plugin!(MY_PLUGIN_API = MyPlugin);
+/// ```
+///
+/// This expands to:
+/// ```ignore
+/// #[no_mangle]
+/// static MY_PLUGIN_API: falco_plugin::api::plugin_api = /* ... */;
+/// ```
+///
+/// The symbols referred to in the API structure are still mangled according to default Rust rules.
+///
+/// ## Overriding the supported API version
+///
+/// The macro also implements a form where you can override the required API version (for example,
+/// if you wish to advertise an older version for increased compatibility):
+///
+/// ```
+///# use std::ffi::CStr;
+///# use falco_plugin::base::Metric;
+/// use falco_plugin::base::Plugin;
+/// use falco_plugin::static_plugin;
+///# use falco_plugin::tables::TablesInput;
+///
+///# struct MyPlugin;
+///#
+/// impl Plugin for MyPlugin {
+///     // ...
+///#     const NAME: &'static CStr = c"sample-plugin-rs";
+///#     const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+///#     const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+///#     const CONTACT: &'static CStr = c"you@example.com";
+///#     type ConfigType = ();
+///#
+///#     fn new(input: Option<&TablesInput>, config: Self::ConfigType)
+///#         -> Result<Self, anyhow::Error> {
+///#         Ok(MyPlugin)
+///#     }
+///#
+///#     fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
+///#         Ok(())
+///#     }
+///#
+///#     fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+///#         []
+///#     }
+/// }
+///
+/// // advertise API version 3.3.0
+/// static_plugin!(MY_PLUGIN_API @ (3;3;0) = MyPlugin);
+/// ```
+///
 /// **Note**: this does not affect the actual version supported in any way. If you use this form,
 /// it's **entirely your responsibility** to ensure the advertised version is compatible with the actual
 /// version supported by this crate.
