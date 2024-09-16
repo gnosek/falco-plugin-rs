@@ -126,10 +126,81 @@ pub trait Plugin: Sized {
     /// Plugins can also be configured using a JSON object. This will be parsed by the SDK and your
     /// plugin will receive a data structure containing all the parsed fields. In order to use JSON
     /// configuration, set the `ConfigType` to `Json<T>`, where the [`Json`](`crate::base::Json`)
-    /// type is provided by this crate and the type `T` must implement [`serde::de::DeserializeOwned`].
+    /// type is provided by this crate and the type `T` must implement [`serde::de::DeserializeOwned`]
+    /// and [`schemars::JsonSchema`].
     ///
-    /// Please note that you can use the reexport (`falco_plugin::serde`) to ensure you're using
-    /// the same version of serde as the SDK.
+    /// You will also need to provide a JSON schema for the plugin API to validate the configuration.
+    ///
+    /// Please note that you can use the reexports (`falco_plugin::serde` and `falco_plugin::schemars`)
+    /// to ensure you're using the same version of serde and schemars as the SDK.
+    ///
+    /// Your config struct might look like:
+    ///
+    /// ```
+    /// use falco_plugin::schemars::JsonSchema;
+    /// use falco_plugin::serde::Deserialize;
+    ///
+    /// #[derive(JsonSchema, Deserialize)]
+    /// #[schemars(crate = "falco_plugin::schemars")]
+    /// #[serde(crate = "falco_plugin::serde")]
+    /// struct MyConfig {
+    ///     /* ... */
+    /// }
+    /// ```
+    ///
+    /// You can use irrefutable patterns in your `new` and `set_config` methods to make JSON configs
+    /// a little more ergonomic:
+    ///
+    /// ```
+    /// use std::ffi::CStr;
+    /// use anyhow::Error;
+    /// use falco_plugin::base::{Json, Metric, Plugin};
+    /// use falco_plugin::schemars::JsonSchema;
+    /// use falco_plugin::serde::Deserialize;
+    ///
+    /// use falco_plugin::tables::TablesInput;
+    ///
+    /// #[derive(JsonSchema, Deserialize)]
+    /// #[schemars(crate = "falco_plugin::schemars")]
+    /// #[serde(crate = "falco_plugin::serde")]
+    /// struct MyConfig {
+    ///     debug: bool,
+    /// }
+    ///
+    /// struct MyPlugin;
+    ///
+    /// impl Plugin for MyPlugin {
+    ///     // ...
+    ///#    const NAME: &'static CStr = c"";
+    ///#    const PLUGIN_VERSION: &'static CStr = c"";
+    ///#    const DESCRIPTION: &'static CStr = c"";
+    ///#    const CONTACT: &'static CStr = c"";
+    ///
+    ///     type ConfigType = Json<MyConfig>;
+    ///
+    ///     fn new(input: Option<&TablesInput>, Json(config): Json<MyConfig>) -> Result<Self, Error> {
+    ///     //                                  ^^^^^^^^^^^^
+    ///         if config.debug { /* ... */ }
+    ///
+    ///         // ...
+    ///#        todo!()
+    ///     }
+    ///
+    ///     fn set_config(&mut self, Json(config): Json<MyConfig>) -> Result<(), Error> {
+    ///     //                       ^^^^^^^^^^^^
+    ///         if config.debug { /* ... */ }
+    ///
+    ///         // ...
+    ///#        todo!()
+    ///     }
+    ///
+    ///#    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
+    ///#        []
+    ///#    }
+    ///
+    ///     // ...
+    /// }
+    /// ```
     type ConfigType: ConfigSchema;
 
     /// This method takes a [`TablesInput`](`crate::tables::TablesInput`) instance, which lets you
