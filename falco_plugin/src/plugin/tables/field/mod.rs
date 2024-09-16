@@ -14,6 +14,7 @@ pub(in crate::plugin::tables) mod raw;
 ///
 /// You probably won't need to construct any values of this type, but you will receive
 /// them from [`crate::tables::import::Table::get_field`]
+/// and use the type to define fields in the metadata struct (see [module docs](`crate::tables::import`)).
 pub struct Field<V: Value + ?Sized, T = RuntimeEntry<()>> {
     pub(in crate::plugin::tables) field: RawField<V>,
     pub(in crate::plugin::tables) validator: RuntimeTableValidator,
