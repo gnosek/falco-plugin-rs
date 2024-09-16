@@ -1,9 +1,10 @@
-use crate::plugin::exported_tables::entry::dynamic::DynamicEntry;
+use crate::plugin::exported_tables::entry::extensible::ExtensibleEntry;
+use crate::plugin::exported_tables::entry::table_metadata::extensible::ExtensibleEntryMetadata;
 use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
 use crate::plugin::exported_tables::entry::traits::Entry;
-use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
-use crate::plugin::exported_tables::field_descriptor::FieldRef;
+use crate::plugin::exported_tables::field_descriptor::{FieldDescriptor, FieldRef};
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
+use crate::plugin::exported_tables::metadata::HasMetadata;
 use crate::plugin::exported_tables::metadata::Metadata;
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::FailureReason;
@@ -13,7 +14,7 @@ use std::collections::BTreeMap;
 use std::ffi::CStr;
 use std::rc::Rc;
 
-// TODO(sdk) maybe use tinyvec (here, for storage and for extractions)
+// TODO review
 /// # A table with dynamic fields only by default
 ///
 /// An instance of this type can be exposed to other plugins via
@@ -21,7 +22,9 @@ use std::rc::Rc;
 ///
 /// To create a table that includes static fields, pass a type that implements
 /// [`Entry`] as the second generic parameter.
-pub struct Table<K, E = DynamicEntry>
+///
+/// Since the implementation uses [`Rc`], it's *not* thread-safe.
+pub struct Table<K, E>
 where
     K: Key + Ord + Clone,
     E: Entry,
@@ -29,8 +32,8 @@ where
 {
     name: &'static CStr,
     field_descriptors: Vec<ss_plugin_table_fieldinfo>,
-    metadata: Rc<RefCell<E::Metadata>>,
-    data: BTreeMap<K, Rc<RefCell<E>>>,
+    metadata: Rc<RefCell<ExtensibleEntryMetadata<E::Metadata>>>,
+    data: BTreeMap<K, Rc<RefCell<ExtensibleEntry<E>>>>,
 }
 
 impl<K, E> Table<K, E>
@@ -44,7 +47,7 @@ where
         Ok(Self {
             name,
             field_descriptors: vec![],
-            metadata: Rc::new(RefCell::new(E::Metadata::new()?)),
+            metadata: Rc::new(RefCell::new(ExtensibleEntryMetadata::new()?)),
             data: BTreeMap::new(),
         })
     }
@@ -60,14 +63,14 @@ where
     }
 
     /// Get an entry corresponding to a particular key.
-    pub fn lookup(&self, key: &K) -> Option<Rc<RefCell<E>>> {
+    pub fn lookup(&self, key: &K) -> Option<Rc<RefCell<ExtensibleEntry<E>>>> {
         self.data.get(key).cloned()
     }
 
     /// Get the value for a field in an entry.
     pub fn get_field_value(
         &self,
-        entry: &Rc<RefCell<E>>,
+        entry: &Rc<RefCell<ExtensibleEntry<E>>>,
         field: &FieldDescriptor,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
@@ -82,14 +85,13 @@ where
     // TODO(upstream) the closure cannot store away the entry but we could use explicit docs
     pub fn iterate_entries<F>(&mut self, mut func: F) -> bool
     where
-        F: FnMut(&mut Rc<RefCell<E>>) -> bool,
+        F: FnMut(&mut Rc<RefCell<ExtensibleEntry<E>>>) -> bool,
     {
         for value in &mut self.data.values_mut() {
             if !func(value) {
                 return false;
             }
         }
-
         true
     }
 
@@ -99,22 +101,26 @@ where
     }
 
     /// Erase an entry by key.
-    pub fn erase(&mut self, key: &K) -> Option<Rc<RefCell<E>>> {
+    pub fn erase(&mut self, key: &K) -> Option<Rc<RefCell<ExtensibleEntry<E>>>> {
         self.data.remove(key)
     }
 
     /// Create a new table entry.
     ///
     /// This is a detached entry that can be later inserted into the table using [`Table::insert`].
-    pub fn create_entry(&self) -> Result<Rc<RefCell<E>>, anyhow::Error> {
-        Ok(Rc::new(RefCell::new(E::new_with_metadata(
+    pub fn create_entry(&self) -> Result<Rc<RefCell<ExtensibleEntry<E>>>, anyhow::Error> {
+        Ok(Rc::new(RefCell::new(ExtensibleEntry::new_with_metadata(
             self.name,
-            &self.metadata.borrow(),
+            &self.metadata,
         )?)))
     }
 
     /// Attach an entry to a table key
-    pub fn insert(&mut self, key: &K, entry: Rc<RefCell<E>>) -> Option<Rc<RefCell<E>>> {
+    pub fn insert(
+        &mut self,
+        key: &K,
+        entry: Rc<RefCell<ExtensibleEntry<E>>>,
+    ) -> Option<Rc<RefCell<ExtensibleEntry<E>>>> {
         // note: different semantics from data.insert: we return the *new* entry
         self.data.insert(key.clone(), entry);
         self.lookup(key)
@@ -123,7 +129,7 @@ where
     /// Write a value to a field of an entry
     pub fn write(
         &self,
-        entry: &mut Rc<RefCell<E>>,
+        entry: &mut Rc<RefCell<ExtensibleEntry<E>>>,
         field: &FieldDescriptor,
         value: &ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {

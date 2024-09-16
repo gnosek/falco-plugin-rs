@@ -592,9 +592,6 @@ pub mod tables {
     ///     string_field: CString, // allow writes via the plugin API
     ///     #[hidden]
     ///     secret: Vec<u8>,       // do not expose over the plugin API at all
-    ///
-    ///     #[dynamic]
-    ///     dynamic: export::DynamicEntry,
     /// }
     ///
     /// // define the type holding the plugin state
@@ -630,7 +627,6 @@ pub mod tables {
     /// }
     /// ```
     pub mod export {
-        pub use crate::plugin::exported_tables::entry::dynamic::DynamicEntry;
         pub use crate::plugin::exported_tables::field_value::traits::FieldValue;
         pub use crate::plugin::exported_tables::table::Table;
 
@@ -638,18 +634,6 @@ pub mod tables {
         ///
         /// Tables in Falco plugins are effectively maps from a key
         /// to a (possibly dynamic) struct of values.
-        ///
-        /// The default implementation for tables ([`DynamicEntry`]) uses
-        /// dynamic fields only, but with this macro you can also define structs containing static
-        /// (predefined) fields that are accessible to your plugin without going through the Falco
-        /// plugin API.
-        ///
-        /// A table can be fully static (no dynamic fields allowed). In this case, it must be tagged
-        /// with a `#[static_only]` attribute (to prevent accidental omission of the dynamic field values,
-        /// which would only get caught at runtime, possibly much later).
-        ///
-        /// Alternatively, it can mark a single field as `#[dynamic]`. That field will generally be
-        /// of type [`crate::tables::export::DynamicEntry`].
         ///
         /// Fields tagged as `#[readonly]` won't be writable via the Falco API and fields tagged
         /// as `#[hidden]` won't be exposed to the API at all. This is useful if you want to store data
@@ -659,30 +643,15 @@ pub mod tables {
         /// ```
         /// use std::ffi::CString;
         /// use falco_plugin::tables::export::Entry;
-        /// use falco_plugin::tables::export::DynamicEntry;
         ///
         /// #[derive(Entry, Default)]     // all table structs must implement Default
-        /// #[static_only]                      // no dynamic fields in this one
-        /// struct TableWithStaticFieldsOnly {
+        /// struct ANewTable {
         ///     #[readonly]
         ///     int_field: u64,                 // this field cannot be modified with the Falco API
         ///     string_field: CString,
         ///
         ///     #[hidden]
         ///     secret: Vec<u8>,                // this field is not visible via the Falco API
-        /// }
-        ///
-        /// #[derive(Entry, Default)]
-        /// struct AnotherTable {
-        ///     #[readonly]
-        ///     int_field: u64,                 // this field cannot be modified with the Falco API
-        ///     string_field: CString,
-        ///
-        ///     #[hidden]
-        ///     secret: Vec<u8>,                // this field is not visible via the Falco API
-        ///
-        ///     #[dynamic]
-        ///     dynamic_fields: DynamicEntry,   // dynamically added fields have their values here
         /// }
         /// # // make this doctest a module, not a function: https://github.com/rust-lang/rust/issues/83583#issuecomment-1083300448
         /// # fn main() {}
@@ -993,7 +962,6 @@ pub mod internals {
         pub use crate::plugin::tables::RawTable;
 
         pub mod export {
-            pub use crate::plugin::exported_tables::entry::table_metadata::dynamic::DynamicFieldsOnly;
             pub use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
             pub use crate::plugin::exported_tables::entry::traits::Entry;
             pub use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;

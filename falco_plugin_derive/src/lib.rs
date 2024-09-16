@@ -20,18 +20,11 @@ fn ident_to_bstr(ident: &Ident) -> syn::LitByteStr {
     syn::LitByteStr::new(name.as_bytes(), ident.span())
 }
 
-#[proc_macro_derive(Entry, attributes(static_only, dynamic, readonly, hidden))]
+#[proc_macro_derive(Entry, attributes(readonly, hidden))]
 pub fn derive_entry(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    let static_only = syn::Ident::new("static_only", input.span());
     let hidden = syn::Ident::new("hidden", input.span());
     let readonly = syn::Ident::new("readonly", input.span());
-    let dynamic = syn::Ident::new("dynamic", input.span());
-
-    let static_only = input
-        .attrs
-        .iter()
-        .any(|a| a.meta.path().is_ident(&static_only));
 
     let syn::Data::Struct(data) = input.data else {
         return TokenStream::from(
@@ -56,30 +49,9 @@ pub fn derive_entry(input: TokenStream) -> TokenStream {
 
     let fields = fields.named;
 
-    let dynamic_fields = fields
+    let visible_static_fields = fields
         .iter()
-        .filter(|f| f.attrs.iter().any(|a| a.meta.path().is_ident(&dynamic)))
-        .collect::<Vec<_>>();
-
-    let dynamic_field = match (static_only, dynamic_fields.len()) {
-        (true, 0) => None,
-        (false, 1) => dynamic_fields[0].ident.as_ref(),
-        _ => {
-            return TokenStream::from(
-                syn::Error::new(
-                    name.span(),
-                    "Struct must have exactly one #[dynamic] field or be marked as #[static_only]",
-                )
-                .to_compile_error(),
-            );
-        }
-    };
-
-    let visible_static_fields = fields.iter().filter(|f| {
-        !f.attrs
-            .iter()
-            .any(|a| a.meta.path().is_ident(&hidden) || a.meta.path().is_ident(&dynamic))
-    });
+        .filter(|f| !f.attrs.iter().any(|a| a.meta.path().is_ident(&hidden)));
 
     let static_fields = visible_static_fields.clone().enumerate().map(|(i, f)| {
         let readonly = f.attrs.iter().any(|a| a.meta.path().is_ident(&readonly));
@@ -96,8 +68,7 @@ pub fn derive_entry(input: TokenStream) -> TokenStream {
     });
 
     quote!(::falco_plugin::impl_export_table!(
-        for #name;
-        dynamic = #dynamic_field
+        for #name
         {
             #(#static_fields)*
         }

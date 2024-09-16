@@ -1,4 +1,5 @@
 use crate::plugin::error::ffi_result::FfiResult;
+use crate::plugin::exported_tables::entry::extensible::ExtensibleEntry;
 use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
@@ -89,7 +90,7 @@ where
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(entry) = (entry as *mut Rc<RefCell<E>>).as_mut() else {
+        let Some(entry) = (entry as *mut Rc<RefCell<ExtensibleEntry<E>>>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(field) = (field as *const FieldDescriptor).as_ref() else {
@@ -109,10 +110,11 @@ unsafe extern "C" fn release_table_entry<E>(
     entry: *mut ss_plugin_table_entry_t,
 ) where
     E: Entry,
+    E::Metadata: TableMetadata,
 {
     if !entry.is_null() {
         unsafe {
-            drop(Box::from_raw(entry as *mut Rc<RefCell<E>>));
+            drop(Box::from_raw(entry as *mut Rc<RefCell<ExtensibleEntry<E>>>));
         }
     }
 }
@@ -230,7 +232,7 @@ where
             return std::ptr::null_mut();
         };
         let key = K::from_data(key);
-        let entry = Box::from_raw(entry as *mut Rc<RefCell<E>>);
+        let entry = Box::from_raw(entry as *mut Rc<RefCell<ExtensibleEntry<E>>>);
 
         match table.insert(key, *entry) {
             Some(entry) => Box::into_raw(Box::new(entry)) as *mut _,
@@ -255,7 +257,7 @@ where
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(entry) = (entry as *mut Rc<RefCell<E>>).as_mut() else {
+        let Some(entry) = (entry as *mut Rc<RefCell<ExtensibleEntry<E>>>).as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let Some(field) = (field as *const FieldDescriptor).as_ref() else {

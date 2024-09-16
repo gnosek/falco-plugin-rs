@@ -22,9 +22,6 @@ type RemainingEntryTable = export::Table<u64, RemainingCounter>;
 #[derive(export::Entry, Default)]
 struct RemainingCounter {
     remaining: u64,
-
-    #[dynamic]
-    dynamic: export::DynamicEntry,
 }
 
 struct DummyPlugin {

@@ -6,8 +6,7 @@ use falco_plugin_api::ss_plugin_state_data;
 
 /// # A trait for structs that can be stored as table values
 ///
-/// For tables with dynamic fields only, it's easiest to use the [`crate::tables::export::DynamicEntry`] type
-/// directly, for other types, you'll probably want to use the [`crate::tables::export::Entry`] derive macro.
+/// You'll probably want to use the [`crate::tables::export::Entry`] derive macro.
 pub trait Entry: HasMetadata {
     /// Get field value by index
     ///
