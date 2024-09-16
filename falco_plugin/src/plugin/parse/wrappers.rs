@@ -100,8 +100,8 @@ pub unsafe extern "C" fn plugin_parse_event<T: ParsePlugin>(
 
 /// # Register an event parsing plugin
 ///
-/// This macro must be called at most once in a crate (it generates public functions)
-/// with a type implementing [`ParsePlugin`] as the sole parameter.
+/// This macro must be called at most once in a crate (it generates public functions with fixed
+/// `#[no_mangle]` names) with a type implementing [`ParsePlugin`] as the sole parameter.
 #[macro_export]
 macro_rules! parse_plugin {
     ($ty:ty) => {

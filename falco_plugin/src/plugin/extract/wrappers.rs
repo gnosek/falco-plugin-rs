@@ -118,8 +118,8 @@ pub unsafe extern "C" fn plugin_extract_fields<T: ExtractPlugin>(
 
 /// # Register an extract plugin
 ///
-/// This macro must be called at most once in a crate (it generates public functions)
-/// with a type implementing [`ExtractPlugin`] as the sole parameter.
+/// This macro must be called at most once in a crate (it generates public functions with fixed
+/// `#[no_mangle`] names) with a type implementing [`ExtractPlugin`] as the sole parameter.
 #[macro_export]
 macro_rules! extract_plugin {
     ($ty:ty) => {

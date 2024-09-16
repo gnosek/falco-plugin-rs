@@ -105,8 +105,8 @@ pub unsafe extern "C" fn plugin_set_async_event_handler<T: AsyncEventPlugin>(
 
 /// # Register an asynchronous event plugin
 ///
-/// This macro must be called at most once in a crate (it generates public functions)
-/// with a type implementing [`AsyncEventPlugin`] as the sole
+/// This macro must be called at most once in a crate (it generates public functions with fixed
+/// `#[no_mangle]` names) with a type implementing [`AsyncEventPlugin`] as the sole
 /// parameter.
 #[macro_export]
 macro_rules! async_event_plugin {

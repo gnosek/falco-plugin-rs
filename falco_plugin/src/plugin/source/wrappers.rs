@@ -265,8 +265,8 @@ pub unsafe extern "C" fn plugin_event_to_string<T: SourcePlugin>(
 
 /// # Register a source plugin
 ///
-/// This macro must be called at most once in a crate (it generates public functions)
-/// with a type implementing [`SourcePlugin`] as the sole parameter.
+/// This macro must be called at most once in a crate (it generates public functions with fixed
+/// `#[no_mangle]` names) with a type implementing [`SourcePlugin`] as the sole parameter.
 #[macro_export]
 macro_rules! source_plugin {
     ($ty:ty) => {
