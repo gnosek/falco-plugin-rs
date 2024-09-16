@@ -4,21 +4,57 @@ This crate provides a framework for writing [Falco](https://github.com/falcosecu
 plugins. There are several types of plugins available. Learn more about Falco plugins
 and plugin types in the [Falco plugin documentation](https://falco.org/docs/plugins/).
 
-## Dynamically linked plugins
+All plugins must implement the base plugin trait (see [`base`]) and at least one of the plugin
+capabilities.
+
+## Linking
+
+### Dynamically linked plugins
 
 The typical way to distribute a Falco plugin is to build a shared library. To build a plugin as a shared
 library, you need to:
 
 1. Specify `crate_type = ["dylib"]` in the `[lib]` section of `Cargo.toml`,
-2. Invoke all the [macros](#macros) corresponding to the capabilities your plugin implements.
+2. Invoke [`plugin!`] and all the macros corresponding to the capabilities your plugin implements.
 
-All plugins must implement the base plugin trait (see [`base`]) and at least one of the plugin
-capabilities.
+The general layout of your plugin code would be:
 
-**Note**: due to the structure of the Falco plugin API, there can be only one plugin per shared
-library, though that plugin can implement multiple capabilities, as described below.
+```ignore
+struct MyPlugin { /* ... */ }
 
-## Statically linked plugins
+impl Plugin for MyPlugin { /* ... */ }
+
+// one or more of the plugin capabilities:
+impl SourcePlugin for MyPlugin { /* ... */ }
+
+// generate actual plugin functions for Falco to use:
+plugin!(MyPlugin);
+// use the macros corresponding to the capabilities your plugin implements:
+source_plugin!(MyPlugin);
+
+// now you can call sinsp::register_plugin("/path/to/your.so")
+// or get Falco to do it via the configuration file
+```
+
+#### Loading and configuring plugins in Falco
+
+To load a plugin in Falco, you need to add them to the `plugins` and `load_plugins` sections in the config
+file, for example:
+
+```yaml
+plugins:
+  - name: my_plugin
+    library_path: /path/to/libmyplugin.so
+    init_config: ...
+load_plugins:
+  - my_plugin
+```
+
+The plugin name in `plugins.name` and in `load_plugins` must match [`base::Plugin::NAME`]. `init_config` is optional
+and may contain either a string or a YAML object (which will be converted to JSON before passing it to your plugin).
+In any case, the configuration must match [`base::Plugin::ConfigType`].
+
+### Statically linked plugins
 
 In some circumstances, you might prefer to link plugins statically into your application. This changes
 the interface somewhat (instead of using predefined symbol names, you register your plugin by directly
@@ -27,46 +63,25 @@ passing a [`falco_plugin_api::plugin_api`] struct to `sinsp::register_plugin`).
 For a statically linked plugin, you need to:
 
 1. Specify `crate_type = ["staticlib"]` in the `[lib]` section of `Cargo.toml`,
-2. Export the plugin API under a name of your choice, for example:
+2. Invoke the [`static_plugin!`] macro. You do not need to handle individual capabilities.
 
-```
-use std::ffi::CStr;
-use falco_plugin::base::{Plugin, Metric};
-use falco_plugin::tables::TablesInput;
-use falco_plugin::static_plugin;
+```ignore
+struct MyPlugin { /* ... */ }
 
-// define the type holding the plugin state
-struct DummyPlugin;
+impl Plugin for MyPlugin { /* ... */ }
 
-// implement the base::Plugin trait
-impl Plugin for DummyPlugin {
-    const NAME: &'static CStr = c"sample-plugin-rs";
-    const PLUGIN_VERSION: &'static CStr = c"0.0.1";
-    const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
-    const CONTACT: &'static CStr = c"you@example.com";
-    type ConfigType = ();
+// one or more of the plugin capabilities:
+impl SourcePlugin for MyPlugin { /* ... */ }
 
-    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
-        -> Result<Self, anyhow::Error> {
-        Ok(DummyPlugin)
-    }
+// generate the API structure for the plugin:
+static_plugin!(MY_PLUGIN_API = MyPlugin);
 
-    fn set_config(&mut self, config: Self::ConfigType) -> Result<(), anyhow::Error> {
-        Ok(())
-    }
-
-    fn get_metrics(&mut self) -> impl IntoIterator<Item=Metric> {
-        []
-    }
-}
-
-static_plugin!(DUMMY_PLUGIN_API = DummyPlugin);
+// now you can call sinsp::register_plugin(&MY_PLUGIN_API) on the C++ side
 ```
 
-**Note**: due to implementation limitations, there can be only one plugin per static library, though that
-plugin can implement multiple capabilities, as described below. This limitation is more painful for static
-libraries than for shared ones (since you could meaningfully ship multiple plugins in a static library)
-and might be lifted in the future.
+Loading and configuring a statically linked plugin entirely depends on the application you're linking it into.
+
+## Plugin capabilities
 
 ### Event sourcing plugins
 
@@ -78,32 +93,44 @@ Source plugins are used to generate events. The implementation comes in two part
 
 To register your plugin's event sourcing capability, pass it to the [`source_plugin!`] macro.
 
-See `samples/source_plugin.rs` for an example implementation.
+To create rules matching against events coming from your plugin, set the `source` field on a rule
+to the value of [`source::SourcePlugin::EVENT_SOURCE`], for example (in `falco_rules.yaml`):
+
+```yaml
+- rule: match first 100 events from `my_plugin`
+  desc: match first 100 events from `my_plugin`
+  condition: evt.num <= 100
+  output: %evt.plugininfo # evt.plugininfo comes from event_to_string()
+  priority: CRITICAL
+  source: my_plugin
+```
 
 ### Field extraction plugins
 
 Field extraction plugins add extra fields to be used in rule matching and rule output. Each
 field has a name, type and a function or method that returns the actual extracted data.
-Extraction plugins are created by implementing the [`extract::ExtractPlugin`] trait.
 
-See `samples/extract_plugin.rs` for an example implementation.
+Extraction plugins are created by implementing the [`extract::ExtractPlugin`] trait and calling
+[`extract_plugin!`] with the plugin type.
+
+Rules involving fields from extract plugins must match against the correct source (one of [
+`extract::ExtractPlugin::EVENT_SOURCES`]).
 
 ### Event parsing plugins
 
 Event parsing plugins are invoked on every event (modulo some filtering) and can be used to
-maintain some state across events, e.g. for extraction plugins our source plugins to return
-later. They are created by implementing [`parse::ParsePlugin`] and calling [`parse_plugin!`]
-with the plugin type.
+maintain some state across events, e.g. for extraction plugins to return later.
 
-See `samples/parse_plugin.rs` for an example implementation.
+Event parsing plugins are created by implementing [`parse::ParsePlugin`] and calling [`parse_plugin!`]
+with the plugin type.
 
 ### Asynchronous event plugins
 
 Asynchronous event plugins can be used to inject events outside the flow of the main event loop,
-for example from a separate thread. They are created by implementing [`async_event::AsyncEventPlugin`]
-and calling [`async_event_plugin!`] with the plugin type.
+for example from a separate thread.
 
-See `samples/async_plugin.rs` for an example implementation.
+They are created by implementing [`async_event::AsyncEventPlugin`] and calling [`async_event_plugin!`]
+with the plugin type.
 
 ## Logging in plugins
 
