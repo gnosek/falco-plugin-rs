@@ -1,5 +1,6 @@
+use crate::plugin::exported_tables::entry::traits::TableValues;
 use crate::plugin::tables::data::FieldTypeId;
-use crate::tables::export::{DynamicFieldValue, FieldValue, TableValues};
+use crate::tables::export::{DynamicFieldValue, FieldValue};
 use falco_plugin_api::ss_plugin_state_data;
 use std::collections::BTreeMap;
 use std::ffi::CStr;
