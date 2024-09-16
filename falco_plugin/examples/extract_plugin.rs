@@ -7,12 +7,12 @@ use falco_plugin::base::Plugin;
 use falco_plugin::extract::{
     field, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin, ExtractRequest,
 };
-use falco_plugin::tables::TypedTable;
+use falco_plugin::tables::Table;
 use falco_plugin::tables::{Field, TablesInput};
 use falco_plugin::{extract_plugin, plugin};
 
 pub struct DummyPlugin {
-    thread_table: TypedTable<i64>,
+    thread_table: Table<i64>,
     comm_field: Field<CStr>,
 }
 

@@ -519,7 +519,7 @@ pub mod tables {
     pub use crate::plugin::tables::data::FieldTypeId;
     pub use crate::plugin::tables::data::TableData;
     pub use crate::plugin::tables::field::Field;
-    pub use crate::plugin::tables::table::TypedTable;
+    pub use crate::plugin::tables::table::Table;
     pub use crate::plugin::tables::vtable::TableReader;
     pub use crate::plugin::tables::vtable::TableWriter;
     pub use crate::plugin::tables::vtable::TablesInput;

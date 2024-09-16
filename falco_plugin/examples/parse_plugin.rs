@@ -6,7 +6,7 @@ use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
 use falco_plugin::parse::{EventInput, EventParseInput, ParsePlugin};
 use falco_plugin::tables::{DynamicFieldValues, Field, TablesInput};
-use falco_plugin::tables::{DynamicTable, TypedTable};
+use falco_plugin::tables::{DynamicTable, Table};
 use falco_plugin::{parse_plugin, plugin};
 use falco_plugin_api::ss_plugin_event_parse_input;
 use falco_plugin_derive::TableValues;
@@ -38,7 +38,7 @@ struct TableWithStaticFieldsOnly {
 }
 
 pub struct DummyPlugin {
-    thread_table: TypedTable<i64>,
+    thread_table: Table<i64>,
     sample_field: Field<u64>,
     #[allow(dead_code)]
     new_table: &'static mut DynamicTable<u64>,

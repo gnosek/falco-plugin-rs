@@ -14,7 +14,7 @@ use thiserror::Error;
 pub(in crate::plugin::tables) mod raw;
 
 /// # A handle for a specific table
-pub struct TypedTable<K: Key> {
+pub struct Table<K: Key> {
     pub(in crate::plugin::tables) raw_table: RawTable,
     pub(in crate::plugin::tables) key_type: PhantomData<K>,
 }
@@ -28,9 +28,9 @@ pub enum TableError {
     FromPtrError(#[from] FromPtrError),
 }
 
-impl<K: Key> TypedTable<K> {
-    pub(crate) unsafe fn new(raw_table: RawTable) -> TypedTable<K> {
-        TypedTable {
+impl<K: Key> Table<K> {
+    pub(crate) unsafe fn new(raw_table: RawTable) -> Self {
+        Table {
             raw_table,
             key_type: PhantomData,
         }
