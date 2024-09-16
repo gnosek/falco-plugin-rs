@@ -30,9 +30,9 @@ pub trait SourcePlugin: Plugin {
     /// This string describes the event source. One notable event source name is `syscall`,
     /// for plugins collecting syscall information.
     ///
-    /// If the plugin defines both `EVENT_SOURCE` and `PLUGIN_ID`, it will only be allowed to emit
-    /// events of type [`PluginEvent`] with the `plugin_id` field matching
-    /// `PLUGIN_ID` in the definition of this trait.
+    /// If the plugin defines both `EVENT_SOURCE` (as a non-empty string) and `PLUGIN_ID`
+    /// (as a non-zero value), it will only be allowed to emit events of type [`PluginEvent`]
+    /// with the `plugin_id` field matching `PLUGIN_ID` in the definition of this trait.
     ///
     /// This constant must be a non-empty string if `PLUGIN_ID` is set.
     const EVENT_SOURCE: &'static CStr;
@@ -41,13 +41,13 @@ pub trait SourcePlugin: Plugin {
     ///
     /// This is the unique ID of the plugin.
     ///
-    /// If the plugin defines both `EVENT_SOURCE` and `PLUGIN_ID`, it will only be allowed to emit
-    /// events of type [`PluginEvent`] with the `plugin_id` field matching
-    /// `PLUGIN_ID` in the definition of this trait.
+    /// If the plugin defines both `EVENT_SOURCE` (as a non-empty string) and `PLUGIN_ID`
+    /// (as a non-zero value), it will only be allowed to emit events of type [`PluginEvent`]
+    /// with the `plugin_id` field matching `PLUGIN_ID` in the definition of this trait.
     ///
-    /// EVERY PLUGIN WITH EVENT SOURCING CAPABILITY IMPLEMENTING A SPECIFIC EVENT SOURCE MUST OBTAIN
-    /// AN OFFICIAL ID FROM THE FALCOSECURITY ORGANIZATION, OTHERWISE IT WON'T PROPERLY COEXIST
-    /// WITH OTHER PLUGINS.
+    /// > EVERY PLUGIN WITH EVENT SOURCING CAPABILITY IMPLEMENTING A SPECIFIC EVENT SOURCE MUST
+    /// > OBTAIN AN OFFICIAL ID FROM THE FALCOSECURITY ORGANIZATION, OTHERWISE IT WON'T PROPERLY
+    /// > COEXIST WITH OTHER PLUGINS.
     const PLUGIN_ID: u32;
 
     /// # List sample open parameters
@@ -78,7 +78,8 @@ pub trait SourcePlugin: Plugin {
 
     /// # Render an event to string
     ///
-    /// This string will be available as `%evt.plugininfo` in Falco rules.
+    /// This string will be available as `%evt.plugininfo` in Falco rules. You may consider
+    /// using [`crate::source::CStringWriter`] to build the resulting CString.
     fn event_to_string(&mut self, event: &EventInput) -> Result<CString, anyhow::Error>;
 }
 
@@ -115,17 +116,52 @@ pub trait SourcePluginInstance {
     /// For each event that is ready, pass it to `batch.add()` to add it to the current batch
     /// to be returned.
     ///
+    /// ```ignore
+    /// fn next_batch(
+    ///     &mut self,
+    ///     plugin: &mut Self::Plugin,
+    ///     batch: &mut EventBatch,
+    /// ) -> Result<(), anyhow::Error> {
+    ///     let mut event = Vec::new();
+    ///     // ...
+    ///     let event = Self::plugin_event(&event);
+    ///     batch.add(event)?;
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
     /// ## Returning no events, temporarily
     ///
     /// If there are no events to return at the moment but there might be later, you should
     /// return [`FailureReason::Timeout`](`crate::FailureReason::Timeout`) as the error. The plugin framework will retry the call
     /// to `next_batch` later.
     ///
+    /// ```ignore
+    /// fn next_batch(
+    ///     &mut self,
+    ///     plugin: &mut Self::Plugin,
+    ///     batch: &mut EventBatch,
+    /// ) -> Result<(), anyhow::Error> {
+    ///     std::thread::sleep(Duration::from_millis(100));
+    ///     Err(anyhow::anyhow!("no events right now").context(FailureReason::Timeout))
+    /// }
+    /// ```
+    ///
     /// ## Returning no events, permanently
     ///
     /// If there will be no more events coming from this instance, you should return\
     /// [`FailureReason::Eof`](`crate::FailureReason::Eof`) as the error. The plugin framework will end the capture and shut down
     /// gracefully.
+    ///
+    /// ```ignore
+    /// fn next_batch(
+    ///     &mut self,
+    ///     plugin: &mut Self::Plugin,
+    ///     batch: &mut EventBatch,
+    /// ) -> Result<(), anyhow::Error> {
+    ///     Err(anyhow::anyhow!("no more events").context(FailureReason::Eof))
+    /// }
+    /// ```
     ///
     /// ## Timing considerations
     ///
