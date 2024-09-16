@@ -12,13 +12,27 @@ use falco_plugin::tables::import::{Entry, Field, Table, TableMetadata};
 use falco_plugin::tables::TablesInput;
 use falco_plugin::{extract_plugin, plugin};
 
-type Thread = Entry<Rc<ThreadTableMetadata>>;
 type ThreadTable = Table<i64, Thread>;
+type Thread = Entry<Rc<ThreadMetadata>>;
 
 #[derive(TableMetadata)]
 #[entry_type(Thread)]
-pub struct ThreadTableMetadata {
-    sample: Field<u64, Thread>,
+struct ThreadMetadata {
+    comm: Field<CStr, Thread>,
+    fd: Field<FdTable, Thread>,
+
+    #[custom]
+    color: Field<u64, Thread>,
+}
+
+type FdTable = Table<i64, Fd>;
+type Fd = Entry<Rc<FdMetadata>>;
+
+#[derive(TableMetadata)]
+#[entry_type(Fd)]
+struct FdMetadata {
+    #[name(c"type")]
+    fd_type: Field<u8, Fd>,
 }
 
 pub struct DummyPlugin {
@@ -26,7 +40,7 @@ pub struct DummyPlugin {
 }
 
 impl Plugin for DummyPlugin {
-    const NAME: &'static CStr = c"extract2-plugin-rs";
+    const NAME: &'static CStr = c"extract-plugin-rs";
     const PLUGIN_VERSION: &'static CStr = c"0.0.0";
     const DESCRIPTION: &'static CStr = c"sample extract plugin";
     const CONTACT: &'static CStr = c"rust@localdomain.pl";
@@ -34,7 +48,6 @@ impl Plugin for DummyPlugin {
 
     fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
         let input = input.ok_or_else(|| anyhow::anyhow!("did not get tables input"))?;
-
         let thread_table = input.get_table(c"threads")?;
 
         Ok(DummyPlugin { thread_table })
@@ -44,10 +57,11 @@ impl Plugin for DummyPlugin {
 impl DummyPlugin {
     fn extract_sample(
         &mut self,
-        _req: ExtractRequest<Self>,
+        ExtractRequest { table_reader, .. }: ExtractRequest<Self>,
         _arg: ExtractFieldRequestArg,
     ) -> Result<CString, Error> {
-        Ok(c"hello".to_owned())
+        let entry = self.thread_table.get_entry(table_reader, &1i64)?;
+        Ok(CString::from(entry.get_comm(table_reader)?))
     }
 
     fn extract_sample_strs(
@@ -55,7 +69,7 @@ impl DummyPlugin {
         _req: ExtractRequest<Self>,
         _arg: ExtractFieldRequestArg,
     ) -> Result<Vec<CString>, Error> {
-        Ok(vec![c"hello".to_owned(), c"byebye".to_owned()])
+        Ok(vec![c"hello".to_owned(), c"bybye".to_owned()])
     }
 
     //noinspection DuplicatedCode
@@ -67,11 +81,11 @@ impl DummyPlugin {
         Ok(vec![5u64, 10u64])
     }
 
-    fn extract_sample_num(
+    fn extract_sample_num2(
         &mut self,
         ExtractRequest {
-            event,
             table_reader,
+            event,
             ..
         }: ExtractRequest<Self>,
         _arg: ExtractFieldRequestArg,
@@ -80,7 +94,9 @@ impl DummyPlugin {
 
         self.thread_table
             .get_entry(table_reader, &tid)?
-            .get_sample(table_reader)
+            .get_fd_by_key(table_reader, &0)?
+            .get_fd_type(table_reader)
+            .map(|v| v as u64)
     }
 }
 
@@ -90,9 +106,9 @@ impl ExtractPlugin for DummyPlugin {
     type ExtractContext = ();
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
         field("example.msg", &Self::extract_sample),
-        field("example.nums", &Self::extract_sample_nums),
         field("example.msgs", &Self::extract_sample_strs),
-        field("example.num", &Self::extract_sample_num),
+        field("example.nums", &Self::extract_sample_nums),
+        field("example.num2", &Self::extract_sample_num2),
     ];
 }
 

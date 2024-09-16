@@ -1,7 +1,7 @@
-use crate::plugin::tables::data::Key;
+use crate::plugin::tables::data::{Key, Value};
 use crate::plugin::tables::entry::raw::RawEntry;
 use crate::plugin::tables::table::raw::RawTable;
-use crate::plugin::tables::vtable::{TableReader, TablesInput};
+use crate::plugin::tables::vtable::{TableReader, TableWriter, TablesInput};
 use falco_plugin_api::ss_plugin_table_t;
 use std::rc::Rc;
 
@@ -36,6 +36,17 @@ pub trait Entry {
 
     /// extract the raw entry from the instance
     fn into_raw(self) -> RawEntry;
+}
+
+/// A trait to indicate writable fields
+///
+/// Since we do unspeakable horrors to traits and impls in the derive macro,
+/// we cannot call any inherent method on the entry to write a field.
+///
+/// Hence, a trait.
+pub trait EntryWrite<F, V: Value<AssocData = ()> + ?Sized> {
+    /// write a field using the plugin API
+    fn write_field(&self, writer: &TableWriter, field: F, val: &V) -> Result<(), anyhow::Error>;
 }
 
 /// A trait describing a table that can have its entries looked up

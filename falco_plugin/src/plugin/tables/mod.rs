@@ -1,8 +1,12 @@
 pub mod data;
-pub(crate) mod entry;
-pub(crate) mod field;
+pub mod entry;
+pub mod field;
+pub mod macros;
 pub mod runtime;
-pub(crate) mod runtime_table_validator;
+pub(in crate::plugin::tables) mod runtime_table_validator;
 pub mod table;
-mod traits;
+pub mod traits;
 pub mod vtable;
+
+pub use entry::Entry;
+pub use table::raw::RawTable;

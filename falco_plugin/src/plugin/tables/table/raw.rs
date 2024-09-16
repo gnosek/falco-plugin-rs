@@ -2,6 +2,7 @@ use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::tables::data::{Key, Value};
 use crate::plugin::tables::entry::raw::RawEntry;
 use crate::plugin::tables::field::raw::RawField;
+use crate::plugin::tables::traits::TableMetadata;
 use crate::plugin::tables::vtable::TableFields;
 use crate::plugin::tables::vtable::{TableReader, TableWriter, TablesInput};
 use crate::strings::from_ptr::{try_str_from_ptr, FromPtrError};
@@ -16,8 +17,7 @@ use std::ffi::CStr;
 ///
 /// This is a thin wrapper around the Falco plugin API and provides little type safety.
 ///
-/// You will probably want to use [`crate::tables::Table`] or maybe [`crate::tables::RuntimeTable`]
-/// instead.
+/// You will probably want to use [`crate::tables::import::Table`] instead.
 pub struct RawTable {
     pub(crate) table: *mut ss_plugin_table_t,
 }
@@ -258,6 +258,20 @@ impl RawTable {
         let ret = func(&raw_table);
         unsafe { (tables_input.writer_ext.destroy_table_entry)(self.table, entry) };
         Ok(ret)
+    }
+
+    #[doc(hidden)]
+    // this is not really intended to be called by the end user, it's just for the derive macros
+    pub fn get_metadata<M: TableMetadata, V: Value + ?Sized>(
+        &self,
+        field: &RawField<V>,
+        tables_input: &TablesInput,
+    ) -> Result<M, anyhow::Error> {
+        unsafe {
+            self.with_subtable(field.field, tables_input, |subtable| {
+                M::new(subtable, tables_input)
+            })
+        }?
     }
 }
 

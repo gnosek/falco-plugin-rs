@@ -19,7 +19,15 @@ name = "static_source_plugin"
 crate-type = ["staticlib"]
 
 [[example]]
-name = "extract_plugin"
+name = "extract_plugin_derive"
+crate-type = ["dylib"]
+
+[[example]]
+name = "extract_plugin_typed"
+crate-type = ["dylib"]
+
+[[example]]
+name = "extract_plugin_typed_no_tag"
 crate-type = ["dylib"]
 
 [[example]]

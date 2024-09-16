@@ -14,6 +14,10 @@ use falco_plugin::{extract_plugin, plugin};
 pub struct DummyPlugin {
     thread_table: Table<i64>,
     comm_field: Field<CStr>,
+    #[allow(dead_code)]
+    color_field: Field<u64>,
+    fd_field: Field<Table<i64>>,
+    fd_type_field: Field<u8>,
 }
 
 impl Plugin for DummyPlugin {
@@ -26,12 +30,20 @@ impl Plugin for DummyPlugin {
     fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
         let input = input.ok_or_else(|| anyhow::anyhow!("did not get tables input"))?;
 
-        let thread_table = input.get_table::<Table<i64>, _>(c"threads")?;
-        let comm_field = thread_table.get_field::<CStr>(&input, c"comm")?;
+        let thread_table: Table<i64> = input.get_table(c"threads")?;
+        let comm_field = thread_table.get_field(input, c"comm")?;
+        let color_field = thread_table.add_field(input, c"color")?;
+        let (fd_field, fd_type_field) =
+            thread_table.get_table_field(input, c"file_descriptors", |table| {
+                table.get_field(input, c"type")
+            })?;
 
         Ok(DummyPlugin {
             thread_table,
             comm_field,
+            color_field,
+            fd_field,
+            fd_type_field,
         })
     }
 }
@@ -43,7 +55,7 @@ impl DummyPlugin {
         _arg: ExtractFieldRequestArg,
     ) -> Result<CString, Error> {
         let entry = self.thread_table.get_entry(table_reader, &1i64)?;
-        dbg!(entry.read_field(table_reader, &self.comm_field)).ok();
+        entry.read_field(table_reader, &self.comm_field).ok();
         Ok(c"hello".to_owned())
     }
 
@@ -63,6 +75,25 @@ impl DummyPlugin {
     ) -> Result<Vec<u64>, Error> {
         Ok(vec![5u64, 10u64])
     }
+
+    fn extract_sample_num2(
+        &mut self,
+        ExtractRequest {
+            table_reader,
+            event,
+            ..
+        }: ExtractRequest<Self>,
+        _arg: ExtractFieldRequestArg,
+    ) -> Result<u64, Error> {
+        let tid = event.event()?.metadata.tid;
+
+        self.thread_table
+            .get_entry(table_reader, &tid)?
+            .read_field(table_reader, &self.fd_field)?
+            .get_entry(table_reader, &0)?
+            .read_field(table_reader, &self.fd_type_field)
+            .map(|v| v as u64)
+    }
 }
 
 impl ExtractPlugin for DummyPlugin {
@@ -73,6 +104,7 @@ impl ExtractPlugin for DummyPlugin {
         field("example.msg", &Self::extract_sample),
         field("example.msgs", &Self::extract_sample_strs),
         field("example.nums", &Self::extract_sample_nums),
+        field("example.num2", &Self::extract_sample_num2),
     ];
 }
 

@@ -4,7 +4,7 @@ use falco_event::events::types::EventType;
 use falco_plugin::base::Plugin;
 use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
 use falco_plugin::tables::export::{DynamicFieldValues, DynamicTable};
-use falco_plugin::tables::import::{Field, Table};
+use falco_plugin::tables::import::{Field, RuntimeEntry, Table};
 use falco_plugin::tables::TablesInput;
 use falco_plugin::{parse_plugin, plugin};
 use falco_plugin_derive::TableValues;
@@ -35,9 +35,11 @@ struct TableWithStaticFieldsOnly {
     secret: Vec<u8>,
 }
 
+struct ThreadTable;
+
 pub struct DummyPlugin {
-    thread_table: Table<i64>,
-    sample_field: Field<u64>,
+    thread_table: Table<i64, RuntimeEntry<ThreadTable>>,
+    sample_field: Field<u64, RuntimeEntry<ThreadTable>>,
     #[allow(dead_code)]
     new_table: &'static mut DynamicTable<u64>,
     #[allow(dead_code)]
@@ -56,8 +58,8 @@ impl Plugin for DummyPlugin {
     fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, anyhow::Error> {
         let input = input.ok_or_else(|| anyhow::anyhow!("did not get tables input"))?;
 
-        let thread_table = input.get_table::<Table<i64>, _>(c"threads")?;
-        let sample_field = thread_table.add_field::<u64>(&input, c"sample")?;
+        let thread_table: Table<i64, RuntimeEntry<ThreadTable>> = input.get_table(c"threads")?;
+        let sample_field = thread_table.add_field::<u64>(input, c"sample")?;
 
         let new_table = input.add_table(DynamicTable::new(c"sample"))?;
         let another_table = input.add_table(DynamicTable::new(c"another"))?;
@@ -87,17 +89,13 @@ impl ParsePlugin for DummyPlugin {
         let event = event.load_any()?;
         let tid = event.metadata.tid;
 
-        let reader = &parse_input.reader;
-        let writer = &parse_input.writer;
-
-        let entry = self.thread_table.get_entry(&reader, &tid)?;
+        let entry = self.thread_table.get_entry(&parse_input.reader, &tid)?;
 
         let mut num = entry
-            .read_field(&reader, &self.sample_field)
+            .read_field(&parse_input.reader, &self.sample_field)
             .unwrap_or_default();
         num += 1;
-
-        entry.write_field(&writer, &self.sample_field, &num)?;
+        entry.write_field(&parse_input.writer, &self.sample_field, &num)?;
         Ok(())
     }
 }

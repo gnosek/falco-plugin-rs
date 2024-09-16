@@ -583,12 +583,265 @@ pub mod tables {
     /// # Importing tables from other plugins (or Falco core)
     ///
     /// Your plugin can access tables exported by other plugins (or Falco core) by importing them.
-    /// The docs will arrive in the next commit, once we have the derive macro ready.
+    /// The recommended approach is to use the `#[derive(TableMetadata)]` macro for that purpose.
+    ///
+    /// You will probably want to define two additional type aliases, so that the full definition
+    /// involves:
+    /// - a type alias for the whole table
+    /// - a type alias for a single table entry
+    /// - a metadata struct, describing an entry (somewhat indirectly)
+    ///
+    /// For example:
+    ///
+    /// ```
+    /// # use std::ffi::CStr;
+    /// # use std::rc::Rc;
+    /// # use falco_plugin::tables::import::{Entry, Field, Table, TableMetadata};
+    /// #
+    /// type ImportedThing = Entry<Rc<ImportedThingMetadata>>;
+    /// type ImportedThingTable = Table<u64, ImportedThing>;
+    ///
+    /// #[derive(TableMetadata)]
+    /// #[entry_type(ImportedThing)]
+    /// struct ImportedThingMetadata {
+    ///     imported: Field<u64, ImportedThing>,
+    ///
+    ///     #[name(c"type")]
+    ///     thing_type: Field<u64, ImportedThing>,
+    ///
+    ///     #[custom]
+    ///     added: Field<CStr, ImportedThing>,
+    /// }
+    ///
+    /// # // make this doctest a module, not a function: https://github.com/rust-lang/rust/issues/83583#issuecomment-1083300448
+    /// # fn main() {}
+    /// ```
+    ///
+    /// In contrast to [exported tables](`crate::tables::export`), the entry struct does not
+    /// contain any accessible fields. It only provides generated methods to access each field
+    /// using the plugin API. This means that each read/write is fairly expensive (involves
+    /// method calls), so you should probably cache the values in local variables.
+    ///
+    /// ## Declaring fields
+    ///
+    /// You need to declare each field you're going to use in a particular table, by providing
+    /// a corresponding [`import::Field`] field in the metadata struct. You do **not** need
+    /// to declare all fields in the table, or put the fields in any particular order, but you
+    /// **do** need to get the type right (otherwise you'll get an error at initialization time).
+    ///
+    /// The Falco table field name is the same as the field name in your metadata struct,
+    /// unless overridden by `#[name(c"foo")]`. This is useful if a field's name is a Rust reserved
+    /// word (e.g. `type`).
+    ///
+    /// You can also add fields to imported tables. To do that, tag the field with a `#[custom]`
+    /// attribute. It will be then added to the table instead of looking it up in existing fields.
+    /// Note that multiple plugins can add a field with the same name and type, which will make them
+    /// all use the same field (they will share the data). Adding a field multiple times
+    /// with different types is not allowed and will cause an error at initialization time.
+    ///
+    /// ## Generated methods
+    ///
+    /// Each scalar field gets a getter and setter method, e.g. declaring a metadata struct like
+    /// the above example will generate the following methods **on the `ImportedThing` type**:
+    /// ```ignore
+    /// fn get_imported(&self, reader: &TableReader) -> Result<u64, anyhow::Error>;
+    /// fn set_imported(&self, writer: &TableWriter, value: &u64) -> Result<(), anyhow::Error>;
+    ///
+    /// fn get_thing_type(&self, reader: &TableReader) -> Result<u64, anyhow::Error>;
+    /// fn set_thing_type(&self, writer: &TableWriter, value: &u64) -> Result<(), anyhow::Error>;
+    ///
+    /// fn get_added<'a>(&'a self, reader: &TableReader) -> Result<&'a CStr, anyhow::Error>;
+    /// fn set_added(&self, writer: &TableWriter, value: &CStr) -> Result<(), anyhow::Error>;
+    /// ```
+    ///
+    /// **Note**: setters do not take `&mut self` as all the mutation happens on the other side
+    /// of the API (presumably in another plugin).
+    ///
+    /// **Note**: non-scalar fields are limited to nested tables, which are disabled for now
+    /// (due to issues within the plugin API itself), so the description above applies to all types.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use std::ffi::CStr;
+    /// use std::rc::Rc;
+    /// use falco_plugin::anyhow::Error;
+    /// use falco_plugin::base::Plugin;
+    /// use falco_plugin::event::events::types::EventType;
+    /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
+    /// use falco_plugin::tables::TablesInput;
+    /// use falco_plugin::tables::import::{Entry, Field, Table, TableMetadata};
+    ///
+    /// #[derive(TableMetadata)]
+    /// #[entry_type(ImportedThing)]
+    /// struct ImportedThingMetadata {
+    ///     imported: Field<u64, ImportedThing>,
+    ///
+    ///     #[name(c"type")]
+    ///     thing_type: Field<u64, ImportedThing>,
+    ///
+    ///     #[custom]
+    ///     added: Field<CStr, ImportedThing>,
+    /// }
+    ///
+    /// type ImportedThing = Entry<Rc<ImportedThingMetadata>>;
+    /// type ImportedThingTable = Table<u64, ImportedThing>;
+    ///
+    /// struct MyPlugin {
+    ///     things: ImportedThingTable,
+    /// }
+    ///
+    /// impl Plugin for MyPlugin {
+    ///     // ...
+    ///#     const NAME: &'static CStr = c"dummy_extract";
+    ///#     const PLUGIN_VERSION: &'static CStr = c"0.0.0";
+    ///#     const DESCRIPTION: &'static CStr = c"test plugin";
+    ///#     const CONTACT: &'static CStr = c"rust@localdomain.pl";
+    ///#     type ConfigType = ();
+    ///
+    ///     fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, Error> {
+    ///         let input = input.ok_or_else(|| anyhow::anyhow!("did not get table input"))?;
+    ///         let things: ImportedThingTable = input.get_table(c"things")?;
+    ///
+    ///         Ok(Self { things })
+    ///     }
+    /// }
+    ///
+    /// impl ParsePlugin for MyPlugin {
+    ///     const EVENT_TYPES: &'static [EventType] = &[];
+    ///     const EVENT_SOURCES: &'static [&'static str] = &[];
+    ///
+    ///     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput)
+    ///         -> anyhow::Result<()> {
+    ///         // creating and accessing entries
+    ///
+    ///         // create a new entry (not yet attached to a table key)
+    ///         let entry = self.things.create_entry(&parse_input.writer)?;
+    ///         entry.set_imported(&parse_input.writer, &5u64)?;
+    ///
+    ///         // attach the entry to a table key
+    ///         self.things.insert(&parse_input.writer, &1u64, entry)?;
+    ///
+    ///         // look up the entry we have just added
+    ///         let entry = self.things.get_entry(&parse_input.reader, &1u64)?;
+    ///         assert_eq!(entry.get_imported(&parse_input.reader).ok(), Some(5u64));
+    ///
+    ///         Ok(())
+    ///     }
+    /// }
+    ///
+    /// # // make this doctest a module, not a function: https://github.com/rust-lang/rust/issues/83583#issuecomment-1083300448
+    /// # fn main() {}
+    /// ```
+    ///
+    /// **Note**: The derive macro involves creating a private module (to avoid polluting
+    /// the top-level namespace with a bunch of one-off traits), so you cannot use it inside
+    /// a function due to scoping issues. See <https://github.com/rust-lang/rust/issues/83583>
+    /// for details.
+    ///
+    /// # Bypassing the derive macro
+    ///
+    /// The derive macro boils down to automatically calling get_field/add_field for each
+    /// field defined in the metadata struct (and generating getters/setters). If you don't know
+    /// the field names in advance (e.g. when supporting different versions of "parent" plugins),
+    /// there is the [`import::RuntimeEntry`] type alias, which makes you responsible for holding
+    /// the field structs (probably in your plugin type) and requires you to use the generic
+    /// read_field/write_field methods, in exchange for the flexibility.
+    ///
+    /// The above example can be rewritten without the derive macro as follows:
+    ///
+    /// ```
+    /// use std::ffi::CStr;
+    /// use std::rc::Rc;
+    /// use falco_plugin::anyhow::Error;
+    /// use falco_plugin::base::Plugin;
+    /// use falco_plugin::event::events::types::EventType;
+    /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
+    /// use falco_plugin::tables::TablesInput;
+    /// use falco_plugin::tables::import::{Field, RuntimeEntry, Table};
+    ///
+    /// struct ImportedThingTag;
+    /// type ImportedThing = RuntimeEntry<ImportedThingTag>;
+    /// type ImportedThingTable = Table<u64, ImportedThing>;
+    ///
+    /// struct MyPlugin {
+    ///     things: ImportedThingTable,
+    ///     thing_imported_field: Field<u64, ImportedThing>,
+    ///     thing_type_field: Field<u64, ImportedThing>,
+    ///     thing_added_field: Field<CStr, ImportedThing>,
+    /// }
+    ///
+    /// impl Plugin for MyPlugin {
+    ///     // ...
+    ///#     const NAME: &'static CStr = c"dummy_extract";
+    ///#     const PLUGIN_VERSION: &'static CStr = c"0.0.0";
+    ///#     const DESCRIPTION: &'static CStr = c"test plugin";
+    ///#     const CONTACT: &'static CStr = c"rust@localdomain.pl";
+    ///#     type ConfigType = ();
+    ///
+    ///     fn new(input: Option<&TablesInput>, _config: Self::ConfigType) -> Result<Self, Error> {
+    ///         let input = input.ok_or_else(|| anyhow::anyhow!("did not get table input"))?;
+    ///         let things: ImportedThingTable = input.get_table(c"things")?;
+    ///         let thing_imported_field = things.get_field(input, c"imported")?;
+    ///         let thing_type_field = things.get_field(input, c"type")?;
+    ///         let thing_added_field = things.add_field(input, c"added")?;
+    ///
+    ///         Ok(Self {
+    ///             things,
+    ///             thing_imported_field,
+    ///             thing_type_field,
+    ///             thing_added_field,
+    ///         })
+    ///     }
+    /// }
+    ///
+    /// impl ParsePlugin for MyPlugin {
+    ///     const EVENT_TYPES: &'static [EventType] = &[];
+    ///     const EVENT_SOURCES: &'static [&'static str] = &[];
+    ///
+    ///     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput)
+    ///         -> anyhow::Result<()> {
+    ///         // creating and accessing entries
+    ///
+    ///         // create a new entry (not yet attached to a table key)
+    ///         let entry = self.things.create_entry(&parse_input.writer)?;
+    ///         entry.write_field(&parse_input.writer, &self.thing_imported_field, &5u64)?;
+    ///
+    ///         // attach the entry to a table key
+    ///         self.things.insert(&parse_input.writer, &1u64, entry)?;
+    ///
+    ///         // look up the entry we have just added
+    ///         let entry = self.things.get_entry(&parse_input.reader, &1u64)?;
+    ///         assert_eq!(
+    ///             entry.read_field(&parse_input.reader, &self.thing_imported_field).ok(),
+    ///             Some(5u64),
+    ///         );
+    ///
+    ///         Ok(())
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// **Note**: in the above example, `ImportedThingTag` is just an empty struct, used to
+    /// distinguish entries (and fields) from different types between one another. You can
+    /// skip this and do not pass the second generic argument to `Field` and `Table`
+    /// (it will default to `RuntimeEntry<()>`), but you lose compile time validation for
+    /// accessing fields from the wrong table. It will still be caught at runtime.
+    ///
+    /// See the [`import::Table`] type for additional methods on tables, to e.g. iterate
+    /// over entries or clear the whole table.
     pub mod import {
         pub use crate::plugin::tables::data::Bool;
         pub use crate::plugin::tables::data::TableData;
         pub use crate::plugin::tables::field::Field;
+        pub use crate::plugin::tables::runtime::RuntimeEntry;
         pub use crate::plugin::tables::table::Table;
+        pub use crate::plugin::tables::Entry;
+
+        /// Mark a struct type as an imported table entry metadata
+        ///
+        /// See the [module documentation](`crate::tables::import`) for details.
+        pub use falco_plugin_derive::TableMetadata;
     }
 }
 
@@ -618,6 +871,17 @@ pub mod internals {
     }
 
     pub mod tables {
+        pub use crate::plugin::tables::data::FieldTypeId;
+
+        pub use crate::plugin::tables::data::Key;
+        pub use crate::plugin::tables::data::Value;
+        pub use crate::plugin::tables::traits::Entry;
+        pub use crate::plugin::tables::traits::EntryWrite;
+        pub use crate::plugin::tables::traits::RawFieldValueType;
+        pub use crate::plugin::tables::traits::TableAccess;
+        pub use crate::plugin::tables::traits::TableMetadata;
+        pub use crate::plugin::tables::RawTable;
+
         pub mod export {
             pub use crate::plugin::exported_tables::StaticField;
             pub use crate::plugin::tables::data::FieldTypeId;

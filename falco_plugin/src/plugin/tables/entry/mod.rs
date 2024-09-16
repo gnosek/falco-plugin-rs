@@ -1,11 +1,11 @@
 use crate::plugin::error::as_result::{AsResult, WithLastError};
 use crate::plugin::tables::data::Value;
 use crate::plugin::tables::field::Field;
+use crate::plugin::tables::traits::{EntryWrite, TableMetadata};
 use crate::plugin::tables::vtable::{TableReader, TableWriter};
 use falco_plugin_api::ss_plugin_table_t;
 
 pub(in crate::plugin::tables) mod raw;
-use crate::plugin::tables::traits::TableMetadata;
 use raw::RawEntry;
 
 /// # An entry in a Falco plugin table
@@ -71,5 +71,16 @@ impl<M> Entry<M> {
                 .as_result()
                 .with_last_error(&writer.last_error)
         }
+    }
+}
+
+impl<M, V: Value<AssocData = ()> + ?Sized> EntryWrite<&Field<V, Entry<M>>, V> for Entry<M> {
+    fn write_field(
+        &self,
+        writer: &TableWriter,
+        field: &Field<V, Entry<M>>,
+        val: &V,
+    ) -> Result<(), anyhow::Error> {
+        Entry::write_field(self, writer, field, val)
     }
 }
