@@ -1,24 +1,22 @@
-use std::cell::RefCell;
-use std::collections::BTreeMap;
-use std::ffi::{CStr, CString};
-use std::rc::Rc;
-
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::FailureReason;
+use entry::dynamic::DynamicFieldValues;
 use falco_plugin_api::{
     ss_plugin_bool, ss_plugin_state_data, ss_plugin_state_type, ss_plugin_table_fieldinfo,
 };
 use field_descriptor::DynamicField;
 use field_value::dynamic::DynamicFieldValue;
 use field_value::traits::FieldValue;
+use std::cell::RefCell;
+use std::collections::BTreeMap;
+use std::ffi::{CStr, CString};
+use std::rc::Rc;
 
+pub mod entry;
 pub mod field_descriptor;
 pub mod field_value;
 pub mod macros;
 pub(super) mod wrappers;
-
-/// A table value type that only has dynamic fields
-pub type DynamicFieldValues = BTreeMap<usize, DynamicFieldValue>;
 
 /// # A trait for structs that can be stored as table values
 ///
@@ -53,39 +51,6 @@ pub trait TableValues: Default {
     /// `key` will correspond to an entry in [`TableValues::STATIC_FIELDS`] or to a dynamic field
     /// (if it's larger than `STATIC_FIELDS.size()`)
     fn set(&mut self, key: usize, value: DynamicFieldValue) -> Result<(), anyhow::Error>;
-}
-
-impl TableValues for DynamicFieldValues {
-    const STATIC_FIELDS: &'static [(&'static CStr, FieldTypeId, bool)] = &[];
-    const HAS_DYNAMIC_FIELDS: bool = true;
-
-    fn get(
-        &self,
-        key: usize,
-        type_id: FieldTypeId,
-        out: &mut ss_plugin_state_data,
-    ) -> Result<(), anyhow::Error> {
-        if let Some((_, actual_type_id, _)) = Self::STATIC_FIELDS.get(key) {
-            if type_id != *actual_type_id {
-                return Err(anyhow::anyhow!(
-                    "Type mismatch, requested {:?}, actual type is {:?}",
-                    type_id,
-                    actual_type_id
-                ));
-            };
-        }
-
-        let field = self
-            .get(&key)
-            .ok_or_else(|| anyhow::anyhow!("Dynamic field {} not found", key))?;
-
-        field.to_data(out, type_id)
-    }
-
-    fn set(&mut self, key: usize, value: DynamicFieldValue) -> Result<(), anyhow::Error> {
-        self.insert(key, value);
-        Ok(())
-    }
 }
 
 // TODO(sdk) maybe use tinyvec (here, for storage and for extractions)
