@@ -132,6 +132,15 @@ for example from a separate thread.
 They are created by implementing [`async_event::AsyncEventPlugin`] and calling [`async_event_plugin!`]
 with the plugin type.
 
+### Capture listening plugins
+
+Plugins with this capability provide `capture_open` and `capture_close` callbacks that are called
+when the capture is started/stopped, respectively. Note this is *not* equivalent to plugin init/shutdown
+as the capture may be stopped/restarted several times over the lifetime of a plugin.
+
+They are created by implementing [`listen::CaptureListenPlugin`] and calling [`capture_listen_plugin!`]
+with the plugin type.
+
 ## Logging in plugins
 
 The SDK uses the [`log`] crate for logging, redirecting all messages to the Falco libs logger, so you can use

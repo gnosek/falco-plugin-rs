@@ -254,7 +254,7 @@ pub const SCNoPTR: &[u8; 3] = b"lo\0";
 pub const SCNuPTR: &[u8; 3] = b"lu\0";
 pub const SCNxPTR: &[u8; 3] = b"lx\0";
 pub const PLUGIN_API_VERSION_MAJOR: u32 = 3;
-pub const PLUGIN_API_VERSION_MINOR: u32 = 6;
+pub const PLUGIN_API_VERSION_MINOR: u32 = 7;
 pub const PLUGIN_API_VERSION_PATCH: u32 = 0;
 pub const PLUGIN_MAX_ERRLEN: u32 = 1024;
 pub type __u_char = ::std::os::raw::c_uchar;
@@ -2354,6 +2354,128 @@ fn bindgen_test_layout_ss_plugin_set_config_input() {
         )
     );
 }
+pub type ss_plugin_routine_t = ::std::os::raw::c_void;
+pub type ss_plugin_routine_state_t = ::std::os::raw::c_void;
+pub type ss_plugin_routine_fn_t = ::std::option::Option<
+    unsafe extern "C" fn(s: *mut ss_plugin_t, i: *mut ss_plugin_routine_state_t) -> ss_plugin_bool,
+>;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ss_plugin_routine_vtable {
+    pub subscribe: ::std::option::Option<
+        unsafe extern "C" fn(
+            o: *mut ss_plugin_owner_t,
+            f: ss_plugin_routine_fn_t,
+            i: *mut ss_plugin_routine_state_t,
+        ) -> *mut ss_plugin_routine_t,
+    >,
+    pub unsubscribe: ::std::option::Option<
+        unsafe extern "C" fn(
+            o: *mut ss_plugin_owner_t,
+            r: *mut ss_plugin_routine_t,
+        ) -> ss_plugin_rc,
+    >,
+}
+#[test]
+fn bindgen_test_layout_ss_plugin_routine_vtable() {
+    const UNINIT: ::std::mem::MaybeUninit<ss_plugin_routine_vtable> =
+        ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<ss_plugin_routine_vtable>(),
+        16usize,
+        concat!("Size of: ", stringify!(ss_plugin_routine_vtable))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<ss_plugin_routine_vtable>(),
+        8usize,
+        concat!("Alignment of ", stringify!(ss_plugin_routine_vtable))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).subscribe) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_routine_vtable),
+            "::",
+            stringify!(subscribe)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).unsubscribe) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_routine_vtable),
+            "::",
+            stringify!(unsubscribe)
+        )
+    );
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ss_plugin_capture_listen_input {
+    pub owner: *mut ss_plugin_owner_t,
+    pub routine: *mut ss_plugin_routine_vtable,
+    pub table_reader_ext: *mut ss_plugin_table_reader_vtable_ext,
+    pub table_writer_ext: *mut ss_plugin_table_writer_vtable_ext,
+}
+#[test]
+fn bindgen_test_layout_ss_plugin_capture_listen_input() {
+    const UNINIT: ::std::mem::MaybeUninit<ss_plugin_capture_listen_input> =
+        ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<ss_plugin_capture_listen_input>(),
+        32usize,
+        concat!("Size of: ", stringify!(ss_plugin_capture_listen_input))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<ss_plugin_capture_listen_input>(),
+        8usize,
+        concat!("Alignment of ", stringify!(ss_plugin_capture_listen_input))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).owner) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_capture_listen_input),
+            "::",
+            stringify!(owner)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).routine) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_capture_listen_input),
+            "::",
+            stringify!(routine)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).table_reader_ext) as usize - ptr as usize },
+        16usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_capture_listen_input),
+            "::",
+            stringify!(table_reader_ext)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).table_writer_ext) as usize - ptr as usize },
+        24usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ss_plugin_capture_listen_input),
+            "::",
+            stringify!(table_writer_ext)
+        )
+    );
+}
 pub type ss_plugin_async_event_handler_t = ::std::option::Option<
     unsafe extern "C" fn(
         o: *mut ss_plugin_owner_t,
@@ -2399,6 +2521,7 @@ pub struct plugin_api {
     pub get_metrics: ::std::option::Option<
         unsafe extern "C" fn(s: *mut ss_plugin_t, num_metrics: *mut u32) -> *mut ss_plugin_metric,
     >,
+    pub __bindgen_anon_5: plugin_api__bindgen_ty_5,
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -2735,13 +2858,65 @@ fn bindgen_test_layout_plugin_api__bindgen_ty_4() {
         )
     );
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct plugin_api__bindgen_ty_5 {
+    pub capture_open: ::std::option::Option<
+        unsafe extern "C" fn(
+            s: *mut ss_plugin_t,
+            i: *const ss_plugin_capture_listen_input,
+        ) -> ss_plugin_rc,
+    >,
+    pub capture_close: ::std::option::Option<
+        unsafe extern "C" fn(
+            s: *mut ss_plugin_t,
+            i: *const ss_plugin_capture_listen_input,
+        ) -> ss_plugin_rc,
+    >,
+}
+#[test]
+fn bindgen_test_layout_plugin_api__bindgen_ty_5() {
+    const UNINIT: ::std::mem::MaybeUninit<plugin_api__bindgen_ty_5> =
+        ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<plugin_api__bindgen_ty_5>(),
+        16usize,
+        concat!("Size of: ", stringify!(plugin_api__bindgen_ty_5))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<plugin_api__bindgen_ty_5>(),
+        8usize,
+        concat!("Alignment of ", stringify!(plugin_api__bindgen_ty_5))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).capture_open) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(plugin_api__bindgen_ty_5),
+            "::",
+            stringify!(capture_open)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).capture_close) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(plugin_api__bindgen_ty_5),
+            "::",
+            stringify!(capture_close)
+        )
+    );
+}
 #[test]
 fn bindgen_test_layout_plugin_api() {
     const UNINIT: ::std::mem::MaybeUninit<plugin_api> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<plugin_api>(),
-        232usize,
+        248usize,
         concat!("Size of: ", stringify!(plugin_api))
     );
     assert_eq!(

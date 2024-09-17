@@ -12,7 +12,7 @@ struct SinspMetric;
 class SinspTestDriver {
 public:
     SinspTestDriver():
-        m_sinsp(false, "", "", "", true),
+        m_sinsp(true),
         m_metrics(&m_sinsp, METRICS_V2_PLUGINS)
         {}
 

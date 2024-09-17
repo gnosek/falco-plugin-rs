@@ -472,6 +472,7 @@ macro_rules! base_plugin_ffi_wrappers {
         pub const fn __plugin_base_api() -> falco_plugin::api::plugin_api {
             use $crate::internals::async_events::wrappers::AsyncPluginFallbackApi;
             use $crate::internals::extract::wrappers::ExtractPluginFallbackApi;
+            use $crate::internals::listen::wrappers::CaptureListenFallbackApi;
             use $crate::internals::parse::wrappers::ParsePluginFallbackApi;
             use $crate::internals::source::wrappers::SourcePluginFallbackApi;
             falco_plugin::api::plugin_api {
@@ -492,6 +493,8 @@ macro_rules! base_plugin_ffi_wrappers {
                     $crate::internals::parse::wrappers::ParsePluginApi::<$ty>::PARSE_API,
                 __bindgen_anon_4:
                     $crate::internals::async_events::wrappers::AsyncPluginApi::<$ty>::ASYNC_API,
+                __bindgen_anon_5:
+                    $crate::internals::listen::wrappers::CaptureListenApi::<$ty>::LISTEN_API,
                 set_config: Some(plugin_set_config),
                 get_metrics: Some(plugin_get_metrics),
             }

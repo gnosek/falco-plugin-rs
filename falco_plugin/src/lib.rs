@@ -405,6 +405,102 @@ pub mod source {
     pub use falco_event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
 }
 
+/// # Capture listening plugins
+///
+/// Plugins with capture listening capability can receive notifications whenever a capture is
+/// started or stopped. Note that a capture may be stopped and restarted multiple times
+/// over the lifetime of a plugin.
+///
+/// ## Background tasks
+///
+/// Capture listening plugins receive a reference to a thread pool, which can be used to submit
+/// "routines" (tasks running in a separate thread, effectively).
+///
+/// *Note* there is no built-in mechanism to stop a running routine, so you should avoid doing this
+/// in the routine:
+/// ```ignore
+/// loop {
+///     do_something();
+///     std::thread::sleep(some_time);
+/// }
+/// ```
+///
+/// Instead, have your routine just do a single iteration and request a rerun from the scheduler:
+/// ```ignore
+/// do_something();
+/// std::thread::sleep(some_time)
+/// std::ops::ControlFlow::Continue(())
+/// ```
+///
+/// If you insist on using an infinite loop inside a routine, consider using e.g. [`async_event::BackgroundTask`]
+/// to manage the lifetime of the routine.
+///
+/// For your plugin to support event parsing, you will need to implement the [`listen::CaptureListenPlugin`]
+/// trait and invoke the [`capture_listen_plugin`] macro, for example:
+///
+/// ```
+///# use std::ffi::CStr;
+///# use std::time::Duration;
+/// use falco_plugin::anyhow::Error;
+/// use falco_plugin::base::Plugin;
+/// use falco_plugin::{capture_listen_plugin, plugin};
+/// use falco_plugin::listen::{CaptureListenInput, CaptureListenPlugin, Routine};
+///# use falco_plugin::tables::TablesInput;
+///# use log;
+///
+/// struct MyListenPlugin {
+///     tasks: Vec<Routine>,
+/// }
+///
+/// impl Plugin for MyListenPlugin {
+///     // ...
+/// #    const NAME: &'static CStr = c"sample-plugin-rs";
+/// #    const PLUGIN_VERSION: &'static CStr = c"0.0.1";
+/// #    const DESCRIPTION: &'static CStr = c"A sample Falco plugin that does nothing";
+/// #    const CONTACT: &'static CStr = c"you@example.com";
+/// #    type ConfigType = ();
+/// #
+/// #    fn new(input: Option<&TablesInput>, config: Self::ConfigType)
+/// #        -> Result<Self, Error> {
+/// #        Ok(MyListenPlugin {
+/// #             tasks: Vec::new(),
+/// #        })
+/// #    }
+/// }
+///
+/// impl CaptureListenPlugin for MyListenPlugin {
+///     fn capture_open(&mut self, listen_input: &CaptureListenInput) -> Result<(), Error> {
+///         log::info!("Capture started");
+///         self.tasks.push(listen_input.thread_pool.subscribe(|| {
+///             log::info!("Doing stuff in the background");
+///             std::thread::sleep(Duration::from_millis(500));
+///             std::ops::ControlFlow::Continue(())
+///         })?);
+///
+///         Ok(())
+///     }
+///
+/// fn capture_close(&mut self, listen_input: &CaptureListenInput) -> Result<(), Error> {
+///         log::info!("Capture stopped");
+///         for routine in self.tasks.drain(..) {
+///             listen_input.thread_pool.unsubscribe(&routine)?;
+///         }
+///
+///         Ok(())
+///     }
+/// }
+///
+/// plugin!(MyListenPlugin);
+/// capture_listen_plugin!(MyListenPlugin);
+/// ```
+pub mod listen {
+    pub use crate::plugin::listen::CaptureListenInput;
+    pub use crate::plugin::listen::CaptureListenPlugin;
+
+    pub use crate::plugin::listen::routine::Routine;
+    pub use crate::plugin::listen::routine::ThreadPool;
+}
+
 /// # Creating and accessing tables
 ///
 /// Tables are a mechanism to share data between plugins (and Falco core). There are three major
@@ -471,8 +567,10 @@ pub mod source {
 /// # Access control
 ///
 /// Not all plugins are created equal when it comes to accessing tables. Only
-/// [parse plugins](`crate::parse::ParsePlugin`) and [extract plugins](`crate::extract::ExtractPlugin`)
-/// can access tables. Moreover, during field extraction you can only read tables, not write them.
+/// [parse plugins](`crate::parse::ParsePlugin`), [listen plugins](`crate::listen::CaptureListenPlugin`)
+/// and [extract plugins](`crate::extract::ExtractPlugin`) can access tables. Moreover, during field
+/// extraction you can only read tables, not write them.
+///
 /// To summarize:
 ///
 /// | Plugin type | Initialization phase | Action phase ^1 |
@@ -480,6 +578,7 @@ pub mod source {
 /// | source      | no access            | no access       |
 /// | parse       | full access          | read/write      |
 /// | extract     | full access ^2       | read only       |
+/// | listen      | full access          | n/a             |
 /// | async       | no access            | no access       |
 ///
 /// **Notes**:
@@ -489,6 +588,11 @@ pub mod source {
 /// 2. Even though you can create tables and fields during initialization of an extract plugin,
 ///    there's no way to modify them later (create table entries or write to fields), so it's
 ///    more useful to constrain yourself to looking up existing tables/fields.
+///
+/// 3. Listen plugins don't really have an action phase as they only expose methods to run
+///    on capture start/stop. The routines they spawn cannot access tables, since the table
+///    API is explicitly not thread safe (but with the `thread-safe-tables` feature you can
+///    safely access tables from Rust plugins across many threads).
 ///
 /// ## Access control implementation
 ///
@@ -883,6 +987,10 @@ pub mod internals {
 
     pub mod extract {
         pub use crate::plugin::extract::wrappers;
+    }
+
+    pub mod listen {
+        pub use crate::plugin::listen::wrappers;
     }
 
     pub mod parse {

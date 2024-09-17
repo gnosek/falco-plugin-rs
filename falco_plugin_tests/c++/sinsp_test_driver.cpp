@@ -49,7 +49,7 @@ void SinspTestDriver::load_capture_file(const char* path)
 void SinspTestDriver::start_capture(const char* name, const char* config)
 {
     std::scoped_lock m(s_sinsp_lock);
-    m_sinsp.open_plugin(name, config);
+    m_sinsp.open_plugin(name, config, sinsp_plugin_platform::SINSP_PLATFORM_GENERIC);
     m_sinsp.start_capture();
 }
 
