@@ -40,5 +40,7 @@ cmd = [
     "> api/feature_gates.h",
     "bindgen api/ppm_events_public.h -- -I. > src/ffi.rs",
     "./tools/generate_event_table.sh",
-    "./tools/generate_dynamic_param_table.sh"]
+    "./tools/generate_dynamic_param_table.sh",
+    "./tools/generate_flags_table.sh"
+]
 working_dir = "."

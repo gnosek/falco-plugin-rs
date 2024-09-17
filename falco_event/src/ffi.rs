@@ -126,7 +126,6 @@ pub const SIZE_MAX: i32 = -1;
 pub const WINT_MIN: u32 = 0;
 pub const WINT_MAX: u32 = 4294967295;
 pub const PPM_MAX_EVENT_PARAMS: u32 = 32;
-pub const PPM_MAX_PATH_SIZE: u32 = 256;
 pub const PPM_MAX_NAME_LEN: u32 = 32;
 pub const PPM_AF_UNSPEC: u32 = 0;
 pub const PPM_AF_UNIX: u32 = 1;
@@ -185,6 +184,10 @@ pub const PPM_O_LARGEFILE: u32 = 2048;
 pub const PPM_O_CLOEXEC: u32 = 4096;
 pub const PPM_O_TMPFILE: u32 = 8192;
 pub const PPM_O_F_CREATED: u32 = 16384;
+pub const PPM_FD_UPPER_LAYER: u32 = 32768;
+pub const PPM_FD_LOWER_LAYER: u32 = 65536;
+pub const PPM_FD_UPPER_LAYER_CREAT: u32 = 1;
+pub const PPM_FD_LOWER_LAYER_CREAT: u32 = 2;
 pub const PPM_S_NONE: u32 = 0;
 pub const PPM_S_IXOTH: u32 = 1;
 pub const PPM_S_IWOTH: u32 = 2;
@@ -556,6 +559,7 @@ pub const PPM_RESOLVE_CACHED: u32 = 32;
 pub const PPM_EXE_WRITABLE: u32 = 1;
 pub const PPM_EXE_UPPER_LAYER: u32 = 2;
 pub const PPM_EXE_FROM_MEMFD: u32 = 4;
+pub const PPM_EXE_LOWER_LAYER: u32 = 8;
 pub const PPM_EXVAT_AT_EMPTY_PATH: u32 = 1;
 pub const PPM_EXVAT_AT_SYMLINK_NOFOLLOW: u32 = 2;
 pub const PPM_IORING_SETUP_IOPOLL: u32 = 1;
@@ -902,6 +906,10 @@ pub const ppm_capture_category_PPMC_PAGE_FAULT: ppm_capture_category = 4;
 pub const ppm_capture_category_PPMC_SCHED_PROC_EXEC: ppm_capture_category = 5;
 pub const ppm_capture_category_PPMC_SCHED_PROC_FORK: ppm_capture_category = 6;
 pub type ppm_capture_category = ::std::os::raw::c_uint;
+pub const ppm_overlay_PPM_NOT_OVERLAY_FS: ppm_overlay = 0;
+pub const ppm_overlay_PPM_OVERLAY_UPPER: ppm_overlay = 1;
+pub const ppm_overlay_PPM_OVERLAY_LOWER: ppm_overlay = 2;
+pub type ppm_overlay = ::std::os::raw::c_uint;
 pub const ppm_event_code_PPME_GENERIC_E: ppm_event_code = 0;
 pub const ppm_event_code_PPME_GENERIC_X: ppm_event_code = 1;
 pub const ppm_event_code_PPME_SYSCALL_OPEN_E: ppm_event_code = 2;
@@ -1328,7 +1336,11 @@ pub const ppm_event_code_PPME_SYSCALL_PROCESS_VM_WRITEV_E: ppm_event_code = 422;
 pub const ppm_event_code_PPME_SYSCALL_PROCESS_VM_WRITEV_X: ppm_event_code = 423;
 pub const ppm_event_code_PPME_SYSCALL_DELETE_MODULE_E: ppm_event_code = 424;
 pub const ppm_event_code_PPME_SYSCALL_DELETE_MODULE_X: ppm_event_code = 425;
-pub const ppm_event_code_PPM_EVENT_MAX: ppm_event_code = 426;
+pub const ppm_event_code_PPME_SYSCALL_SETREUID_E: ppm_event_code = 426;
+pub const ppm_event_code_PPME_SYSCALL_SETREUID_X: ppm_event_code = 427;
+pub const ppm_event_code_PPME_SYSCALL_SETREGID_E: ppm_event_code = 428;
+pub const ppm_event_code_PPME_SYSCALL_SETREGID_X: ppm_event_code = 429;
+pub const ppm_event_code_PPM_EVENT_MAX: ppm_event_code = 430;
 #[doc = " @defgroup etypes Event Types\n  @{"]
 pub type ppm_event_code = ::std::os::raw::c_uint;
 pub const extra_event_prog_code_T1_EXECVE_X: extra_event_prog_code = 0;
@@ -1795,7 +1807,8 @@ pub const ppm_sc_code_PPM_SC_LSM_GET_SELF_ATTR: ppm_sc_code = 439;
 pub const ppm_sc_code_PPM_SC_LSM_SET_SELF_ATTR: ppm_sc_code = 440;
 pub const ppm_sc_code_PPM_SC_LSM_LIST_MODULES: ppm_sc_code = 441;
 pub const ppm_sc_code_PPM_SC_MSEAL: ppm_sc_code = 442;
-pub const ppm_sc_code_PPM_SC_MAX: ppm_sc_code = 443;
+pub const ppm_sc_code_PPM_SC_URETPROBE: ppm_sc_code = 443;
+pub const ppm_sc_code_PPM_SC_MAX: ppm_sc_code = 444;
 pub type ppm_sc_code = ::std::os::raw::c_uint;
 pub const ppm_event_category_EC_UNKNOWN: ppm_event_category = 0;
 pub const ppm_event_category_EC_OTHER: ppm_event_category = 1;
@@ -1942,7 +1955,7 @@ pub struct ppm_param_info {
     pub name: [::std::os::raw::c_char; 32usize],
     #[doc = "< Parameter type, e.g. 'uint16', 'string'..."]
     pub type_: ppm_param_type,
-    #[doc = "< If this is a numeric parameter, this flag specifies if it should be rendered as decimal or hex."]
+    #[doc = "< If this is a numeric parameter, this flag specifies if it should\nbe rendered as decimal or hex."]
     pub fmt: ppm_print_format,
     #[doc = "< If this is a flags parameter, it points to an array of ppm_name_value,\nif this is a FSRELPATH parameter, it references the related dirfd,\nelse if this is a dynamic parameter it points to an array of ppm_param_info"]
     pub info: *const ::std::os::raw::c_void,
@@ -2173,6 +2186,9 @@ extern "C" {
 }
 extern "C" {
     pub static file_flags: [ppm_name_value; 0usize];
+}
+extern "C" {
+    pub static creat_flags: [ppm_name_value; 0usize];
 }
 extern "C" {
     pub static flock_flags: [ppm_name_value; 0usize];
