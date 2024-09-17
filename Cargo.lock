@@ -174,7 +174,7 @@ dependencies = [
 
 [[package]]
 name = "falco_event_derive"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "proc-macro2",
  "quote",
