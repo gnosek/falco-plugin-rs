@@ -3,7 +3,7 @@ use falco_plugin::base::{Metric, MetricLabel, MetricType, MetricValue, Plugin};
 use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
 use falco_plugin::event::events::types::{EventType, PPME_PLUGINEVENT_E};
 use falco_plugin::extract::{
-    field, ExtractArgType, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin, ExtractRequest,
+    field, ExtractFieldInfo, ExtractPlugin, ExtractRequest,
 };
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::source::{
@@ -269,11 +269,7 @@ impl Plugin for DummyExtractPlugin {
 }
 
 impl DummyExtractPlugin {
-    fn extract_remaining(
-        &mut self,
-        req: ExtractRequest<Self>,
-        _arg: ExtractFieldRequestArg,
-    ) -> Result<u64, Error> {
+    fn extract_remaining(&mut self, req: ExtractRequest<Self>) -> Result<u64, Error> {
         let event_num = req.event.event_number() as u64;
 
         let entry = self
@@ -284,11 +280,7 @@ impl DummyExtractPlugin {
         Ok(remaining)
     }
 
-    fn extract_is_even(
-        &mut self,
-        req: ExtractRequest<Self>,
-        _arg: ExtractFieldRequestArg,
-    ) -> Result<u64, Error> {
+    fn extract_is_even(&mut self, req: ExtractRequest<Self>) -> Result<u64, Error> {
         let event_num = req.event.event_number() as u64;
 
         let entry = self
@@ -299,15 +291,7 @@ impl DummyExtractPlugin {
         Ok(is_even.into())
     }
 
-    fn extract_is_final(
-        &mut self,
-        req: ExtractRequest<Self>,
-        arg: ExtractFieldRequestArg,
-    ) -> Result<u64, Error> {
-        let ExtractFieldRequestArg::Int(arg) = arg else {
-            anyhow::bail!("required arg missing")
-        };
-
+    fn extract_is_final(&mut self, req: ExtractRequest<Self>, arg: u64) -> Result<u64, Error> {
         let event_num = req.event.event_number() as u64;
 
         let entry = self
@@ -321,11 +305,7 @@ impl DummyExtractPlugin {
         Ok(is_final.into())
     }
 
-    fn extract_string_rep(
-        &mut self,
-        req: ExtractRequest<Self>,
-        _arg: ExtractFieldRequestArg,
-    ) -> Result<CString, Error> {
+    fn extract_string_rep(&mut self, req: ExtractRequest<Self>) -> Result<CString, Error> {
         let event_num = req.event.event_number() as u64;
 
         let entry = self
@@ -344,8 +324,7 @@ impl ExtractPlugin for DummyExtractPlugin {
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
         field("dummy_extract.remaining", &Self::extract_remaining),
         field("dummy_extract.is_even", &Self::extract_is_even),
-        field("dummy_extract.is_final", &Self::extract_is_final)
-            .with_arg(ExtractArgType::RequiredIndex),
+        field("dummy_extract.is_final", &Self::extract_is_final),
         field("dummy_extract.as_string", &Self::extract_string_rep),
     ];
 }

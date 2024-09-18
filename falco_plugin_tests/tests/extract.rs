@@ -3,7 +3,7 @@ use falco_plugin::base::{Metric, MetricLabel, MetricType, MetricValue, Plugin};
 use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
 use falco_plugin::event::events::types::{EventType, PPME_PLUGINEVENT_E};
 use falco_plugin::extract::{
-    field, ExtractArgType, ExtractFieldInfo, ExtractFieldRequestArg, ExtractPlugin, ExtractRequest,
+    field, ExtractFieldInfo, ExtractPlugin, ExtractRequest,
 };
 use falco_plugin::source::{
     EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance,
@@ -92,11 +92,7 @@ impl SourcePlugin for DummyPlugin {
 }
 
 impl DummyPlugin {
-    fn extract_payload(
-        &mut self,
-        req: ExtractRequest<Self>,
-        _arg: ExtractFieldRequestArg,
-    ) -> Result<CString, Error> {
+    fn extract_payload(&mut self, req: ExtractRequest<Self>) -> Result<CString, Error> {
         let event = req.event.event()?;
         let event = event.load::<PPME_PLUGINEVENT_E>()?;
         let payload = event
@@ -112,12 +108,8 @@ impl DummyPlugin {
     fn extract_payload_repeated(
         &mut self,
         req: ExtractRequest<Self>,
-        arg: ExtractFieldRequestArg,
+        reps: u64,
     ) -> Result<Vec<CString>, Error> {
-        let ExtractFieldRequestArg::Int(arg) = arg else {
-            anyhow::bail!("I need an int arg")
-        };
-
         let event = req.event.event()?;
         let event = event.load::<PPME_PLUGINEVENT_E>()?;
         let payload = event
@@ -127,14 +119,10 @@ impl DummyPlugin {
 
         let mut out = CString::default();
         out.write_into(|w| w.write_all(payload))?;
-        Ok(vec![out; arg as usize])
+        Ok(vec![out; reps as usize])
     }
 
-    fn extract_events_remaining(
-        &mut self,
-        req: ExtractRequest<Self>,
-        _arg: ExtractFieldRequestArg,
-    ) -> Result<u64, Error> {
+    fn extract_events_remaining(&mut self, req: ExtractRequest<Self>) -> Result<u64, Error> {
         let event = req.event.event()?;
         let event = event.load::<PPME_PLUGINEVENT_E>()?;
         let payload = event
@@ -151,12 +139,8 @@ impl DummyPlugin {
     fn events_remaining_repeated(
         &mut self,
         req: ExtractRequest<Self>,
-        arg: ExtractFieldRequestArg,
+        reps: u64,
     ) -> Result<Vec<u64>, Error> {
-        let ExtractFieldRequestArg::Int(arg) = arg else {
-            anyhow::bail!("I need an int arg")
-        };
-
         let event = req.event.event()?;
         let event = event.load::<PPME_PLUGINEVENT_E>()?;
         let payload = event
@@ -167,21 +151,20 @@ impl DummyPlugin {
         let first_char = &payload[0..1];
         let first_char = std::str::from_utf8(first_char)?;
         let remaining: u64 = first_char.parse()?;
-        Ok(vec![remaining; arg as usize])
+        Ok(vec![remaining; reps as usize])
     }
 
     fn extract_events_remaining_with_maybe_override(
         &mut self,
         req: ExtractRequest<Self>,
-        arg: ExtractFieldRequestArg,
+        arg: Option<&CStr>,
     ) -> Result<u64, Error> {
         let event = req.event.event()?;
         let event = event.load::<PPME_PLUGINEVENT_E>()?;
 
         let buf = match arg {
-            ExtractFieldRequestArg::String(s) => s.to_bytes(),
-            ExtractFieldRequestArg::Int(_) => anyhow::bail!("unexpected int argument"),
-            ExtractFieldRequestArg::None => event
+            Some(s) => s.to_bytes(),
+            None => event
                 .params
                 .event_data
                 .ok_or(anyhow::anyhow!("no payload in event"))?,
@@ -200,16 +183,13 @@ impl ExtractPlugin for DummyPlugin {
     type ExtractContext = ();
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
         field("dummy.payload", &Self::extract_payload),
-        field("dummy.payload_repeated", &Self::extract_payload_repeated)
-            .with_arg(ExtractArgType::RequiredIndex),
+        field("dummy.payload_repeated", &Self::extract_payload_repeated),
         field("dummy.remaining", &Self::extract_events_remaining),
-        field("dummy.remaining_repeated", &Self::events_remaining_repeated)
-            .with_arg(ExtractArgType::RequiredIndex),
+        field("dummy.remaining_repeated", &Self::events_remaining_repeated),
         field(
             "dummy.remaining_with_maybe_override",
             &Self::extract_events_remaining_with_maybe_override,
-        )
-        .with_arg(ExtractArgType::OptionalKey),
+        ),
     ];
 }
 
