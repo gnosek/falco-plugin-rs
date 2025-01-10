@@ -20,8 +20,14 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 
 #[derive(export::Entry)]
+struct NestedTableEntry {
+    num: export::Public<u64>,
+}
+
+#[derive(export::Entry)]
 struct TableEntry {
     num: export::Public<u64>,
+    nested: Box<export::Table<u64, NestedTableEntry>>,
 }
 
 struct DummyAsyncPlugin {
