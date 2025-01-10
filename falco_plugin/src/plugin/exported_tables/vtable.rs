@@ -17,6 +17,12 @@ pub(crate) struct Vtable {
     fields_ext: ss_plugin_table_fields_vtable_ext,
 }
 
+#[cfg(feature = "thread-safe-tables")]
+unsafe impl Send for Vtable {}
+
+#[cfg(feature = "thread-safe-tables")]
+unsafe impl Sync for Vtable {}
+
 impl<K, E> Table<K, E>
 where
     K: Key + Ord,
