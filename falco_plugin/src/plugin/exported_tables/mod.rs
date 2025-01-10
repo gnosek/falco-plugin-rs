@@ -1,6 +1,7 @@
 pub mod entry;
 pub mod field;
 pub mod field_descriptor;
+pub mod field_info;
 pub mod field_value;
 pub mod macros;
 pub mod metadata;

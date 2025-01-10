@@ -1,3 +1,4 @@
+use crate::plugin::exported_tables::field_info::FieldInfo;
 use crate::plugin::tables::data::FieldTypeId;
 use falco_plugin_api::{ss_plugin_field_type, ss_plugin_table_fieldinfo};
 use std::sync::Arc;
@@ -71,11 +72,11 @@ impl FieldDescriptor {
     /// Get the raw API representation of a field descriptor
     ///
     /// This is used to list table fields
-    pub fn to_raw(&self, name: &'static [u8]) -> ss_plugin_table_fieldinfo {
-        ss_plugin_table_fieldinfo {
+    pub fn to_raw(&self, name: &'static [u8]) -> FieldInfo {
+        FieldInfo::new(ss_plugin_table_fieldinfo {
             name: name.as_ptr().cast(),
             field_type: self.type_id as ss_plugin_field_type,
             read_only: self.read_only.into(),
-        }
+        })
     }
 }

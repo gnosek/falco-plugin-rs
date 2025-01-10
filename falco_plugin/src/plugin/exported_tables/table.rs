@@ -3,6 +3,7 @@ use crate::plugin::exported_tables::entry::table_metadata::extensible::Extensibl
 use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
 use crate::plugin::exported_tables::entry::traits::Entry;
 use crate::plugin::exported_tables::field_descriptor::{FieldDescriptor, FieldRef};
+use crate::plugin::exported_tables::field_info::FieldInfo;
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::exported_tables::metadata::HasMetadata;
 use crate::plugin::exported_tables::metadata::Metadata;
@@ -12,7 +13,7 @@ use crate::plugin::exported_tables::ref_shared::{
 use crate::plugin::exported_tables::vtable::Vtable;
 use crate::plugin::tables::data::{FieldTypeId, Key};
 use crate::FailureReason;
-use falco_plugin_api::{ss_plugin_state_data, ss_plugin_table_fieldinfo};
+use falco_plugin_api::ss_plugin_state_data;
 use std::borrow::Borrow;
 use std::collections::BTreeMap;
 use std::ffi::CStr;
@@ -45,7 +46,7 @@ where
     E::Metadata: TableMetadata,
 {
     name: &'static CStr,
-    field_descriptors: Vec<ss_plugin_table_fieldinfo>,
+    field_descriptors: Vec<FieldInfo>,
     metadata: RefShared<ExtensibleEntryMetadata<E::Metadata>>,
     data: RefShared<BTreeMap<K, RefShared<ExtensibleEntry<E>>>>,
 
@@ -263,7 +264,7 @@ where
     }
 
     /// Return a list of fields as a slice of raw FFI objects
-    pub fn list_fields(&mut self) -> &[ss_plugin_table_fieldinfo] {
+    pub fn list_fields(&mut self) -> &[FieldInfo] {
         self.field_descriptors.clear();
         self.field_descriptors.extend(self.metadata.list_fields());
         self.field_descriptors.as_slice()

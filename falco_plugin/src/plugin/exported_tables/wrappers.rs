@@ -306,7 +306,9 @@ where
         };
         let fields = table.list_fields();
         *nfields = fields.len() as u32;
-        fields.as_ptr()
+        // casting *const FieldInfo to *const ss_plugin_table_fieldinfo is fine
+        // because of #[repr(transparent)] on the wrapper struct
+        fields.as_ptr() as *const _
     }
 }
 

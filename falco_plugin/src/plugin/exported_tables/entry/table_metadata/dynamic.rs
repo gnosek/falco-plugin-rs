@@ -1,6 +1,7 @@
 use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
 use crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
 use crate::plugin::exported_tables::field_descriptor::{FieldId, FieldRef};
+use crate::plugin::exported_tables::field_info::FieldInfo;
 use crate::plugin::exported_tables::metadata::Metadata;
 use crate::plugin::tables::data::FieldTypeId;
 use falco_plugin_api::{ss_plugin_bool, ss_plugin_state_type, ss_plugin_table_fieldinfo};
@@ -56,13 +57,15 @@ impl TableMetadata for DynamicFieldsOnly {
         Some(FieldRef::Dynamic(field))
     }
 
-    fn list_fields(&self) -> Vec<ss_plugin_table_fieldinfo> {
+    fn list_fields(&self) -> Vec<FieldInfo> {
         self.fields
             .iter()
-            .map(|(name, field)| ss_plugin_table_fieldinfo {
-                name: name.as_ptr(),
-                field_type: field.type_id as ss_plugin_state_type,
-                read_only: field.read_only as ss_plugin_bool,
+            .map(|(name, field)| {
+                FieldInfo::new(ss_plugin_table_fieldinfo {
+                    name: name.as_ptr(),
+                    field_type: field.type_id as ss_plugin_state_type,
+                    read_only: field.read_only as ss_plugin_bool,
+                })
             })
             .collect()
     }

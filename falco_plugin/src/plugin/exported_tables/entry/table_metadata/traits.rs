@@ -1,8 +1,8 @@
 use crate::plugin::exported_tables::field_descriptor::FieldRef;
+use crate::plugin::exported_tables::field_info::FieldInfo;
 use crate::plugin::exported_tables::metadata::Metadata;
 use crate::plugin::exported_tables::ref_shared::RefShared;
 use crate::plugin::tables::data::FieldTypeId;
-use falco_plugin_api::ss_plugin_table_fieldinfo;
 use std::ffi::CStr;
 
 /// Trait implemented by metadata types belonging to tables
@@ -21,7 +21,7 @@ pub trait TableMetadata: Metadata {
     ) -> Option<FieldRef>;
 
     /// List all fields
-    fn list_fields(&self) -> Vec<ss_plugin_table_fieldinfo>;
+    fn list_fields(&self) -> Vec<FieldInfo>;
 }
 
 impl<M: TableMetadata> TableMetadata for RefShared<M> {
@@ -38,7 +38,7 @@ impl<M: TableMetadata> TableMetadata for RefShared<M> {
         self.write_arc().add_field(name, field_type, read_only)
     }
 
-    fn list_fields(&self) -> Vec<ss_plugin_table_fieldinfo> {
+    fn list_fields(&self) -> Vec<FieldInfo> {
         self.read_arc().list_fields()
     }
 }

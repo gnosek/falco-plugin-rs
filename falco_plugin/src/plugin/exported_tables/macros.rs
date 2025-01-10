@@ -8,6 +8,7 @@ macro_rules! table_export_expose_internals {
             pub use $crate::plugin::exported_tables::field_descriptor::FieldDescriptor;
             pub use $crate::plugin::exported_tables::field_descriptor::FieldId;
             pub use $crate::plugin::exported_tables::field_descriptor::FieldRef;
+            pub use $crate::plugin::exported_tables::field_info::FieldInfo;
             pub use $crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
             pub use $crate::plugin::exported_tables::metadata::HasMetadata;
             pub use $crate::plugin::exported_tables::metadata::Metadata;
@@ -32,6 +33,7 @@ macro_rules! table_export_use_internals {
         use $crate::internals::tables::export::DynamicFieldValue;
         use $crate::internals::tables::export::FieldDescriptor;
         use $crate::internals::tables::export::FieldId;
+        use $crate::internals::tables::export::FieldInfo;
         use $crate::internals::tables::export::FieldRef;
         use $crate::internals::tables::export::FieldTypeId;
         use $crate::internals::tables::export::HasMetadata;
@@ -45,7 +47,6 @@ macro_rules! table_export_use_internals {
         use $crate::internals::tables::export::StaticFieldSetFallback;
         use $crate::internals::tables::export::TableMetadata;
 
-        use $crate::api::ss_plugin_table_fieldinfo;
         use $crate::phf;
     };
 }
@@ -139,7 +140,7 @@ macro_rules! impl_export_table {
                     None
                 }
 
-                fn list_fields(&self) -> std::vec::Vec<ss_plugin_table_fieldinfo> {
+                fn list_fields(&self) -> std::vec::Vec<FieldInfo> {
                     STATIC_FIELDS
                         .entries()
                         .filter_map(|(name, maybe_field)| {

@@ -1,10 +1,10 @@
 use crate::plugin::exported_tables::entry::table_metadata::dynamic::DynamicFieldsOnly;
 use crate::plugin::exported_tables::entry::table_metadata::traits::TableMetadata;
 use crate::plugin::exported_tables::field_descriptor::FieldRef;
+use crate::plugin::exported_tables::field_info::FieldInfo;
 use crate::plugin::exported_tables::metadata::Metadata;
 use crate::plugin::tables::data::FieldTypeId;
 use anyhow::Error;
-use falco_plugin_api::ss_plugin_table_fieldinfo;
 use std::ffi::CStr;
 
 #[derive(Debug)]
@@ -41,7 +41,7 @@ impl<M: TableMetadata> TableMetadata for ExtensibleEntryMetadata<M> {
         self.custom_fields.add_field(name, field_type, read_only)
     }
 
-    fn list_fields(&self) -> Vec<ss_plugin_table_fieldinfo> {
+    fn list_fields(&self) -> Vec<FieldInfo> {
         let mut fields = self.inner.list_fields();
         fields.extend(self.custom_fields.list_fields());
         fields
