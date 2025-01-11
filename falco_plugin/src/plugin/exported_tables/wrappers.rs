@@ -304,11 +304,11 @@ where
         let Some(table) = (table as *mut Table<K, E>).as_mut() else {
             return std::ptr::null_mut();
         };
-        let fields = table.list_fields();
-        *nfields = fields.len() as u32;
+        let (fields, len) = table.list_fields();
+        *nfields = len as u32;
         // casting *const FieldInfo to *const ss_plugin_table_fieldinfo is fine
         // because of #[repr(transparent)] on the wrapper struct
-        fields.as_ptr() as *const _
+        fields as *const _
     }
 }
 

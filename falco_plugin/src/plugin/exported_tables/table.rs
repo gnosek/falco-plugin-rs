@@ -7,6 +7,7 @@ use crate::plugin::exported_tables::field_info::FieldInfo;
 use crate::plugin::exported_tables::field_value::dynamic::DynamicFieldValue;
 use crate::plugin::exported_tables::metadata::HasMetadata;
 use crate::plugin::exported_tables::metadata::Metadata;
+use crate::plugin::exported_tables::per_thread::PerThreadCell;
 use crate::plugin::exported_tables::ref_shared::{
     new_counted_ref, new_shared_ref, RefCounted, RefGuard, RefShared,
 };
@@ -46,7 +47,7 @@ where
     E::Metadata: TableMetadata,
 {
     name: &'static CStr,
-    field_descriptors: Vec<FieldInfo>,
+    field_descriptors: PerThreadCell<Vec<FieldInfo>>,
     metadata: RefShared<ExtensibleEntryMetadata<E::Metadata>>,
     data: RefShared<BTreeMap<K, RefShared<ExtensibleEntry<E>>>>,
 
@@ -90,7 +91,7 @@ where
     ) -> Result<Self, anyhow::Error> {
         let table = Self {
             name: tag,
-            field_descriptors: vec![],
+            field_descriptors: PerThreadCell::default(),
             metadata: metadata.clone(),
             data: new_shared_ref(BTreeMap::new()),
 
@@ -104,7 +105,7 @@ where
     pub fn new(name: &'static CStr) -> Result<Self, anyhow::Error> {
         Ok(Self {
             name,
-            field_descriptors: vec![],
+            field_descriptors: PerThreadCell::default(),
             metadata: new_shared_ref(ExtensibleEntryMetadata::new()?),
             data: new_shared_ref(BTreeMap::new()),
 
@@ -263,11 +264,15 @@ where
         entry.set(index, value)
     }
 
-    /// Return a list of fields as a slice of raw FFI objects
-    pub fn list_fields(&mut self) -> &[FieldInfo] {
-        self.field_descriptors.clear();
-        self.field_descriptors.extend(self.metadata.list_fields());
-        self.field_descriptors.as_slice()
+    /// Return a list of fields as a (pointer, len) tuple, describing a slice of FieldInfo objects
+    pub fn list_fields(&mut self) -> (*const FieldInfo, usize) {
+        let descriptors = self.metadata.list_fields();
+
+        let ptr = descriptors.as_ptr();
+        let len = descriptors.len();
+        self.field_descriptors.replace(descriptors);
+
+        (ptr, len)
     }
 
     /// Return a field descriptor for a particular field
