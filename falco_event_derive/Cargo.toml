@@ -9,6 +9,9 @@ repository = "https://github.com/falcosecurity/plugin-sdk-rs"
 readme = "README.md"
 keywords = ["falco", "security"]
 
+[lints]
+workspace = true
+
 [lib]
 proc-macro = true
 

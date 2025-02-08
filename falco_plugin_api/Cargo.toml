@@ -10,4 +10,7 @@ readme = "README.md"
 keywords = ["falco", "security"]
 categories = ["external-ffi-bindings"]
 
+[lints]
+workspace = true
+
 [dependencies]
