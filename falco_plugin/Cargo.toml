@@ -14,6 +14,23 @@ categories = ["api-bindings"]
 
 # RUSTFLAGS='--cfg linkage="static"' cargo rustc --crate-type=staticlib -p falco_plugin --example dummy_source
 [lints.rust]
+# rust-2024-compatibility = "warn"
+boxed-slice-into-iter = "allow"
+dependency-on-unit-never-type-fallback = "allow"
+deprecated-safe-2024 = "allow"
+edition-2024-expr-fragment-specifier = "allow"
+if-let-rescope = "allow"
+impl-trait-overcaptures = "allow"
+keyword-idents-2024 = "allow"
+missing-unsafe-on-extern = "allow"
+never-type-fallback-flowing-into-unsafe = "allow"
+rust-2024-guarded-string-incompatible-syntax = "allow"
+rust-2024-incompatible-pat = "allow"
+rust-2024-prelude-collisions = "allow"
+static-mut-refs = "allow"
+tail-expr-drop-order = "allow"
+unsafe-attr-outside-unsafe = "allow"
+unsafe-op-in-unsafe-fn = "allow"
 unexpected_cfgs = { level = "allow", check-cfg = ['cfg(linkage, values("static"))'] }
 
 [[example]]
