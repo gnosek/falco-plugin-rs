@@ -75,8 +75,11 @@ pub unsafe extern "C-unwind" fn plugin_list_open_params<T: SourcePlugin>(
     rc: *mut i32,
 ) -> *const c_char {
     let plugin = plugin as *mut PluginWrapper<T>;
-    let Some(plugin) = plugin.as_mut() else {
-        return std::ptr::null();
+    let plugin = unsafe {
+        let Some(plugin) = plugin.as_mut() else {
+            return std::ptr::null();
+        };
+        plugin
     };
     let Some(actual_plugin) = &mut plugin.plugin else {
         return std::ptr::null();
@@ -163,8 +166,11 @@ pub unsafe extern "C-unwind" fn plugin_close<T: SourcePlugin>(
     instance: *mut ss_instance_t,
 ) {
     let plugin = plugin as *mut PluginWrapper<T>;
-    let Some(plugin) = plugin.as_mut() else {
-        return;
+    let plugin = unsafe {
+        let Some(plugin) = plugin.as_mut() else {
+            return;
+        };
+        plugin
     };
     let Some(actual_plugin) = &mut plugin.plugin else {
         return;

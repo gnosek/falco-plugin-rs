@@ -484,10 +484,10 @@ unsafe extern "C-unwind" fn log(
 ) {
     eprint!("<{severity}>");
     if !component.is_null() {
-        eprint!(" {:?}:", CStr::from_ptr(component));
+        eprint!(" {:?}:", unsafe { CStr::from_ptr(component) });
     }
     if !msg.is_null() {
-        eprint!(" {:?}", CStr::from_ptr(msg));
+        eprint!(" {:?}", unsafe { CStr::from_ptr(msg) });
     }
     eprintln!();
 }
@@ -518,7 +518,7 @@ pub unsafe extern "C-unwind" fn get_table(
     if name.is_null() {
         return std::ptr::null_mut();
     }
-    let name = CStr::from_ptr(name);
+    let name = unsafe { CStr::from_ptr(name) };
 
     let tables = owner.tables.borrow();
     match tables.get_table(name, key_type) {
@@ -542,7 +542,7 @@ pub unsafe extern "C-unwind" fn add_table(
     if table_input.name.is_null() {
         return ss_plugin_rc_SS_PLUGIN_FAILURE;
     }
-    let name = CStr::from_ptr(table_input.name);
+    let name = unsafe { CStr::from_ptr(table_input.name) };
 
     let mut tables = owner.tables.borrow_mut();
     tables.add_table(name, table_input)

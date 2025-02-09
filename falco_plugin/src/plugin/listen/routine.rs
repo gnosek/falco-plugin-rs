@@ -105,7 +105,7 @@ impl ThreadPool {
 
         unsafe fn cb_drop<F>(data: *mut ss_plugin_routine_state_t) {
             let cb = data as *mut F;
-            let _ = Box::from_raw(cb);
+            let _ = unsafe { Box::from_raw(cb) };
         }
 
         let callback = Some(

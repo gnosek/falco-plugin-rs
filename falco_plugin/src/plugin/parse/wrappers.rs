@@ -57,7 +57,7 @@ pub unsafe extern "C-unwind" fn plugin_get_parse_event_types<T: ParsePlugin>(
     _plugin: *mut ss_plugin_t,
 ) -> *mut u16 {
     let types = T::EVENT_TYPES;
-    if let Some(numtypes) = numtypes.as_mut() {
+    if let Some(numtypes) = unsafe { numtypes.as_mut() } {
         *numtypes = types.len() as u32;
         types.as_ptr() as *const u16 as *mut u16 // this should ****really**** be const
     } else {

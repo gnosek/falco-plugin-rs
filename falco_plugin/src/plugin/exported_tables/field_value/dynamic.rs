@@ -27,18 +27,20 @@ impl DynamicFieldValue {
         value: &ss_plugin_state_data,
         type_id: FieldTypeId,
     ) -> Option<Self> {
-        match type_id {
-            FieldTypeId::I8 => Some(Self::I8(value.s8)),
-            FieldTypeId::I16 => Some(Self::I16(value.s16)),
-            FieldTypeId::I32 => Some(Self::I32(value.s32)),
-            FieldTypeId::I64 => Some(Self::I64(value.s64)),
-            FieldTypeId::U8 => Some(Self::U8(value.u8_)),
-            FieldTypeId::U16 => Some(Self::U16(value.u16_)),
-            FieldTypeId::U32 => Some(Self::U32(value.u32_)),
-            FieldTypeId::U64 => Some(Self::U64(value.u64_)),
-            FieldTypeId::String => Some(Self::String(CStr::from_ptr(value.str_).to_owned())),
-            FieldTypeId::Bool => Some(Self::Bool(value.b != 0)),
-            _ => None,
+        unsafe {
+            match type_id {
+                FieldTypeId::I8 => Some(Self::I8(value.s8)),
+                FieldTypeId::I16 => Some(Self::I16(value.s16)),
+                FieldTypeId::I32 => Some(Self::I32(value.s32)),
+                FieldTypeId::I64 => Some(Self::I64(value.s64)),
+                FieldTypeId::U8 => Some(Self::U8(value.u8_)),
+                FieldTypeId::U16 => Some(Self::U16(value.u16_)),
+                FieldTypeId::U32 => Some(Self::U32(value.u32_)),
+                FieldTypeId::U64 => Some(Self::U64(value.u64_)),
+                FieldTypeId::String => Some(Self::String(CStr::from_ptr(value.str_).to_owned())),
+                FieldTypeId::Bool => Some(Self::Bool(value.b != 0)),
+                _ => None,
+            }
         }
     }
 }
