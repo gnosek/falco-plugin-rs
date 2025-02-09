@@ -249,11 +249,11 @@ where
         };
         let key = K::from_data(key);
         let entry = Box::from_raw(entry as *mut TableEntryType<E>);
+        let entry = table.insert(key, *entry);
 
-        match table.insert(key, *entry) {
-            Some(entry) => Box::into_raw(Box::new(entry)) as *mut _,
-            None => std::ptr::null_mut(),
-        }
+        entry
+            .map(|e| Box::into_raw(Box::new(e)).cast())
+            .unwrap_or_else(std::ptr::null_mut)
     }
 }
 

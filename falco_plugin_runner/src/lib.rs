@@ -83,7 +83,8 @@ impl CapturingPluginRunner {
     fn get_next_event(&mut self) -> anyhow::Result<Event> {
         self.evtnum += 1;
         for plugin in &mut self.plugins {
-            match plugin.next_event() {
+            let event = plugin.next_event();
+            match event {
                 Ok(mut event) => {
                     event.evt_num = Some(self.evtnum);
                     return Ok(event);
