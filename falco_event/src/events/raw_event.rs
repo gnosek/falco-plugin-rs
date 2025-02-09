@@ -73,7 +73,7 @@ impl RawEvent<'_> {
         self.nparams as usize * size
     }
 
-    unsafe fn lengths<T>(mut buf: &[u8]) -> impl Iterator<Item = usize> + '_ {
+    unsafe fn lengths<T>(mut buf: &[u8]) -> impl Iterator<Item = usize> + '_ + use<'_, T> {
         let size = std::mem::size_of::<T>();
 
         std::iter::from_fn(move || buf.read_uint::<NativeEndian>(size).ok().map(|s| s as usize))
