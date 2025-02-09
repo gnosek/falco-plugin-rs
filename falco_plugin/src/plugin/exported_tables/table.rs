@@ -214,7 +214,7 @@ where
     /// (`data.read()`) or writing (`data.write()`).
     pub fn create_entry_fn(
         &self,
-    ) -> impl Fn() -> Result<RefShared<ExtensibleEntry<E>>, anyhow::Error> {
+    ) -> impl Fn() -> Result<RefShared<ExtensibleEntry<E>>, anyhow::Error> + use<K, E> {
         let name = self.name;
         let metadata = self.metadata.clone();
 
