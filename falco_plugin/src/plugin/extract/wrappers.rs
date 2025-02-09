@@ -97,7 +97,7 @@ pub unsafe extern "C-unwind" fn plugin_extract_fields<T: ExtractPlugin>(
         let Some(plugin) = plugin.as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+        let Some(actual_plugin) = &mut plugin.plugin else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 

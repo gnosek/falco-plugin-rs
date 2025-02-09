@@ -52,7 +52,7 @@ impl<T: ToBytes> ToBytes for Option<T> {
 
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         match self {
-            Some(ref val) => val.write(writer),
+            Some(val) => val.write(writer),
             None => T::default_repr().write(writer),
         }
     }

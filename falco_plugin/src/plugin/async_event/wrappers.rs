@@ -98,7 +98,7 @@ pub unsafe extern "C-unwind" fn plugin_set_async_event_handler<T: AsyncEventPlug
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 
-        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+        let Some(actual_plugin) = &mut plugin.plugin else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 
@@ -137,7 +137,7 @@ pub unsafe extern "C-unwind" fn plugin_dump_state<T: AsyncEventPlugin>(
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 
-        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+        let Some(actual_plugin) = &mut plugin.plugin else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 
