@@ -26,9 +26,12 @@ macro_rules! delegate_table_method {
             return $error;
         };
 
-        let Some(vtable) = table_input.$vtable.as_ref() else {
-            #[allow(clippy::unused_unit)]
-            return $error;
+        let vtable = unsafe {
+            let Some(vtable) = table_input.$vtable.as_ref() else {
+                #[allow(clippy::unused_unit)]
+                return $error;
+            };
+            vtable
         };
 
         let Some(method) = vtable.$method else {
@@ -43,12 +46,12 @@ macro_rules! delegate_table_method {
 unsafe extern "C-unwind" fn get_table_name(table: *mut ss_plugin_table_t) -> *const c_char {
     let (get_table_name, table) =
         delegate_table_method!(table => reader_ext.get_table_name or std::ptr::null());
-    get_table_name(table)
+    unsafe { get_table_name(table) }
 }
 
 unsafe extern "C-unwind" fn get_table_size(table: *mut ss_plugin_table_t) -> u64 {
     let (get_table_size, table) = delegate_table_method!(table => reader_ext.get_table_size or 0);
-    get_table_size(table)
+    unsafe { get_table_size(table) }
 }
 
 unsafe extern "C-unwind" fn get_table_entry(
@@ -57,7 +60,7 @@ unsafe extern "C-unwind" fn get_table_entry(
 ) -> *mut ss_plugin_table_entry_t {
     let (get_table_entry, table) =
         delegate_table_method!(table => reader_ext.get_table_entry or std::ptr::null_mut());
-    get_table_entry(table, key)
+    unsafe { get_table_entry(table, key) }
 }
 
 unsafe extern "C-unwind" fn read_entry_field(
@@ -67,7 +70,7 @@ unsafe extern "C-unwind" fn read_entry_field(
     out: *mut ss_plugin_state_data,
 ) -> ss_plugin_rc {
     let (read_entry_field, table) = delegate_table_method!(table => reader_ext.read_entry_field or ss_plugin_rc_SS_PLUGIN_FAILURE);
-    read_entry_field(table, entry, field, out)
+    unsafe { read_entry_field(table, entry, field, out) }
 }
 
 unsafe extern "C-unwind" fn release_table_entry(
@@ -76,7 +79,7 @@ unsafe extern "C-unwind" fn release_table_entry(
 ) {
     let (release_table_entry, table) =
         delegate_table_method!(table => reader_ext.release_table_entry or ());
-    release_table_entry(table, entry)
+    unsafe { release_table_entry(table, entry) }
 }
 
 unsafe extern "C-unwind" fn iterate_entries(
@@ -85,13 +88,13 @@ unsafe extern "C-unwind" fn iterate_entries(
     state: *mut ss_plugin_table_iterator_state_t,
 ) -> ss_plugin_bool {
     let (iterate_entries, table) = delegate_table_method!(table => reader_ext.iterate_entries or 0);
-    iterate_entries(table, iter, state)
+    unsafe { iterate_entries(table, iter, state) }
 }
 
 unsafe extern "C-unwind" fn clear_table(table: *mut ss_plugin_table_t) -> ss_plugin_rc {
     let (clear_table, table) =
         delegate_table_method!(table => writer_ext.clear_table or ss_plugin_rc_SS_PLUGIN_FAILURE);
-    clear_table(table)
+    unsafe { clear_table(table) }
 }
 
 unsafe extern "C-unwind" fn erase_table_entry(
@@ -99,7 +102,7 @@ unsafe extern "C-unwind" fn erase_table_entry(
     key: *const ss_plugin_state_data,
 ) -> ss_plugin_rc {
     let (erase_table_entry, table) = delegate_table_method!(table => writer_ext.erase_table_entry or ss_plugin_rc_SS_PLUGIN_FAILURE);
-    erase_table_entry(table, key)
+    unsafe { erase_table_entry(table, key) }
 }
 
 unsafe extern "C-unwind" fn create_table_entry(
@@ -107,7 +110,7 @@ unsafe extern "C-unwind" fn create_table_entry(
 ) -> *mut ss_plugin_table_entry_t {
     let (create_table_entry, table) =
         delegate_table_method!(table => writer_ext.create_table_entry or std::ptr::null_mut());
-    create_table_entry(table)
+    unsafe { create_table_entry(table) }
 }
 
 unsafe extern "C-unwind" fn destroy_table_entry(
@@ -116,7 +119,7 @@ unsafe extern "C-unwind" fn destroy_table_entry(
 ) {
     let (destroy_table_entry, table) =
         delegate_table_method!(table => writer_ext.destroy_table_entry or ());
-    destroy_table_entry(table, entry)
+    unsafe { destroy_table_entry(table, entry) }
 }
 
 unsafe extern "C-unwind" fn add_table_entry(
@@ -126,7 +129,7 @@ unsafe extern "C-unwind" fn add_table_entry(
 ) -> *mut ss_plugin_table_entry_t {
     let (add_table_entry, table) =
         delegate_table_method!(table => writer_ext.add_table_entry or std::ptr::null_mut());
-    add_table_entry(table, key, entry)
+    unsafe { add_table_entry(table, key, entry) }
 }
 
 unsafe extern "C-unwind" fn write_entry_field(
@@ -136,7 +139,7 @@ unsafe extern "C-unwind" fn write_entry_field(
     value: *const ss_plugin_state_data,
 ) -> ss_plugin_rc {
     let (write_entry_field, table) = delegate_table_method!(table => writer_ext.write_entry_field or ss_plugin_rc_SS_PLUGIN_FAILURE);
-    write_entry_field(table, entry, field, value)
+    unsafe { write_entry_field(table, entry, field, value) }
 }
 
 unsafe extern "C-unwind" fn list_table_fields(
@@ -145,7 +148,7 @@ unsafe extern "C-unwind" fn list_table_fields(
 ) -> *const ss_plugin_table_fieldinfo {
     let (list_table_fields, table) =
         delegate_table_method!(table => fields_ext.list_table_fields or std::ptr::null());
-    list_table_fields(table, nfields)
+    unsafe { list_table_fields(table, nfields) }
 }
 
 unsafe extern "C-unwind" fn get_table_field(
@@ -155,7 +158,7 @@ unsafe extern "C-unwind" fn get_table_field(
 ) -> *mut ss_plugin_table_field_t {
     let (get_table_field, table) =
         delegate_table_method!(table => fields_ext.get_table_field or std::ptr::null_mut());
-    get_table_field(table, name, data_type)
+    unsafe { get_table_field(table, name, data_type) }
 }
 
 unsafe extern "C-unwind" fn add_table_field(
@@ -165,7 +168,7 @@ unsafe extern "C-unwind" fn add_table_field(
 ) -> *mut ss_plugin_table_field_t {
     let (add_table_field, table) =
         delegate_table_method!(table => fields_ext.add_table_field or std::ptr::null_mut());
-    add_table_field(table, name, data_type)
+    unsafe { add_table_field(table, name, data_type) }
 }
 
 pub static TABLE_READER: falco_plugin_api::ss_plugin_table_reader_vtable =

@@ -101,7 +101,7 @@ unsafe extern "C-unwind" fn async_handler(
     event: *const ss_plugin_event,
     err: *mut c_char,
 ) -> i32 {
-    let err = std::slice::from_raw_parts_mut(err as *mut _, PLUGIN_MAX_ERRLEN as usize);
+    let err = unsafe { std::slice::from_raw_parts_mut(err as *mut _, PLUGIN_MAX_ERRLEN as usize) };
     let owner = unsafe { &mut *(owner as *mut AsyncPlugin) };
     let evt_len = unsafe { (*event).len as usize };
 

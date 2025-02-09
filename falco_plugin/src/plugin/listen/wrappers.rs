@@ -46,18 +46,24 @@ pub unsafe extern "C-unwind" fn plugin_capture_open<T: CaptureListenPlugin>(
     plugin: *mut ss_plugin_t,
     listen_input: *const ss_plugin_capture_listen_input,
 ) -> ss_plugin_rc {
-    let Some(plugin) = (plugin as *mut PluginWrapper<T>).as_mut() else {
-        return ss_plugin_rc_SS_PLUGIN_FAILURE;
+    let plugin = unsafe {
+        let Some(plugin) = (plugin as *mut PluginWrapper<T>).as_mut() else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+        plugin
     };
 
     let Some(actual_plugin) = &mut plugin.plugin else {
         return ss_plugin_rc_SS_PLUGIN_FAILURE;
     };
 
-    let Ok(listen_input) =
-        CaptureListenInput::try_from(listen_input, actual_plugin.last_error.clone())
-    else {
-        return ss_plugin_rc_SS_PLUGIN_FAILURE;
+    let listen_input = unsafe {
+        let Ok(listen_input) =
+            CaptureListenInput::try_from(listen_input, actual_plugin.last_error.clone())
+        else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+        listen_input
     };
 
     if let Err(e) = actual_plugin.plugin.capture_open(&listen_input) {
@@ -72,18 +78,24 @@ pub unsafe extern "C-unwind" fn plugin_capture_close<T: CaptureListenPlugin>(
     plugin: *mut ss_plugin_t,
     listen_input: *const ss_plugin_capture_listen_input,
 ) -> ss_plugin_rc {
-    let Some(plugin) = (plugin as *mut PluginWrapper<T>).as_mut() else {
-        return ss_plugin_rc_SS_PLUGIN_FAILURE;
+    let plugin = unsafe {
+        let Some(plugin) = (plugin as *mut PluginWrapper<T>).as_mut() else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+        plugin
     };
 
     let Some(actual_plugin) = &mut plugin.plugin else {
         return ss_plugin_rc_SS_PLUGIN_FAILURE;
     };
 
-    let Ok(listen_input) =
-        CaptureListenInput::try_from(listen_input, actual_plugin.last_error.clone())
-    else {
-        return ss_plugin_rc_SS_PLUGIN_FAILURE;
+    let listen_input = unsafe {
+        let Ok(listen_input) =
+            CaptureListenInput::try_from(listen_input, actual_plugin.last_error.clone())
+        else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+        listen_input
     };
 
     if let Err(e) = actual_plugin.plugin.capture_close(&listen_input) {

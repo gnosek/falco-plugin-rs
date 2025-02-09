@@ -85,7 +85,7 @@ impl RawEvent<'_> {
     pub unsafe fn params<T>(
         &self,
     ) -> Result<impl Iterator<Item = Result<&[u8], FromBytesError>>, PayloadFromBytesError> {
-        let ll = self.lengths_length::<T>();
+        let ll = unsafe { self.lengths_length::<T>() };
 
         if self.payload.len() < ll {
             return Err(PayloadFromBytesError::TruncatedEvent {
@@ -95,7 +95,7 @@ impl RawEvent<'_> {
         }
 
         let (lengths, mut params) = self.payload.split_at(ll);
-        let mut lengths = Self::lengths::<T>(lengths);
+        let mut lengths = unsafe { Self::lengths::<T>(lengths) };
 
         Ok(std::iter::from_fn(move || {
             let len = lengths.next()?;

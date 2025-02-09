@@ -314,8 +314,10 @@ where
         field: *mut ss_plugin_table_field_t,
         tables_input: &TablesInput,
     ) -> Result<Self::AssocData, Error> {
-        table.with_subtable::<K, _, _>(field, tables_input, |subtable| {
-            M::new(subtable, tables_input)
-        })?
+        unsafe {
+            table.with_subtable::<K, _, _>(field, tables_input, |subtable| {
+                M::new(subtable, tables_input)
+            })?
+        }
     }
 }

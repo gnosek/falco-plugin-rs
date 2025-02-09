@@ -23,8 +23,7 @@ impl RawEntry {
         assoc: &T::AssocData,
     ) -> Option<T::Value<'a>> {
         let mut data = ss_plugin_state_data { u64_: 0 };
-        if reader
-            .read_entry_field(self.table, self.entry, field, &mut data as *mut _)
+        if unsafe { reader.read_entry_field(self.table, self.entry, field, &mut data as *mut _) }
             .unwrap_or(ss_plugin_rc_SS_PLUGIN_NOT_SUPPORTED)
             != ss_plugin_rc_SS_PLUGIN_SUCCESS
         {
@@ -40,8 +39,7 @@ impl RawEntry {
         field: *const ss_plugin_table_field_t,
         val: &ss_plugin_state_data,
     ) -> ss_plugin_rc {
-        writer
-            .write_entry_field(self.table, self.entry, field, val as *const _)
+        unsafe { writer.write_entry_field(self.table, self.entry, field, val as *const _) }
             .unwrap_or(ss_plugin_rc_SS_PLUGIN_NOT_SUPPORTED)
     }
 }

@@ -51,7 +51,7 @@ impl TestDriver for NativeTestDriver {
     ) -> anyhow::Result<Self::Plugin> {
         // no point in making the PluginRunner support raw pointers, just handle it here
         anyhow::ensure!(!api.is_null(), "null pointer in register_plugin");
-        let api: &'static falco_plugin::api::plugin_api = &*api;
+        let api: &'static falco_plugin::api::plugin_api = unsafe { &*api };
         self.0.register_plugin(api, config)?;
         Ok(NativePlugin)
     }

@@ -97,7 +97,7 @@ pub unsafe extern "C-unwind" fn plugin_init<P: Plugin>(
         let tables_input =
             TablesInput::try_from(init_input).context("Failed to build tables input")?;
 
-        let last_error = LastError::from(init_input)?;
+        let last_error = unsafe { LastError::from(init_input)? };
 
         P::new(tables_input.as_ref(), config)
             .map(|plugin| Box::into_raw(Box::new(PluginWrapper::new(plugin, last_error))))
@@ -105,14 +105,18 @@ pub unsafe extern "C-unwind" fn plugin_init<P: Plugin>(
 
     match res {
         Ok(plugin) => {
-            *rc = ss_plugin_rc_SS_PLUGIN_SUCCESS;
+            unsafe {
+                *rc = ss_plugin_rc_SS_PLUGIN_SUCCESS;
+            }
             plugin.cast()
         }
         Err(e) => {
             let error_str = format!("{:#}", &e);
             log::error!("Failed to initialize plugin: {}", error_str);
             let plugin = Box::new(PluginWrapper::<P>::new_error(error_str));
-            *rc = e.status_code();
+            unsafe {
+                *rc = e.status_code();
+            }
             Box::into_raw(plugin).cast()
         }
     }
@@ -124,8 +128,11 @@ pub unsafe extern "C-unwind" fn plugin_init<P: Plugin>(
 pub unsafe extern "C-unwind" fn plugin_get_init_schema<P: Plugin>(
     schema_type: *mut falco_plugin_api::ss_plugin_schema_type,
 ) -> *const c_char {
-    let Some(schema_type) = schema_type.as_mut() else {
-        return std::ptr::null();
+    let schema_type = unsafe {
+        let Some(schema_type) = schema_type.as_mut() else {
+            return std::ptr::null();
+        };
+        schema_type
     };
     match P::ConfigType::get_schema() {
         ConfigSchemaType::None => {
@@ -169,8 +176,11 @@ pub unsafe extern "C-unwind" fn plugin_set_config<P: Plugin>(
     config_input: *const falco_plugin_api::ss_plugin_set_config_input,
 ) -> falco_plugin_api::ss_plugin_rc {
     let plugin = plugin as *mut PluginWrapper<P>;
-    let Some(plugin) = plugin.as_mut() else {
-        return ss_plugin_rc_SS_PLUGIN_FAILURE;
+    let plugin = unsafe {
+        let Some(plugin) = plugin.as_mut() else {
+            return ss_plugin_rc_SS_PLUGIN_FAILURE;
+        };
+        plugin
     };
 
     let Some(actual_plugin) = &mut plugin.plugin else {
@@ -195,15 +205,22 @@ pub unsafe extern "C-unwind" fn plugin_get_metrics<P: Plugin>(
     num_metrics: *mut u32,
 ) -> *mut ss_plugin_metric {
     let plugin = plugin as *mut PluginWrapper<P>;
-    let Some(plugin) = plugin.as_mut() else {
-        *num_metrics = 0;
-        return std::ptr::null_mut();
+    let num_metrics = unsafe {
+        let Some(num_metrics) = num_metrics.as_mut() else {
+            return std::ptr::null_mut();
+        };
+        num_metrics
     };
+
+    let plugin = unsafe {
+        let Some(plugin) = plugin.as_mut() else {
+            *num_metrics = 0;
+            return std::ptr::null_mut();
+        };
+        plugin
+    };
+
     let Some(actual_plugin) = &mut plugin.plugin else {
-        *num_metrics = 0;
-        return std::ptr::null_mut();
-    };
-    let Some(num_metrics) = num_metrics.as_mut() else {
         *num_metrics = 0;
         return std::ptr::null_mut();
     };

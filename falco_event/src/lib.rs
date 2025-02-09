@@ -18,6 +18,7 @@ pub use types::format;
 #[allow(non_camel_case_types)]
 #[allow(non_upper_case_globals)]
 #[allow(missing_docs)]
+#[allow(unsafe_op_in_unsafe_fn)]
 mod ffi;
 
 // things for the derive macro to access under a well-known name

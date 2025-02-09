@@ -30,7 +30,7 @@ rust-2024-prelude-collisions = "warn"
 static-mut-refs = "warn"
 tail-expr-drop-order = "warn"
 unsafe-attr-outside-unsafe = "warn"
-unsafe-op-in-unsafe-fn = "allow"
+unsafe-op-in-unsafe-fn = "warn"
 unexpected_cfgs = { level = "allow", check-cfg = ['cfg(linkage, values("static"))'] }
 
 [[example]]

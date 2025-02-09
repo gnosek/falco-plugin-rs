@@ -193,9 +193,12 @@ impl RawTable {
         writer_vtable: &impl TableWriter,
         key: &K,
     ) -> Result<(), anyhow::Error> {
-        Ok(writer_vtable
-            .erase_table_entry(self.table, &key.to_data() as *const _)?
-            .as_result()?)
+        unsafe {
+            writer_vtable
+                .erase_table_entry(self.table, &key.to_data() as *const _)?
+                .as_result()?
+        };
+        Ok(())
     }
 
     /// # Create a table entry
@@ -233,8 +236,9 @@ impl RawTable {
         key: &K,
         mut entry: RawEntry,
     ) -> Result<RawEntry, anyhow::Error> {
-        let ret =
-            writer_vtable.add_table_entry(self.table, &key.to_data() as *const _, entry.entry)?;
+        let ret = unsafe {
+            writer_vtable.add_table_entry(self.table, &key.to_data() as *const _, entry.entry)?
+        };
 
         if ret.is_null() {
             Err(anyhow::anyhow!("Failed to attach entry"))
@@ -318,18 +322,20 @@ impl RawTable {
         let entry = TemporaryTableEntry::create(tables_input, self.table)?;
 
         let mut val = ss_plugin_state_data { u64_: 0 };
-        let rc = tables_input.reader_ext.read_entry_field(
-            self.table,
-            entry.entry,
-            field,
-            &mut val as *mut _,
-        )?;
+        let rc = unsafe {
+            tables_input.reader_ext.read_entry_field(
+                self.table,
+                entry.entry,
+                field,
+                &mut val as *mut _,
+            )?
+        };
 
         if rc != ss_plugin_rc_SS_PLUGIN_SUCCESS {
             anyhow::bail!("Failed to get field value for temporary table entry")
         }
 
-        let input = val.table as *mut falco_plugin_api::ss_plugin_table_input;
+        let input = unsafe { val.table } as *mut falco_plugin_api::ss_plugin_table_input;
         let input = unsafe { input.as_mut() };
         let Some(input) = input else {
             anyhow::bail!("Temporary table entry has a null value for table");
