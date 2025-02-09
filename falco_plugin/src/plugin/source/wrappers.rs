@@ -205,10 +205,10 @@ pub unsafe extern "C-unwind" fn plugin_next_batch<T: SourcePlugin>(
 
         instance.batch.reset();
         let mut batch = EventBatch::new(&mut instance.batch);
-        match instance
+        let batch_result = instance
             .instance
-            .next_batch(&mut actual_plugin.plugin, &mut batch)
-        {
+            .next_batch(&mut actual_plugin.plugin, &mut batch);
+        match batch_result {
             Ok(()) => {
                 let events = batch.get_events();
                 *nevts = events.len() as u32;
