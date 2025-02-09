@@ -173,7 +173,7 @@ pub unsafe extern "C-unwind" fn plugin_set_config<P: Plugin>(
         return ss_plugin_rc_SS_PLUGIN_FAILURE;
     };
 
-    let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+    let Some(actual_plugin) = &mut plugin.plugin else {
         return ss_plugin_rc_SS_PLUGIN_FAILURE;
     };
 
@@ -199,7 +199,7 @@ pub unsafe extern "C-unwind" fn plugin_get_metrics<P: Plugin>(
         *num_metrics = 0;
         return std::ptr::null_mut();
     };
-    let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+    let Some(actual_plugin) = &mut plugin.plugin else {
         *num_metrics = 0;
         return std::ptr::null_mut();
     };

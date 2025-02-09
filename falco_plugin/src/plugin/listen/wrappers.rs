@@ -50,7 +50,7 @@ pub unsafe extern "C-unwind" fn plugin_capture_open<T: CaptureListenPlugin>(
         return ss_plugin_rc_SS_PLUGIN_FAILURE;
     };
 
-    let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+    let Some(actual_plugin) = &mut plugin.plugin else {
         return ss_plugin_rc_SS_PLUGIN_FAILURE;
     };
 
@@ -76,7 +76,7 @@ pub unsafe extern "C-unwind" fn plugin_capture_close<T: CaptureListenPlugin>(
         return ss_plugin_rc_SS_PLUGIN_FAILURE;
     };
 
-    let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+    let Some(actual_plugin) = &mut plugin.plugin else {
         return ss_plugin_rc_SS_PLUGIN_FAILURE;
     };
 

@@ -78,7 +78,7 @@ pub unsafe extern "C-unwind" fn plugin_list_open_params<T: SourcePlugin>(
     let Some(plugin) = plugin.as_mut() else {
         return std::ptr::null();
     };
-    let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+    let Some(actual_plugin) = &mut plugin.plugin else {
         return std::ptr::null();
     };
 
@@ -112,7 +112,7 @@ pub unsafe extern "C-unwind" fn plugin_open<T: SourcePlugin>(
         let Some(plugin) = plugin.as_mut() else {
             return std::ptr::null_mut();
         };
-        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+        let Some(actual_plugin) = &mut plugin.plugin else {
             return std::ptr::null_mut();
         };
 
@@ -166,7 +166,7 @@ pub unsafe extern "C-unwind" fn plugin_close<T: SourcePlugin>(
     let Some(plugin) = plugin.as_mut() else {
         return;
     };
-    let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+    let Some(actual_plugin) = &mut plugin.plugin else {
         return;
     };
 
@@ -195,7 +195,7 @@ pub unsafe extern "C-unwind" fn plugin_next_batch<T: SourcePlugin>(
         let Some(plugin) = plugin.as_mut() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+        let Some(actual_plugin) = &mut plugin.plugin else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 
@@ -266,7 +266,7 @@ pub unsafe extern "C-unwind" fn plugin_event_to_string<T: SourcePlugin>(
         let Some(plugin) = plugin.as_mut() else {
             return std::ptr::null();
         };
-        let Some(ref mut actual_plugin) = &mut plugin.plugin else {
+        let Some(actual_plugin) = &mut plugin.plugin else {
             return std::ptr::null();
         };
 
