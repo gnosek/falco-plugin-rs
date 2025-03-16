@@ -391,13 +391,7 @@ impl EventInfo {
             self.event_code.span(),
         );
         quote!(crate::ffi:: #raw_ident => {
-            let params = unsafe {
-                if <#event_code as crate::event_derive::EventPayload>::LARGE {
-                    <#event_code as crate::event_derive::PayloadFromBytes>::read(self.params::<u32>()?)?
-                } else {
-                    <#event_code as crate::event_derive::PayloadFromBytes>::read(self.params::<u16>()?)?
-                }
-            };
+            let params = self.load_params::<#event_code>()?;
             AnyEvent::#event_type(params)
         })
     }
