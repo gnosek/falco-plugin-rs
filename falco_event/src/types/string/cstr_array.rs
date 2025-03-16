@@ -1,4 +1,5 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
+use crate::format::FormatType;
 use crate::types::format::Format;
 use crate::types::Borrow;
 use std::ffi::{CStr, CString};
@@ -33,11 +34,8 @@ impl<'a> FromBytes<'a> for Vec<&'a CStr> {
     }
 }
 
-impl<'a, F> Format<F> for Vec<&'a CStr>
-where
-    &'a CStr: Format<F>,
-{
-    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+impl Format for Vec<&CStr> {
+    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
         let mut is_first = true;
         for s in self {
             if is_first {
@@ -46,7 +44,7 @@ where
                 fmt.write_char(';')?;
             }
 
-            s.format(fmt)?;
+            s.format(format_type, fmt)?;
         }
 
         Ok(())
