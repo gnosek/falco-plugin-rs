@@ -1,4 +1,5 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
+use crate::format::FormatType;
 use crate::types::format::Format;
 use crate::types::{Borrow, Borrowed};
 use std::fmt::Formatter;
@@ -35,15 +36,12 @@ impl<'a> FromBytes<'a> for RelativePath<'a> {
     }
 }
 
-impl<'a, F> Format<F> for RelativePath<'a>
-where
-    &'a [u8]: Format<F>,
-{
-    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+impl Format for RelativePath<'_> {
+    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
         write!(fmt, "<...>")?;
 
         let bytes = self.0.as_os_str().as_bytes();
-        bytes.format(fmt)
+        bytes.format(format_type, fmt)
     }
 }
 /// A relative path

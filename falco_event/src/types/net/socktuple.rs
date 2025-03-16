@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
+use crate::format::FormatType;
 use crate::types::format::Format;
 use crate::types::net::endpoint::{EndpointV4, EndpointV6};
 use crate::types::{Borrow, Borrowed};
@@ -144,13 +145,8 @@ impl<'a> FromBytes<'a> for SockTuple<'a> {
     }
 }
 
-impl<F> Format<F> for SockTuple<'_>
-where
-    for<'a> &'a Path: Format<F>,
-    EndpointV4: Format<F>,
-    EndpointV6: Format<F>,
-{
-    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+impl Format for SockTuple<'_> {
+    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
         match self {
             SockTuple::Unix {
                 source_ptr,
@@ -158,17 +154,17 @@ where
                 path,
             } => {
                 write!(fmt, "<{:#016x}->{:#016x}>unix://", source_ptr, dest_ptr)?;
-                path.format(fmt)
+                path.format(format_type, fmt)
             }
             SockTuple::V4 { source, dest } => {
-                source.format(fmt)?;
+                source.format(format_type, fmt)?;
                 fmt.write_str("->")?;
-                dest.format(fmt)
+                dest.format(format_type, fmt)
             }
             SockTuple::V6 { source, dest } => {
-                source.format(fmt)?;
+                source.format(format_type, fmt)?;
                 fmt.write_str("->")?;
-                dest.format(fmt)
+                dest.format(format_type, fmt)
             }
             SockTuple::Other(af, raw) => write!(fmt, "<af={}>{:02x?}", af, raw),
         }

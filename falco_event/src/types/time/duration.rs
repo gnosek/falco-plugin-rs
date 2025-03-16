@@ -1,4 +1,5 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
+use crate::format::FormatType;
 use crate::types::format::Format;
 use crate::types::{BorrowDeref, Borrowed};
 use byteorder::{NativeEndian, ReadBytesExt};
@@ -29,8 +30,8 @@ impl ToBytes for Duration {
     }
 }
 
-impl<F> Format<F> for Duration {
-    fn format(&self, fmt: &mut Formatter) -> std::fmt::Result {
+impl Format for Duration {
+    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
         std::fmt::Debug::fmt(self, fmt)
     }
 }

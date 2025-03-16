@@ -121,7 +121,7 @@ impl DynamicParamVariant {
     }
 
     fn variant_fmt(&self) -> proc_macro2::TokenStream {
-        let (disc, ty, field_ref, field_lifetime, _) = self.unpack();
+        let (disc, _, _, _, _) = self.unpack();
         let mut disc_str = disc.to_string();
         if let Some(idx_pos) = disc_str.find("_IDX_") {
             let substr = &disc_str.as_str()[idx_pos + 5..];
@@ -131,8 +131,7 @@ impl DynamicParamVariant {
         quote!(Self:: #disc(val) => {
             fmt.write_str(#disc_str)?;
             fmt.write_char(':')?;
-
-            <#field_ref crate::event_derive::event_field_type::#ty #field_lifetime as crate::event_derive::Format<crate::event_derive::format_type::PF_NA>>::format(val, fmt)
+            val.format(crate::event_derive::FormatType::PF_NA, fmt)
         })
     }
 
@@ -194,9 +193,9 @@ impl DynamicParam {
             None
         };
         let format_generics = if wants_lifetime {
-            quote!(<'a, F>)
+            Some(quote!(<'a>))
         } else {
-            quote!(<F>)
+            None
         };
 
         #[cfg(feature = "serde")]
@@ -266,8 +265,8 @@ impl DynamicParam {
                 }
             }
 
-            impl #format_generics crate::event_derive::Format<F> for #name #lifetime {
-                fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+            impl #format_generics crate::event_derive::Format for #name #lifetime {
+                fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
                     use std::fmt::Write;
 
                     match self {

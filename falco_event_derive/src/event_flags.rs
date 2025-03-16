@@ -200,13 +200,11 @@ fn render_enum(
             type Owned = Self;
         }
 
-        impl<F> crate::event_derive::Format<F> for #name
-        where
-            #repr_type: crate::event_derive::Format<F>,
+        impl crate::event_derive::Format for #name
         {
-            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
                 let raw: #repr_type = (*self).into();
-                raw.format(fmt)?;
+                raw.format(format_type, fmt)?;
                 match self {
                     Self::Unknown(_) => Ok(()),
                     _ => write!(fmt, "({:?})", self)
@@ -272,8 +270,8 @@ fn render_bitflags(
             type Owned = Self;
         }
 
-        impl<F> crate::event_derive::Format<F> for #name {
-            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        impl crate::event_derive::Format for #name {
+            fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
                 write!(fmt, "{:#x}", self.bits())?;
                 let mut first = true;
 
