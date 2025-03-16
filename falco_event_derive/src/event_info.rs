@@ -259,16 +259,12 @@ impl EventInfo {
             let name = &field.name;
             let ident = field.ident();
             let fmt = &field.field_format;
-            let field_type = field.field_type(variant);
 
             quote!(
                 fmt.write_char(' ')?;
                 fmt.write_str(#name)?;
                 fmt.write_char('=')?;
-                <#field_type as
-                    crate::event_derive::Format<
-                        crate::event_derive::format_type::#fmt
-                >>::format(&self.#ident, fmt)?;
+                self.#ident.format(crate::event_derive::FormatType::#fmt, fmt)?;
             )
         });
         let dirfd_methods = self.args().map(|a| a.dirfd_method(self));
@@ -328,8 +324,8 @@ impl EventInfo {
                 const NAME: &'static str = #name;
             }
 
-            impl #lifetime crate::event_derive::Format<crate::event_derive::format_type::PF_NA> for #event_code #lifetime {
-                fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+            impl #lifetime crate::event_derive::Format for #event_code #lifetime {
+                fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
                     use std::fmt::Write;
 
                     match <Self as crate::event_derive::EventPayload>::direction() {
@@ -412,7 +408,7 @@ impl EventInfo {
 
         quote!(
             AnyEvent::#event_type(inner) => {
-                inner.format(fmt)
+                inner.format(format_type, fmt)
             }
         )
     }
@@ -518,8 +514,8 @@ fn event_info_variant(events: &Events, variant: CodegenVariant) -> proc_macro2::
             }
         }
 
-        impl #lifetime crate::event_derive::Format<crate::event_derive::format_type::PF_NA> for AnyEvent #lifetime {
-            fn format(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        impl #lifetime crate::event_derive::Format for AnyEvent #lifetime {
+            fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
                 match self {
                     #(#variant_fmts)*
                 }
