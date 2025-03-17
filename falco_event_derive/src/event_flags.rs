@@ -196,10 +196,6 @@ fn render_enum(
             }
         }
 
-        impl crate::event_derive::Borrowed for #name {
-            type Owned = Self;
-        }
-
         impl<F> crate::event_derive::Format<F> for #name
         where
             #repr_type: crate::event_derive::Format<F>,
@@ -266,10 +262,6 @@ fn render_bitflags(
                 let val = Self::from_bits_retain(repr);
                 Ok(val)
             }
-        }
-
-        impl crate::event_derive::Borrowed for #name {
-            type Owned = Self;
         }
 
         impl<F> crate::event_derive::Format<F> for #name {

@@ -1,6 +1,6 @@
 use crate::event_derive::{FromBytes, FromBytesError, FromBytesResult, ToBytes};
 use crate::types::format::Format;
-use crate::types::{Borrow, Borrowed};
+use crate::types::Borrow;
 use std::ffi::{CStr, CString};
 use std::fmt::Formatter;
 use std::io::Write;
@@ -36,10 +36,6 @@ where
         let bytes = self.to_bytes();
         bytes.format(fmt)
     }
-}
-
-impl Borrowed for CStr {
-    type Owned = CString;
 }
 
 impl Borrow for CString {

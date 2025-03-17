@@ -5,7 +5,7 @@ use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 use crate::types::format::Format;
 use crate::types::net::endpoint::{EndpointV4, EndpointV6};
-use crate::types::{Borrow, Borrowed};
+use crate::types::Borrow;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use typed_path::{UnixPath, UnixPathBuf};
 
@@ -213,10 +213,6 @@ pub enum OwnedSockTuple {
         u8,
         #[cfg_attr(feature = "serde", serde(with = "crate::types::serde::bytebuf"))] Vec<u8>,
     ),
-}
-
-impl Borrowed for SockTuple<'_> {
-    type Owned = OwnedSockTuple;
 }
 
 impl Borrow for OwnedSockTuple {

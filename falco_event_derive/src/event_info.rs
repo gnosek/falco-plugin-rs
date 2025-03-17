@@ -96,29 +96,26 @@ impl EventArg {
     ) -> (
         Option<proc_macro2::TokenStream>,
         Option<proc_macro2::TokenStream>,
-        Option<proc_macro2::TokenStream>,
     ) {
         let field_type = self.final_field_type_name();
 
         match lifetime_type(&field_type.to_string()) {
-            LifetimeType::Ref => (Some(quote!(&'a)), None, None),
-            LifetimeType::Generic => (None, Some(quote!(<'a>)), Some(quote!(<'static>))),
-            LifetimeType::None => (None, None, None),
+            LifetimeType::Ref => (Some(quote!(&'a)), None),
+            LifetimeType::Generic => (None, Some(quote!(<'a>))),
+            LifetimeType::None => (None, None),
         }
     }
 
     fn field_type(&self, variant: CodegenVariant) -> proc_macro2::TokenStream {
         let field_type = self.final_field_type_name();
-        let (field_ref, field_lifetime, static_field_lifetime) = self.lifetimes();
+        let (field_ref, field_lifetime) = self.lifetimes();
 
         match variant {
             CodegenVariant::Borrowed => {
                 quote!(::std::option::Option<#field_ref crate::event_derive::event_field_type::#field_type #field_lifetime>)
             }
             CodegenVariant::Owned => {
-                quote!(::std::option::Option<
-                    <crate::event_derive::event_field_type::#field_type #static_field_lifetime as
-                    crate::event_derive::Borrowed>::Owned>)
+                quote!(::std::option::Option<crate::event_derive::event_field_type::owned::#field_type>)
             }
         }
     }

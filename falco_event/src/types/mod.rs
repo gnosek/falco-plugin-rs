@@ -31,6 +31,5 @@ pub use fd_list::*;
 pub use net::*;
 pub use owned::Borrow;
 pub use owned::BorrowDeref;
-pub use owned::Borrowed;
 pub use path::*;
 pub use primitive::*;
