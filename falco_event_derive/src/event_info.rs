@@ -4,18 +4,7 @@ use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{braced, bracketed, parse_macro_input, Token};
 
-#[cfg(feature = "serde")]
 use crate::serde_custom::{serde_with_option_tag, serde_with_option_tag_owned};
-
-#[cfg(not(feature = "serde"))]
-fn serde_with_option_tag(_ty: &Ident) -> Option<proc_macro2::TokenStream> {
-    None
-}
-
-#[cfg(not(feature = "serde"))]
-fn serde_with_option_tag_owned(_ty: &Ident) -> Option<proc_macro2::TokenStream> {
-    None
-}
 
 pub(crate) enum LifetimeType {
     None,
@@ -361,19 +350,14 @@ impl EventInfo {
         let is_large = self.flags.iter().any(|flag| *flag == "EF_LARGE_PAYLOAD");
         let name = &self.name;
 
-        #[cfg(feature = "serde")]
         let serde_derives = match (variant, wants_lifetime) {
             (CodegenVariant::Borrowed, true) => quote!(
-                #[derive(serde::Serialize)]
+                #[cfg_attr(feature = "serde", derive(serde::Serialize))]
             ),
             _ => quote!(
-                #[derive(serde::Deserialize)]
-                #[derive(serde::Serialize)]
+                #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
             ),
         };
-
-        #[cfg(not(feature = "serde"))]
-        let serde_derives = quote!();
 
         let impl_to_bytes = self.impl_to_bytes(lifetime.as_ref());
         let impl_from_bytes = match variant {
@@ -554,19 +538,14 @@ fn event_info_variant(events: &Events, variant: CodegenVariant) -> proc_macro2::
         CodegenVariant::Owned => None,
     };
 
-    #[cfg(feature = "serde")]
     let derives = match variant {
         CodegenVariant::Borrowed => quote!(
-            #[derive(serde::Serialize)]
+            #[cfg_attr(feature = "serde", derive(serde::Serialize))]
         ),
         CodegenVariant::Owned => quote!(
-            #[derive(serde::Serialize)]
-            #[derive(serde::Deserialize)]
+            #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
         ),
     };
-
-    #[cfg(not(feature = "serde"))]
-    let derives = quote!();
 
     quote!(
         #(#typedefs)*

@@ -3,7 +3,6 @@ use proc_macro::TokenStream;
 mod dynamic_params;
 mod event_flags;
 mod event_info;
-#[cfg(feature = "serde")]
 mod serde_custom;
 
 #[proc_macro]

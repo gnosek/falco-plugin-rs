@@ -15,9 +15,6 @@ all-features = true
 [lib]
 proc-macro = true
 
-[features]
-serde = []
-
 [dependencies]
 quote = "1"
 proc-macro2 = "1.0"

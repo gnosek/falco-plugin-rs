@@ -133,14 +133,9 @@ fn render_enum(
         .clone()
         .map(|(variant, value)| quote!(#name::#variant => crate::ffi::#value as #repr_type));
 
-    #[cfg(feature = "serde")]
     let serde_derives = quote!(
-        #[derive(serde::Deserialize)]
-        #[derive(serde::Serialize)]
+        #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
     );
-
-    #[cfg(not(feature = "serde"))]
-    let serde_derives = quote!();
 
     quote!(
         #[repr(#repr_type)]
@@ -217,14 +212,9 @@ fn render_bitflags(
 ) -> proc_macro2::TokenStream {
     let items = items.map(|(name, value)| quote!(const #name = crate::ffi::#value as #repr_type));
 
-    #[cfg(feature = "serde")]
     let serde_derives = quote!(
-        #[derive(serde::Deserialize)]
-        #[derive(serde::Serialize)]
+        #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
     );
-
-    #[cfg(not(feature = "serde"))]
-    let serde_derives = quote!();
 
     quote!(
         bitflags::bitflags! {

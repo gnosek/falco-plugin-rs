@@ -14,7 +14,7 @@ categories = ["api-bindings"]
 all-features = true
 
 [features]
-serde = ["dep:serde", "bitflags/serde", "falco_event_derive/serde"]
+serde = ["dep:serde", "bitflags/serde"]
 full-schema = []
 
 [dependencies]

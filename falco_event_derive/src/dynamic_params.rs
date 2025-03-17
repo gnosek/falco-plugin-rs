@@ -7,13 +7,7 @@ use syn::punctuated::Punctuated;
 use syn::token::{Brace, Bracket};
 use syn::{braced, bracketed, parse_macro_input, LitInt, Token};
 
-#[cfg(feature = "serde")]
 use crate::serde_custom::serde_with_tag;
-
-#[cfg(not(feature = "serde"))]
-fn serde_with_tag(_ty: &Ident) -> Option<proc_macro2::TokenStream> {
-    None
-}
 
 struct DynamicParamVariant {
     _brackets: syn::token::Bracket,
@@ -196,22 +190,13 @@ impl DynamicParam {
             None
         };
 
-        #[cfg(feature = "serde")]
         let derives = if wants_lifetime {
-            quote!(#[derive(serde::Serialize)])
+            quote!(#[cfg_attr(feature = "serde", derive(serde::Serialize))])
         } else {
             quote!(
                 #[derive(Clone)]
-                #[derive(serde::Deserialize)]
-                #[derive(serde::Serialize)]
+                #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
             )
-        };
-
-        #[cfg(not(feature = "serde"))]
-        let derives = if wants_lifetime {
-            None
-        } else {
-            Some(quote!(#[derive(Clone)]))
         };
 
         quote!(
@@ -275,14 +260,9 @@ impl DynamicParam {
             )
         });
 
-        #[cfg(feature = "serde")]
         let serde_derives = quote!(
-            #[derive(serde::Deserialize)]
-            #[derive(serde::Serialize)]
+            #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
         );
-
-        #[cfg(not(feature = "serde"))]
-        let serde_derives = quote!();
 
         if wants_lifetime {
             quote!(
