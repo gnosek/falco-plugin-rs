@@ -1,6 +1,5 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::types::format::Format;
-use crate::types::Borrowed;
 use chrono::Local;
 use std::fmt::Formatter;
 use std::io::Write;
@@ -31,10 +30,6 @@ impl ToBytes for SystemTime {
     fn default_repr() -> impl ToBytes {
         0u64
     }
-}
-
-impl Borrowed for SystemTime {
-    type Owned = Self;
 }
 
 impl<F> Format<F> for SystemTime {

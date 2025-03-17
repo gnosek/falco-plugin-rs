@@ -64,39 +64,37 @@ impl DynamicParamVariant {
         &Ident,
         Option<proc_macro2::TokenStream>,
         Option<proc_macro2::TokenStream>,
-        Option<proc_macro2::TokenStream>,
     ) {
         let disc = &self.discriminant;
         let ty = &self.field_type;
-        let (field_ref, field_lifetime, static_field_lifetime) =
-            match lifetime_type(&self.field_type.to_string()) {
-                LifetimeType::Ref => (Some(quote!(&'a)), None, None),
-                LifetimeType::Generic => (None, Some(quote!(<'a>)), Some(quote!(<'static>))),
-                LifetimeType::None => (None, None, None),
-            };
+        let (field_ref, field_lifetime) = match lifetime_type(&self.field_type.to_string()) {
+            LifetimeType::Ref => (Some(quote!(&'a)), None),
+            LifetimeType::Generic => (None, Some(quote!(<'a>))),
+            LifetimeType::None => (None, None),
+        };
 
-        (disc, ty, field_ref, field_lifetime, static_field_lifetime)
+        (disc, ty, field_ref, field_lifetime)
     }
 
     fn variant_definition(&self) -> proc_macro2::TokenStream {
-        let (disc, ty, field_ref, field_lifetime, _) = self.unpack();
+        let (disc, ty, field_ref, field_lifetime) = self.unpack();
         let serde_tag = serde_with_tag(ty);
 
         quote!(#disc(#serde_tag #field_ref crate::event_derive::event_field_type::#ty #field_lifetime))
     }
 
     fn owned_variant_definition(&self) -> proc_macro2::TokenStream {
-        let (disc, ty, _, _, static_field_lifetime) = self.unpack();
+        let (disc, ty, _, _) = self.unpack();
         let serde_tag = serde_with_tag(ty);
 
         quote!(#disc(
             #serde_tag
-            <crate::event_derive::event_field_type::#ty #static_field_lifetime as crate::event_derive::Borrowed>::Owned
+            crate::event_derive::event_field_type::owned::#ty
         ))
     }
 
     fn variant_read(&self) -> proc_macro2::TokenStream {
-        let (disc, ty, field_ref, field_lifetime, _) = self.unpack();
+        let (disc, ty, field_ref, field_lifetime) = self.unpack();
 
         quote!(crate::ffi:: #disc => {
             Ok(Self:: #disc(
@@ -121,7 +119,7 @@ impl DynamicParamVariant {
     }
 
     fn variant_fmt(&self) -> proc_macro2::TokenStream {
-        let (disc, ty, field_ref, field_lifetime, _) = self.unpack();
+        let (disc, ty, field_ref, field_lifetime) = self.unpack();
         let mut disc_str = disc.to_string();
         if let Some(idx_pos) = disc_str.find("_IDX_") {
             let substr = &disc_str.as_str()[idx_pos + 5..];
@@ -217,16 +215,6 @@ impl DynamicParam {
             Some(quote!(#[derive(Clone)]))
         };
 
-        let to_owned = if wants_lifetime {
-            Some(quote!(
-                impl #lifetime crate::event_derive::Borrowed for #name #lifetime {
-                    type Owned = owned::#name;
-                }
-            ))
-        } else {
-            None
-        };
-
         quote!(
             #[allow(non_camel_case_types)]
             #[derive(Debug)]
@@ -234,8 +222,6 @@ impl DynamicParam {
             pub enum #name #lifetime {
                 #(#variant_definitions,)*
             }
-
-            #to_owned
 
             impl #lifetime crate::event_derive::ToBytes for #name #lifetime {
                 fn binary_size(&self) -> usize {

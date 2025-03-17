@@ -1,6 +1,6 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::types::format::Format;
-use crate::types::{Borrow, Borrowed};
+use crate::types::Borrow;
 use std::fmt::Formatter;
 use std::io::Write;
 use typed_path::{UnixPath, UnixPathBuf};
@@ -57,10 +57,6 @@ where
 pub struct OwnedRelativePath(
     #[cfg_attr(feature = "serde", serde(with = "crate::types::serde::unix_path"))] pub UnixPathBuf,
 );
-
-impl Borrowed for RelativePath<'_> {
-    type Owned = OwnedRelativePath;
-}
 
 impl Borrow for OwnedRelativePath {
     type Borrowed<'b> = RelativePath<'b>;

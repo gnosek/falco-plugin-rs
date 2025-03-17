@@ -1,6 +1,6 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::types::format::Format;
-use crate::types::{Borrow, Borrowed};
+use crate::types::Borrow;
 use std::ffi::CStr;
 use std::fmt::Formatter;
 use std::io::Write;
@@ -36,10 +36,6 @@ where
         let bytes = self.as_bytes();
         bytes.format(fmt)
     }
-}
-
-impl Borrowed for UnixPath {
-    type Owned = UnixPathBuf;
 }
 
 impl Borrow for UnixPathBuf {

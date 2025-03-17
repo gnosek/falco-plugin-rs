@@ -1,6 +1,6 @@
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 use crate::types::format::{format_type, Format};
-use crate::types::{Borrow, BorrowDeref, Borrowed};
+use crate::types::{Borrow, BorrowDeref};
 use std::fmt::{Formatter, Write as _};
 use std::io::Write;
 
@@ -60,10 +60,6 @@ impl Format<format_type::PF_HEX> for &[u8] {
 
         Ok(())
     }
-}
-
-impl Borrowed for [u8] {
-    type Owned = Vec<u8>;
 }
 
 impl Borrow for Vec<u8> {
