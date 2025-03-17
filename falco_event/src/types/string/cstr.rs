@@ -1,7 +1,7 @@
 use crate::event_derive::{FromBytes, FromBytesError, FromBytesResult, ToBytes};
 use crate::format::FormatType;
 use crate::types::format::Format;
-use crate::types::{Borrow, Borrowed};
+use crate::types::Borrow;
 use std::ffi::{CStr, CString};
 use std::fmt::Formatter;
 use std::io::Write;
@@ -34,10 +34,6 @@ impl Format for &CStr {
         let bytes = self.to_bytes();
         bytes.format(format_type, fmt)
     }
-}
-
-impl Borrowed for CStr {
-    type Owned = CString;
 }
 
 impl Borrow for CString {

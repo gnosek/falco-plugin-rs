@@ -1,7 +1,7 @@
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 use crate::format::FormatType;
 use crate::types::format::Format;
-use crate::types::{Borrow, BorrowDeref, Borrowed};
+use crate::types::{Borrow, BorrowDeref};
 use std::fmt::{Formatter, Write as _};
 use std::io::Write;
 
@@ -53,10 +53,6 @@ impl Format for &[u8] {
 
         Ok(())
     }
-}
-
-impl Borrowed for [u8] {
-    type Owned = Vec<u8>;
 }
 
 impl Borrow for Vec<u8> {

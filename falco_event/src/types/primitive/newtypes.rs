@@ -1,7 +1,7 @@
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 use crate::format::FormatType;
 use crate::types::format::Format;
-use crate::types::{BorrowDeref, Borrowed};
+use crate::types::BorrowDeref;
 use std::fmt::{Debug, Formatter};
 
 macro_rules! default_format {
@@ -47,10 +47,6 @@ macro_rules! newtype {
             fn default_repr() -> impl ToBytes {
                 <$repr>::default_repr()
             }
-        }
-
-        impl Borrowed for $name {
-            type Owned = Self;
         }
 
         impl BorrowDeref for $name {

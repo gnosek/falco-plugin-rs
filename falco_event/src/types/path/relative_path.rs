@@ -1,7 +1,7 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::format::FormatType;
 use crate::types::format::Format;
-use crate::types::{Borrow, Borrowed};
+use crate::types::Borrow;
 use std::fmt::Formatter;
 use std::io::Write;
 use std::os::unix::ffi::OsStrExt;
@@ -52,10 +52,6 @@ impl Format for RelativePath<'_> {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[derive(Debug)]
 pub struct OwnedRelativePath(pub PathBuf);
-
-impl Borrowed for RelativePath<'_> {
-    type Owned = OwnedRelativePath;
-}
 
 impl Borrow for OwnedRelativePath {
     type Borrowed<'b> = RelativePath<'b>;

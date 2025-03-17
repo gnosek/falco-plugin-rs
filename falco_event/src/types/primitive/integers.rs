@@ -1,6 +1,6 @@
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 use crate::types::format::{Format, FormatType};
-use crate::types::{BorrowDeref, Borrowed};
+use crate::types::BorrowDeref;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 macro_rules! impl_format {
@@ -23,10 +23,6 @@ macro_rules! impl_format {
 
 macro_rules! impl_borrow_deref {
     ($ty:ty) => {
-        impl Borrowed for $ty {
-            type Owned = Self;
-        }
-
         impl BorrowDeref for $ty {
             type Target<'a> = Self;
 

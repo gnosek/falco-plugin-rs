@@ -1,7 +1,7 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::format::FormatType;
 use crate::types::format::Format;
-use crate::types::{Borrow, Borrowed};
+use crate::types::Borrow;
 use std::ffi::{CStr, CString};
 use std::fmt::{Formatter, Write as _};
 use std::io::Write;
@@ -49,10 +49,6 @@ impl Format for Vec<&CStr> {
 
         Ok(())
     }
-}
-
-impl Borrowed for Vec<&CStr> {
-    type Owned = Vec<CString>;
 }
 
 impl Borrow for Vec<CString> {

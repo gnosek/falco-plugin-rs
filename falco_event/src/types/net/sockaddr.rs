@@ -2,7 +2,7 @@ use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL, PPM_AF_UNSPEC};
 use crate::format::FormatType;
 use crate::types::format::Format;
-use crate::types::{Borrow, Borrowed, EndpointV4, EndpointV6};
+use crate::types::{Borrow, EndpointV4, EndpointV6};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::ffi::OsStr;
 use std::fmt::Formatter;
@@ -123,10 +123,6 @@ pub enum OwnedSockAddr {
         u8,
         #[cfg_attr(feature = "serde", serde(with = "crate::types::serde::bytebuf"))] Vec<u8>,
     ),
-}
-
-impl Borrowed for SockAddr<'_> {
-    type Owned = OwnedSockAddr;
 }
 
 impl Borrow for OwnedSockAddr {
