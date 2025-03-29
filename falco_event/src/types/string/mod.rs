@@ -10,3 +10,4 @@ pub mod serde {
 }
 
 pub use cstr::CStrFormatter;
+pub use cstr_array::CStrArrayFormatter;

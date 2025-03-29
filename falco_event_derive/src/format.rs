@@ -9,7 +9,9 @@ pub fn display_wrapper_for(
         "PT_ABSTIME" => quote!(#val_tt.map(|t| crate::event_derive::SystemTimeFormatter(*t))),
         "PT_BYTEBUF" => quote!(#val_tt.map(|t| crate::event_derive::ByteBufFormatter(t))),
         "PT_CHARBUF" => quote!(#val_tt.map(|t| crate::event_derive::CStrFormatter(t))),
-        // "PT_CHARBUFARRAY" => todo!(),
+        "PT_CHARBUFARRAY" => {
+            quote!(#val_tt.map(|t| crate::event_derive::CStrArrayFormatter(&t)))
+        }
         "PT_FSPATH" => quote!(#val_tt.map(|p| p.display())),
         _ => val_tt,
     }
