@@ -1,4 +1,7 @@
 use crate::event_info::{lifetime_type, LifetimeType};
+use crate::format::formatter_for;
+#[cfg(feature = "serde")]
+use crate::serde_custom::serde_with_tag;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
@@ -6,9 +9,6 @@ use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::token::{Brace, Bracket};
 use syn::{braced, bracketed, parse_macro_input, LitInt, Token};
-
-#[cfg(feature = "serde")]
-use crate::serde_custom::serde_with_tag;
 
 #[cfg(not(feature = "serde"))]
 fn serde_with_tag(_ty: &Ident) -> Option<proc_macro2::TokenStream> {
@@ -25,7 +25,7 @@ struct DynamicParamVariant {
     _comma1: Token![,],
     field_type: Ident,
     _comma2: Token![,],
-    _field_format: Ident,
+    field_format: Ident,
     _comma3: Token![,],
     _zero2: LitInt,
     _comma4: Token![,],
@@ -47,7 +47,7 @@ impl Parse for DynamicParamVariant {
             _comma1: content.parse()?,
             field_type: content.parse()?,
             _comma2: content.parse()?,
-            _field_format: content.parse()?,
+            field_format: content.parse()?,
             _comma3: content.parse()?,
             _zero2: content.parse()?,
             _comma4: content.parse()?,
@@ -126,10 +126,13 @@ impl DynamicParamVariant {
             disc_str = String::from(substr);
         }
 
+        let format_val =
+            formatter_for(&self.field_type, &self.field_format, quote!(val), quote!(f));
+
         quote!(Self:: #disc(val) => {
-            fmt.write_str(#disc_str)?;
-            fmt.write_char(':')?;
-            val.format(crate::event_derive::FormatType::PF_NA, fmt)
+            f.write_str(#disc_str)?;
+            f.write_char(':')?;
+            #format_val
         })
     }
 
@@ -190,11 +193,6 @@ impl DynamicParam {
         } else {
             None
         };
-        let format_generics = if wants_lifetime {
-            Some(quote!(<'a>))
-        } else {
-            None
-        };
 
         #[cfg(feature = "serde")]
         let derives = if wants_lifetime {
@@ -216,7 +214,6 @@ impl DynamicParam {
 
         quote!(
             #[allow(non_camel_case_types)]
-            #[derive(Debug)]
             #derives
             pub enum #name #lifetime {
                 #(#variant_definitions,)*
@@ -251,13 +248,25 @@ impl DynamicParam {
                 }
             }
 
-            impl #format_generics crate::event_derive::Format for #name #lifetime {
-                fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-                    use std::fmt::Write;
+            impl #lifetime ::std::fmt::Debug for #name #lifetime {
+                fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                    use ::std::fmt::Write;
 
                     match self {
                         #(#variant_fmts)*
                     }
+                }
+            }
+
+            impl #lifetime ::std::fmt::LowerHex for #name #lifetime {
+                fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                    ::std::fmt::Debug::fmt(self, f)
+                }
+            }
+
+            impl #lifetime crate::event_derive::Format for #name #lifetime {
+                fn format(&self, _format_type: crate::event_derive::FormatType, fmt: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                    ::std::fmt::Debug::fmt(self, fmt)
                 }
             }
         )
@@ -287,7 +296,6 @@ impl DynamicParam {
         if wants_lifetime {
             quote!(
                 #[allow(non_camel_case_types)]
-                #[derive(Debug)]
                 #serde_derives
                 pub enum #name {
                     #(#variant_definitions,)*
@@ -303,6 +311,20 @@ impl DynamicParam {
                         match self {
                             #(#variant_borrows)*
                         }
+                    }
+                }
+
+                impl ::std::fmt::Debug for #name {
+                    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                        use crate::event_derive::Borrow;
+                        ::std::fmt::Debug::fmt(&self.borrow(), f)
+                    }
+                }
+
+                impl ::std::fmt::LowerHex for #name {
+                    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                        use crate::event_derive::Borrow;
+                        ::std::fmt::LowerHex::fmt(&self.borrow(), f)
                     }
                 }
             )
