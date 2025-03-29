@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Formatter};
 use std::io::Write;
 
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
@@ -13,7 +13,7 @@ use typed_path::{UnixPath, UnixPathBuf};
 /// Socket tuple: describing both endpoints of a connection
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub enum SockTuple<'a> {
     /// Unix socket connection
     Unix {
@@ -49,7 +49,7 @@ pub enum SockTuple<'a> {
     ),
 }
 
-impl Display for SockTuple<'_> {
+impl Debug for SockTuple<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             SockTuple::Unix {
@@ -147,35 +147,14 @@ impl<'a> FromBytes<'a> for SockTuple<'a> {
 }
 
 impl Format for SockTuple<'_> {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        match self {
-            SockTuple::Unix {
-                source_ptr,
-                dest_ptr,
-                path,
-            } => {
-                write!(fmt, "<{:#016x}->{:#016x}>unix://", source_ptr, dest_ptr)?;
-                path.format(format_type, fmt)
-            }
-            SockTuple::V4 { source, dest } => {
-                source.format(format_type, fmt)?;
-                fmt.write_str("->")?;
-                dest.format(format_type, fmt)
-            }
-            SockTuple::V6 { source, dest } => {
-                source.format(format_type, fmt)?;
-                fmt.write_str("->")?;
-                dest.format(format_type, fmt)
-            }
-            SockTuple::Other(af, raw) => write!(fmt, "<af={}>{:02x?}", af, raw),
-        }
+    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+        Debug::fmt(self, fmt)
     }
 }
 
 /// Socket tuple: describing both endpoints of a connection (owned)
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
-#[derive(Debug)]
 pub enum OwnedSockTuple {
     /// Unix socket connection
     Unix {
@@ -235,6 +214,12 @@ impl Borrow for OwnedSockTuple {
             },
             OwnedSockTuple::Other(af, raw) => SockTuple::Other(*af, raw.as_slice()),
         }
+    }
+}
+
+impl Debug for OwnedSockTuple {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self.borrow(), f)
     }
 }
 
