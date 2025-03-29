@@ -2,17 +2,27 @@ use crate::fields::{FromBytes, FromBytesResult, ToBytes};
 use crate::format::FormatType;
 use crate::types::format::Format;
 use crate::types::BorrowDeref;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Formatter, LowerHex};
+
+macro_rules! default_debug {
+    ($name:ident) => {
+        impl Debug for $name {
+            fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                Debug::fmt(&self.0, fmt)
+            }
+        }
+    };
+}
 
 macro_rules! default_format {
-    ($name:ident($repr:ty)) => {
+    ($name:ident) => {
         impl Format for $name {
             fn format(
                 &self,
-                format_type: FormatType,
+                _format_type: FormatType,
                 fmt: &mut std::fmt::Formatter,
             ) -> std::fmt::Result {
-                self.0.format(format_type, fmt)
+                write!(fmt, "{:?}", self)
             }
         }
     };
@@ -61,62 +71,133 @@ macro_rules! newtype {
 
 newtype!(
     /// Syscall result
-    #[derive(Debug)]
     SyscallResult(i64)
 );
 
-#[cfg(target_os = "linux")]
-impl Format for SyscallResult {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+impl Debug for SyscallResult {
+    #[cfg(target_os = "linux")]
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         if self.0 < 0 {
             let errno = nix::errno::Errno::from_raw(-self.0 as i32);
             if errno == nix::errno::Errno::UnknownErrno {
                 // always format errors as decimal
-                self.0.format(FormatType::PF_DEC, fmt)
+                write!(f, "{}", self.0)
             } else {
-                write!(fmt, "{}({:?})", self.0, errno)
+                write!(f, "{}({:?})", self.0, errno)
             }
         } else {
-            self.0.format(format_type, fmt)
+            Debug::fmt(&self.0, f)
+        }
+    }
+
+    // not on Linux, we don't have the Linux errnos without maintaining the list ourselves
+    #[cfg(not(target_os = "linux"))]
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        if self.0 < 0 {
+            // always format errors as decimal
+            write!(f, "{}", self.0)
+        } else {
+            Debug::fmt(&self.0, f)
         }
     }
 }
 
-// not on Linux, we don't have the Linux errnos without maintaining the list ourselves
-#[cfg(not(target_os = "linux"))]
-impl Format for SyscallResult {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+impl LowerHex for SyscallResult {
+    #[cfg(target_os = "linux")]
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        if self.0 < 0 {
+            let errno = nix::errno::Errno::from_raw(-self.0 as i32);
+            if errno == nix::errno::Errno::UnknownErrno {
+                // always format errors as decimal
+                write!(f, "{}", self.0)
+            } else {
+                write!(f, "{}({:?})", self.0, errno)
+            }
+        } else {
+            LowerHex::fmt(&self.0, f)
+        }
+    }
+
+    // not on Linux, we don't have the Linux errnos without maintaining the list ourselves
+    #[cfg(not(target_os = "linux"))]
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         if self.0 < 0 {
             // always format errors as decimal
-            self.0.format(FormatType::PF_DEC, fmt)
+            write!(f, "{}", self.0)
         } else {
-            self.0.format(format_type, fmt)
+            LowerHex::fmt(&self.0, f)
         }
+    }
+}
+
+impl Format for SyscallResult {
+    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+        match format_type {
+            FormatType::PF_HEX => write!(fmt, "{:#x}", self),
+            _ => write!(fmt, "{:?}", self),
+        }
+    }
+}
+
+#[cfg(test)]
+mod syscall_result_tests {
+    use crate::types::SyscallResult;
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn test_fmt_syscall_result() {
+        assert_eq!(format!("{:?}", SyscallResult(0)), "0");
+        assert_eq!(format!("{:?}", SyscallResult(1024)), "1024");
+        assert_eq!(format!("{:?}", SyscallResult(-2)), "-2(ENOENT)");
+        assert_eq!(format!("{:?}", SyscallResult(-28)), "-28(ENOSPC)");
+        assert_eq!(format!("{:?}", SyscallResult(-1024)), "-1024");
+
+        assert_eq!(format!("{:#x}", SyscallResult(0)), "0x0");
+        assert_eq!(format!("{:#x}", SyscallResult(1024)), "0x400");
+        assert_eq!(format!("{:#x}", SyscallResult(-2)), "-2(ENOENT)");
+        assert_eq!(format!("{:#x}", SyscallResult(-28)), "-28(ENOSPC)");
+        assert_eq!(format!("{:#x}", SyscallResult(-1024)), "-1024");
+    }
+
+    #[test]
+    #[cfg(not(target_os = "linux"))]
+    fn test_fmt_syscall_result() {
+        assert_eq!(format!("{:?}", SyscallResult(0)), "0");
+        assert_eq!(format!("{:?}", SyscallResult(1024)), "1024");
+        assert_eq!(format!("{:?}", SyscallResult(-2)), "-2");
+        assert_eq!(format!("{:?}", SyscallResult(-28)), "-28");
+        assert_eq!(format!("{:?}", SyscallResult(-1024)), "-1024");
+
+        assert_eq!(format!("{:#x}", SyscallResult(0)), "0x0");
+        assert_eq!(format!("{:#x}", SyscallResult(1024)), "0x400");
+        assert_eq!(format!("{:#x}", SyscallResult(-2)), "-2");
+        assert_eq!(format!("{:#x}", SyscallResult(-28)), "-28");
+        assert_eq!(format!("{:#x}", SyscallResult(-1024)), "-1024");
     }
 }
 
 newtype!(
     /// A system call number
-    #[derive(Debug)]
     SyscallId(u16)
 );
-default_format!(SyscallId(u16));
+default_debug!(SyscallId);
+default_format!(SyscallId);
 
 newtype!(
     /// A signal number
-    #[derive(Debug)]
     SigType(u8)
 );
+default_format!(SigType);
 
-impl Format for SigType {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        self.0.format(format_type, fmt)?;
+impl Debug for SigType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self.0, f)?;
 
         #[cfg(target_os = "linux")]
         {
             let sig = nix::sys::signal::Signal::try_from(self.0 as i32);
             if let Ok(sig) = sig {
-                write!(fmt, "({sig:?})")?;
+                write!(f, "({sig:?})")?;
             }
         }
 
@@ -124,65 +205,102 @@ impl Format for SigType {
     }
 }
 
+#[cfg(test)]
+mod sig_tests {
+    use crate::types::SigType;
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn test_sig_fmt() {
+        let formatted = format!("{:?}", SigType(1));
+        assert_eq!(formatted, "1(SIGHUP)");
+    }
+
+    #[test]
+    #[cfg(not(target_os = "linux"))]
+    fn test_sig_fmt() {
+        let formatted = format!("{:?}", SigType(1));
+        assert_eq!(formatted, "1");
+    }
+}
+
 newtype!(
     /// File descriptor
-    #[derive(Debug)]
     Fd(i64)
 );
+default_format!(Fd);
 
-impl Format for Fd {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+impl Debug for Fd {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if self.0 == -100 {
-            fmt.write_str("AT_FDCWD")
+            f.write_str("AT_FDCWD")
         } else {
-            self.0.format(format_type, fmt)
+            Debug::fmt(&self.0, f)
         }
+    }
+}
+
+#[cfg(test)]
+mod fd_tests {
+    use crate::types::Fd;
+
+    #[test]
+    fn test_fd_fmt() {
+        assert_eq!(format!("{:?}", Fd(10)), "10");
+        assert_eq!(format!("{:?}", Fd(-100)), "AT_FDCWD");
     }
 }
 
 newtype!(
     /// Process or thread id
-    #[derive(Debug)]
     Pid(i64)
 );
-default_format!(Pid(i64));
+default_debug!(Pid);
+default_format!(Pid);
 
 newtype!(
     /// User id
-    #[derive(Debug)]
     Uid(u32)
 );
-default_format!(Uid(u32));
+default_debug!(Uid);
+default_format!(Uid);
 
 newtype!(
     /// Group id
-    #[derive(Debug)]
     Gid(u32)
 );
-default_format!(Gid(u32));
+default_debug!(Gid);
+default_format!(Gid);
 
 newtype!(
     /// Signal set (bitmask of signals, only the lower 32 bits are used)
-    #[derive(Debug)]
     SigSet(u32)
 );
+default_format!(SigSet);
 
-impl Format for SigSet {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        self.0.format(FormatType::PF_HEX, fmt)?;
+impl SigSet {
+    /// Iterate over all signals in this set
+    pub fn iter(&self) -> impl Iterator<Item = SigType> + use<> {
+        let mask = self.0;
+        (0..32u8)
+            .filter(move |sig| mask & (1u32 << sig) != 0)
+            .map(SigType)
+    }
+}
+
+impl Debug for SigSet {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(fmt, "{:#2x}", self.0)?;
         if self.0 != 0 {
-            let mut first = false;
-            for sig in 0..32 {
-                if (self.0 & (1 << sig)) != 0 {
-                    if first {
-                        write!(fmt, "(")?;
-                        first = false;
-                    } else {
-                        write!(fmt, ",")?;
-                    }
-                    let sig_type = SigType(sig);
-                    sig_type.format(format_type, fmt)?;
+            let mut first = true;
+            for sig in self.iter() {
+                if first {
+                    write!(fmt, "(")?;
+                    first = false;
+                } else {
+                    write!(fmt, ",")?;
                 }
+                write!(fmt, "{:?}", sig)?;
             }
             write!(fmt, ")")?;
         }
@@ -191,23 +309,48 @@ impl Format for SigSet {
     }
 }
 
+#[cfg(test)]
+mod sigset_tests {
+    use crate::types::SigSet;
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn test_sigset() {
+        let signals = (1 << 2) | // SIGINT
+            (1 << 9); // SIGKILL
+
+        let formatted = format!("{:?}", SigSet(signals));
+        assert_eq!(formatted, "0x204(2(SIGINT),9(SIGKILL))");
+    }
+
+    #[test]
+    #[cfg(not(target_os = "linux"))]
+    fn test_sigset() {
+        let signals = (1 << 2) | // SIGINT
+            (1 << 9); // SIGKILL
+
+        let formatted = format!("{:?}", SigSet(signals));
+        assert_eq!(formatted, "0x204(2,9)");
+    }
+}
+
 newtype!(
     /// IP port number
     ///
     /// This looks unused
-    #[derive(Debug)]
     Port(u16)
 );
-default_format!(Port(u16));
+default_debug!(Port);
+default_format!(Port);
 
 newtype!(
     /// Layer 4 protocol (tcp/udp)
     ///
     /// This looks unused
-    #[derive(Debug)]
     L4Proto(u8)
 );
-default_format!(L4Proto(u8));
+default_debug!(L4Proto);
+default_format!(L4Proto);
 
 newtype!(
     /// Socket family (`PPM_AF_*`)
@@ -216,23 +359,35 @@ newtype!(
     #[derive(Debug)]
     SockFamily(u8)
 );
-default_format!(SockFamily(u8));
+default_format!(SockFamily);
 
 newtype!(
     /// Boolean value (0/1)
     ///
     /// This looks unused
-    #[derive(Debug)]
     Bool(u32)
 );
+default_format!(Bool);
 
-impl Format for Bool {
-    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+impl Debug for Bool {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match self.0 {
-            0 => fmt.write_str("false"),
-            1 => fmt.write_str("true"),
-            n => write!(fmt, "true({n})"),
+            0 => f.write_str("false"),
+            1 => f.write_str("true"),
+            n => write!(f, "true({n})"),
         }
+    }
+}
+
+#[cfg(test)]
+mod bool_tests {
+    use crate::types::Bool;
+
+    #[test]
+    fn test_bool() {
+        assert_eq!(format!("{:?}", Bool(0)), "false");
+        assert_eq!(format!("{:?}", Bool(1)), "true");
+        assert_eq!(format!("{:?}", Bool(10)), "true(10)");
     }
 }
 
