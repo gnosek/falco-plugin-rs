@@ -9,11 +9,11 @@ use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 
 /// A list of file descriptors with flags
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct FdList(pub Vec<(u64, PT_FLAGS16_file_flags)>);
 
-impl Format for FdList {
-    fn format(&self, format_type: FormatType, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl Debug for FdList {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut first = true;
         for item in &self.0 {
             if first {
@@ -22,13 +22,18 @@ impl Format for FdList {
             } else {
                 write!(f, " ")?;
             }
-            write!(f, "{}:", item.0)?;
             // TODO: this could use a shorter repr (without the bits)
-            item.1.format(format_type, f)?;
+            write!(f, "{}:{:?}", item.0, item.1)?;
         }
 
         write!(f, "]")?;
         Ok(())
+    }
+}
+
+impl Format for FdList {
+    fn format(&self, _format_type: FormatType, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(self, f)
     }
 }
 
