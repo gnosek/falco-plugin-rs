@@ -12,6 +12,9 @@ pub fn display_wrapper_for(
         "PT_CHARBUFARRAY" => {
             quote!(#val_tt.map(|t| crate::event_derive::CStrArrayFormatter(&t)))
         }
+        "PT_CHARBUF_PAIR_ARRAY" => {
+            quote!(#val_tt.map(|t| crate::event_derive::CStrPairArrayFormatter(&t)))
+        }
         "PT_FSPATH" => quote!(#val_tt.map(|p| p.display())),
         _ => val_tt,
     }

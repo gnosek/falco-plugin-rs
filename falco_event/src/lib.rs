@@ -48,6 +48,7 @@ mod event_derive {
     pub use crate::types::ByteBufFormatter;
     pub use crate::types::CStrArrayFormatter;
     pub use crate::types::CStrFormatter;
+    pub use crate::types::CStrPairArrayFormatter;
     pub use crate::types::SystemTimeFormatter;
 
     pub use crate::types::Borrow;
