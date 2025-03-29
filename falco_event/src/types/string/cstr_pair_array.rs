@@ -1,9 +1,9 @@
-use crate::event_derive::{FromBytes, FromBytesError, FromBytesResult, ToBytes};
+use crate::event_derive::{CStrFormatter, FromBytes, FromBytesError, FromBytesResult, ToBytes};
 use crate::format::FormatType;
 use crate::types::format::Format;
 use crate::types::Borrow;
 use std::ffi::{CStr, CString};
-use std::fmt::{Formatter, Write as _};
+use std::fmt::{Debug, Formatter, Write as _};
 use std::io::Write;
 
 impl<'a> ToBytes for Vec<(&'a CStr, &'a CStr)> {
@@ -43,22 +43,29 @@ impl<'a> FromBytes<'a> for Vec<(&'a CStr, &'a CStr)> {
     }
 }
 
-impl<'a> Format for Vec<(&'a CStr, &'a CStr)> {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+pub struct CStrPairArrayFormatter<'a, T: AsRef<CStr>>(pub &'a Vec<(T, T)>);
+
+impl<T: AsRef<CStr>> Debug for CStrPairArrayFormatter<'_, T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut is_first = true;
-        for (k, v) in self {
+        for (k, v) in self.0 {
             if is_first {
                 is_first = false;
             } else {
-                fmt.write_char(';')?;
+                f.write_char(';')?;
             }
-
-            k.format(format_type, fmt)?;
-            fmt.write_char('=')?;
-            v.format(format_type, fmt)?;
+            Debug::fmt(&CStrFormatter(k.as_ref()), f)?;
+            f.write_char('=')?;
+            Debug::fmt(&CStrFormatter(v.as_ref()), f)?;
         }
 
         Ok(())
+    }
+}
+
+impl<'a> Format for Vec<(&'a CStr, &'a CStr)> {
+    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+        Debug::fmt(&CStrPairArrayFormatter(self), fmt)
     }
 }
 
