@@ -4,14 +4,13 @@ use crate::format::FormatType;
 use crate::types::format::Format;
 use crate::types::{Borrow, EndpointV4, EndpointV6};
 use byteorder::{ReadBytesExt, WriteBytesExt};
-use std::fmt::Formatter;
+use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use typed_path::{UnixPath, UnixPathBuf};
 
 /// A socket address
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
-#[derive(Debug)]
 pub enum SockAddr<'a> {
     /// Unix sockets
     Unix(
@@ -89,25 +88,26 @@ impl<'a> FromBytes<'a> for SockAddr<'a> {
     }
 }
 
-impl Format for SockAddr<'_> {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+impl Debug for SockAddr<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            SockAddr::Unix(u) => {
-                let bytes = u.as_bytes();
-                fmt.write_str("unix://")?;
-                bytes.format(format_type, fmt)
-            }
-            SockAddr::V4(v4) => v4.format(format_type, fmt),
-            SockAddr::V6(v6) => v6.format(format_type, fmt),
-            SockAddr::Other(af, raw) => write!(fmt, "<af={}>{:02x?}", af, raw),
+            SockAddr::Unix(u) => write!(f, "unix://{}", u.display()),
+            SockAddr::V4(v4) => write!(f, "{}:{}", v4.0, v4.1 .0),
+            SockAddr::V6(v6) => write!(f, "[{}]:{}", v6.0, v6.1 .0),
+            SockAddr::Other(af, raw) => write!(f, "<af={}>{:02x?}", af, raw),
         }
+    }
+}
+
+impl Format for SockAddr<'_> {
+    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+        Debug::fmt(self, fmt)
     }
 }
 
 /// A socket address (owned)
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
-#[derive(Debug)]
 pub enum OwnedSockAddr {
     /// Unix sockets
     Unix(
@@ -136,6 +136,17 @@ impl Borrow for OwnedSockAddr {
             OwnedSockAddr::V4(v4) => SockAddr::V4(*v4),
             OwnedSockAddr::V6(v6) => SockAddr::V6(*v6),
             OwnedSockAddr::Other(af, raw) => SockAddr::Other(*af, raw),
+        }
+    }
+}
+
+impl Debug for OwnedSockAddr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OwnedSockAddr::Unix(u) => write!(f, "unix://{}", u.display()),
+            OwnedSockAddr::V4(v4) => write!(f, "{}:{}", v4.0, v4.1 .0),
+            OwnedSockAddr::V6(v6) => write!(f, "[{}]:{}", v6.0, v6.1 .0),
+            OwnedSockAddr::Other(af, raw) => write!(f, "<af={}>{:02x?}", af, raw),
         }
     }
 }
