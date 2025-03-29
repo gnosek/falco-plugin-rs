@@ -1,9 +1,9 @@
 use crate::event_derive::{FromBytes, FromBytesError, FromBytesResult, ToBytes};
 use crate::format::FormatType;
 use crate::types::format::Format;
-use crate::types::Borrow;
+use crate::types::{Borrow, ByteBufFormatter};
 use std::ffi::{CStr, CString};
-use std::fmt::Formatter;
+use std::fmt::{Debug, Formatter};
 use std::io::Write;
 
 impl<'a> FromBytes<'a> for &'a CStr {
@@ -29,10 +29,17 @@ impl ToBytes for &CStr {
     }
 }
 
+pub struct CStrFormatter<'a>(pub &'a CStr);
+
+impl Debug for CStrFormatter<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&ByteBufFormatter(self.0.to_bytes()), f)
+    }
+}
+
 impl Format for &CStr {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        let bytes = self.to_bytes();
-        bytes.format(format_type, fmt)
+    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+        Debug::fmt(&CStrFormatter(self), fmt)
     }
 }
 

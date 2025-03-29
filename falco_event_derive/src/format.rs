@@ -8,7 +8,7 @@ pub fn display_wrapper_for(
     match pt_type.to_string().as_str() {
         "PT_ABSTIME" => quote!(#val_tt.map(|t| crate::event_derive::SystemTimeFormatter(*t))),
         "PT_BYTEBUF" => quote!(#val_tt.map(|t| crate::event_derive::ByteBufFormatter(t))),
-        // "PT_CHARBUF" => todo!(),
+        "PT_CHARBUF" => quote!(#val_tt.map(|t| crate::event_derive::CStrFormatter(t))),
         // "PT_CHARBUFARRAY" => todo!(),
         "PT_FSPATH" => quote!(#val_tt.map(|p| p.display())),
         _ => val_tt,
