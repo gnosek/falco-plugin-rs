@@ -2,7 +2,7 @@ use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::format::FormatType;
 use crate::types::format::Format;
 use crate::types::Borrow;
-use std::fmt::Formatter;
+use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use typed_path::{UnixPath, UnixPathBuf};
 
@@ -12,7 +12,6 @@ use typed_path::{UnixPath, UnixPathBuf};
 /// from the field name. For example, if the field is called `name`, the event type will have
 /// a method called `name_dirfd` that returns the corresponding `dirfd` (as an `Option<PT_FD>`)
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
 pub struct RelativePath<'a>(
     #[cfg_attr(feature = "serde", serde(with = "crate::types::serde::unix_path"))] pub &'a UnixPath,
 );
@@ -37,21 +36,24 @@ impl<'a> FromBytes<'a> for RelativePath<'a> {
     }
 }
 
-impl Format for RelativePath<'_> {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        write!(fmt, "<...>")?;
-
-        let bytes = self.0.as_bytes();
-        bytes.format(format_type, fmt)
+impl Debug for RelativePath<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<...>{}", self.0.display())
     }
 }
+
+impl Format for RelativePath<'_> {
+    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+        Debug::fmt(self, fmt)
+    }
+}
+
 /// A relative path
 ///
 /// Events containing a parameter of this type will have an extra method available, derived
 /// from the field name. For example, if the field is called `name`, the event type will have
 /// a method called `name_dirfd` that returns the corresponding `dirfd` (as an `Option<PT_FD>`)
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[derive(Debug)]
 pub struct OwnedRelativePath(
     #[cfg_attr(feature = "serde", serde(with = "crate::types::serde::unix_path"))] pub UnixPathBuf,
 );
@@ -61,6 +63,12 @@ impl Borrow for OwnedRelativePath {
 
     fn borrow(&self) -> Self::Borrowed<'_> {
         RelativePath(self.0.as_path())
+    }
+}
+
+impl Debug for OwnedRelativePath {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<...>{}", self.0.display())
     }
 }
 
