@@ -26,6 +26,7 @@ pub mod serde {
 /// - the output can be configured in a limited fashion using [`format::FormatType`].
 pub mod format;
 
+pub use bytebuf::ByteBufFormatter;
 pub use fd_list::*;
 pub use net::*;
 pub use owned::Borrow;
