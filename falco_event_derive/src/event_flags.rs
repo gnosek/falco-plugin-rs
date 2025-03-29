@@ -207,10 +207,24 @@ fn render_enum(
             }
         }
 
+        impl ::std::fmt::LowerHex for #name {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                let raw: #repr_type = (*self).into();
+                ::std::fmt::LowerHex::fmt(&raw, f)?;
+                match self {
+                    Self::Unknown(_) => Ok(()),
+                    _ => write!(f, "({:?})", self)
+                }
+            }
+        }
+
         impl crate::event_derive::Format for #name
         {
-            fn format(&self, _format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-                ::std::fmt::Debug::fmt(self, fmt)
+            fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                match format_type {
+                    crate::event_derive::FormatType::PF_HEX =>::std::fmt::LowerHex::fmt(self, fmt),
+                    _ =>::std::fmt::Debug::fmt(self, fmt),
+                }
             }
         }
     )

@@ -1,11 +1,11 @@
+use crate::format::{display_wrapper_for, formatter_for};
+#[cfg(feature = "serde")]
+use crate::serde_custom::{serde_with_option_tag, serde_with_option_tag_owned};
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{braced, bracketed, parse_macro_input, Token};
-
-#[cfg(feature = "serde")]
-use crate::serde_custom::{serde_with_option_tag, serde_with_option_tag_owned};
 
 #[cfg(not(feature = "serde"))]
 fn serde_with_option_tag(_ty: &Ident) -> Option<proc_macro2::TokenStream> {
@@ -258,13 +258,23 @@ impl EventInfo {
         let field_fmts = self.args().map(|field| {
             let name = &field.name;
             let ident = field.ident();
-            let fmt = &field.field_format;
+
+            let display_wrapper =
+                display_wrapper_for(&field.field_type, quote!(self.#ident.as_ref()));
+            let display_val = quote!(crate::event_derive::OptionFormatter(#display_wrapper));
+
+            let format_val = formatter_for(
+                &field.field_type,
+                &field.field_format,
+                quote!(&#display_val),
+                quote!(fmt),
+            );
 
             quote!(
                 fmt.write_char(' ')?;
                 fmt.write_str(#name)?;
                 fmt.write_char('=')?;
-                self.#ident.format(crate::event_derive::FormatType::#fmt, fmt)?;
+                #format_val?;
             )
         });
         let dirfd_methods = self.args().map(|a| a.dirfd_method(self));
