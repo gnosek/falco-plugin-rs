@@ -146,7 +146,7 @@ fn render_enum(
         #[repr(#repr_type)]
         #[allow(non_camel_case_types)]
         #[non_exhaustive]
-        #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+        #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
         #serde_derives
         pub enum #name {
             #(#tags,)*
@@ -196,15 +196,21 @@ fn render_enum(
             }
         }
 
-        impl crate::event_derive::Format for #name
-        {
-            fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        impl ::std::fmt::Debug for #name {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                 let raw: #repr_type = (*self).into();
-                raw.format(format_type, fmt)?;
+                ::std::fmt::Debug::fmt(&raw, f)?;
                 match self {
                     Self::Unknown(_) => Ok(()),
-                    _ => write!(fmt, "({:?})", self)
+                    _ => write!(f, "({:?})", self)
                 }
+            }
+        }
+
+        impl crate::event_derive::Format for #name
+        {
+            fn format(&self, _format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                ::std::fmt::Debug::fmt(self, fmt)
             }
         }
     )
@@ -229,7 +235,7 @@ fn render_bitflags(
     quote!(
         bitflags::bitflags! {
             #[allow(non_camel_case_types)]
-            #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+            #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
             #serde_derives
             pub struct #name: #repr_type {
                 #(#items;)*
@@ -262,38 +268,45 @@ fn render_bitflags(
             }
         }
 
-        impl crate::event_derive::Format for #name {
-            fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-                write!(fmt, "{:#x}", self.bits())?;
+        impl ::std::fmt::Debug for #name {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                write!(f, "{:#x}", self.bits())?;
                 let mut first = true;
 
                 let mut it = self.iter_names();
                 for (name, bits) in &mut it {
                     if first {
-                        fmt.write_str("(")?;
+                        f.write_str("(")?;
                         first = false;
                     } else {
-                        fmt.write_str("|")?;
+                        f.write_str("|")?;
                     }
-                    write!(fmt, "{name}")?;
+                    write!(f, "{name}")?;
                 }
 
                 let rem = it.remaining().bits();
                 if rem != 0 {
                     if first {
-                        fmt.write_str("(")?;
+                        f.write_str("(")?;
                         first = false;
                     } else {
-                        fmt.write_str("|")?;
+                        f.write_str("|")?;
                     }
-                    write!(fmt, "{rem:#x}")?;
+                    write!(f, "{rem:#x}")?;
                 }
 
                 if !first {
-                    fmt.write_str(")")?;
+                    f.write_str(")")?;
                 }
 
                 Ok(())
+
+            }
+        }
+
+        impl crate::event_derive::Format for #name {
+            fn format(&self, _format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+                ::std::fmt::Debug::fmt(self, fmt)
             }
         }
     )
