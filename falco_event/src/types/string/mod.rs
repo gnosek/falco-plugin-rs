@@ -8,3 +8,5 @@ pub mod serde {
     pub use super::cstr_array::serde::*;
     pub use super::cstr_pair_array::serde::*;
 }
+
+pub use cstr::CStrFormatter;

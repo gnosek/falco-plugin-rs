@@ -33,4 +33,5 @@ pub use owned::Borrow;
 pub use owned::BorrowDeref;
 pub use path::*;
 pub use primitive::*;
+pub use string::*;
 pub use time::*;
