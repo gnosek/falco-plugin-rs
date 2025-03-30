@@ -217,16 +217,6 @@ fn render_enum(
                 }
             }
         }
-
-        impl crate::event_derive::Format for #name
-        {
-            fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-                match format_type {
-                    crate::event_derive::FormatType::PF_HEX =>::std::fmt::LowerHex::fmt(self, fmt),
-                    _ =>::std::fmt::Debug::fmt(self, fmt),
-                }
-            }
-        }
     )
 }
 
@@ -315,12 +305,6 @@ fn render_bitflags(
 
                 Ok(())
 
-            }
-        }
-
-        impl crate::event_derive::Format for #name {
-            fn format(&self, _format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-                ::std::fmt::Debug::fmt(self, fmt)
             }
         }
     )
