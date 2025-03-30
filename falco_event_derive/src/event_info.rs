@@ -267,13 +267,13 @@ impl EventInfo {
                 &field.field_type,
                 &field.field_format,
                 quote!(&#display_val),
-                quote!(fmt),
+                quote!(f),
             );
 
             quote!(
-                fmt.write_char(' ')?;
-                fmt.write_str(#name)?;
-                fmt.write_char('=')?;
+                f.write_char(' ')?;
+                f.write_str(#name)?;
+                f.write_char('=')?;
                 #format_val?;
             )
         });
@@ -319,7 +319,6 @@ impl EventInfo {
         quote!(
             #[allow(non_camel_case_types)]
             #derives
-            #[derive(Debug)]
             pub struct #event_code #lifetime {
                 #(#fields,)*
             }
@@ -334,15 +333,15 @@ impl EventInfo {
                 const NAME: &'static str = #name;
             }
 
-            impl #lifetime crate::event_derive::Format for #event_code #lifetime {
-                fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+            impl #lifetime ::std::fmt::Debug for #event_code #lifetime {
+                fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                     use std::fmt::Write;
 
                     match <Self as crate::event_derive::EventPayload>::direction() {
-                        crate::event_derive::EventDirection::Entry => fmt.write_str("> ")?,
-                        crate::event_derive::EventDirection::Exit => fmt.write_str("< ")?,
+                        crate::event_derive::EventDirection::Entry => f.write_str("> ")?,
+                        crate::event_derive::EventDirection::Exit => f.write_str("< ")?,
                     }
-                    fmt.write_str(#name)?;
+                    f.write_str(#name)?;
                     #(#field_fmts)*
                     Ok(())
                 }
@@ -417,9 +416,7 @@ impl EventInfo {
         );
 
         quote!(
-            AnyEvent::#event_type(inner) => {
-                inner.format(format_type, fmt)
-            }
+            AnyEvent::#event_type(inner) => ::std::fmt::Debug::fmt(&inner, f),
         )
     }
 
@@ -509,7 +506,6 @@ fn event_info_variant(events: &Events, variant: CodegenVariant) -> proc_macro2::
     quote!(
         #(#typedefs)*
 
-        #[derive(Debug)]
         #derives
         #[allow(non_camel_case_types)]
         pub enum AnyEvent #lifetime {
@@ -524,8 +520,8 @@ fn event_info_variant(events: &Events, variant: CodegenVariant) -> proc_macro2::
             }
         }
 
-        impl #lifetime crate::event_derive::Format for AnyEvent #lifetime {
-            fn format(&self, format_type: crate::event_derive::FormatType, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        impl #lifetime ::std::fmt::Debug for AnyEvent #lifetime {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 match self {
                     #(#variant_fmts)*
                 }
