@@ -1,4 +1,3 @@
-use crate::types::Borrow;
 use std::fmt::{Debug, Display, Formatter, LowerHex, Octal};
 
 // This is only used by the derive macro
@@ -45,28 +44,6 @@ impl<T: Octal> Octal for OptionFormatter<T> {
 pub trait Format {
     /// build a string representation according to the chosen formatting type
     fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result;
-}
-
-impl<T> Format for Option<T>
-where
-    T: Format,
-{
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        match self {
-            Some(inner) => inner.format(format_type, fmt),
-            None => fmt.write_str("NULL"),
-        }
-    }
-}
-
-impl<T> Format for T
-where
-    T: Borrow,
-    for<'a> <T as Borrow>::Borrowed<'a>: Format,
-{
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        self.borrow().format(format_type, fmt)
-    }
 }
 
 #[allow(non_camel_case_types)]
