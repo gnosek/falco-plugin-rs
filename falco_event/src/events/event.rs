@@ -1,6 +1,5 @@
-use crate::event_derive::{EventMetadata, Format, PayloadToBytes};
+use crate::event_derive::{EventMetadata, PayloadToBytes};
 use crate::events::to_bytes::EventToBytes;
-use crate::format::FormatType;
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 
@@ -10,32 +9,15 @@ pub struct Event<T> {
     pub params: T,
 }
 
-impl<T: Debug + Format> Debug for Event<T> {
+impl<T: Debug> Debug for Event<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("Event")
-                .field("metadata", &self.metadata)
-                .field("params", &self.params)
-                .finish()
-        } else {
-            self.format(FormatType::PF_NA, f)
-        }
+        write!(f, "{:?} {:?}", self.metadata, self.params)
     }
 }
 
 impl<T: PayloadToBytes> EventToBytes for Event<T> {
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.params.write(&self.metadata, writer)
-    }
-}
-
-impl<T> Format for Event<T>
-where
-    T: Format,
-{
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        write!(fmt, "{:?} ", self.metadata)?;
-        self.params.format(format_type, fmt)
     }
 }
 

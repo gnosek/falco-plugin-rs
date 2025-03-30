@@ -16,14 +16,10 @@ pub mod serde {
     pub use super::string::serde::*;
 }
 
-/// Falco-style formatting for fields and events
+/// Formatting wrappers
 ///
-/// This module provides the [`format::Format`] trait, which, similar to [`std::fmt::Debug`], enables
-/// you to get a text representation of a field or an event. The differences compared to `Debug`
-/// are:
-/// - the output format follows the formatters from `libsinsp` (although it's not exact, as it uses
-///   e.g. the `Debug` impl for [`std::time::Duration`] for pretty printing time intervals)
-/// - the output can be configured in a limited fashion using [`format::FormatType`].
+/// This module provides wrappers for various types that format the inner type according
+/// to Falco style.
 pub mod format;
 
 pub use bytebuf::ByteBufFormatter;
