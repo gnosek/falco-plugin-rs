@@ -1,7 +1,7 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::format::FormatType;
 use crate::types::format::Format;
-use std::fmt::Formatter;
+use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use std::net::IpAddr;
 
@@ -10,7 +10,7 @@ use std::net::IpAddr;
 /// This is a wrapper around [IpAddr] that makes it a distinct type, suitable for storing
 /// IP (v4 or v6) subnets.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct IpNet(pub IpAddr);
 
 impl FromBytes<'_> for IpNet {
@@ -33,9 +33,15 @@ impl ToBytes for IpNet {
     }
 }
 
+impl Debug for IpNet {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self.0, f)
+    }
+}
+
 impl Format for IpNet {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        self.0.format(format_type, fmt)
+    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
+        Debug::fmt(self, fmt)
     }
 }
 
