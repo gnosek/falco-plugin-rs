@@ -44,7 +44,6 @@ mod event_derive {
     pub use crate::fields::NoDefault;
     pub use crate::fields::ToBytes;
     pub use crate::types::format::Format;
-    pub use crate::types::format::FormatType;
     pub use crate::types::format::OptionFormatter;
     pub use crate::types::ByteBufFormatter;
     pub use crate::types::CStrArrayFormatter;
