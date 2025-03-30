@@ -3,8 +3,6 @@ use std::io::Write;
 
 use crate::fields::event_flags::PT_FLAGS16_file_flags;
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 
 /// A list of file descriptors with flags
@@ -28,12 +26,6 @@ impl Debug for FdList {
 
         write!(f, "]")?;
         Ok(())
-    }
-}
-
-impl Format for FdList {
-    fn format(&self, _format_type: FormatType, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(self, f)
     }
 }
 

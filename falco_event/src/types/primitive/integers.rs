@@ -1,25 +1,6 @@
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
-use crate::types::format::{Format, FormatType};
 use crate::types::BorrowDeref;
 use byteorder::{ReadBytesExt, WriteBytesExt};
-
-macro_rules! impl_format {
-    ($ty:ty) => {
-        impl Format for $ty {
-            fn format(
-                &self,
-                format_type: FormatType,
-                fmt: &mut std::fmt::Formatter,
-            ) -> std::fmt::Result {
-                match format_type {
-                    FormatType::PF_HEX => write!(fmt, "{:#x}", self),
-                    FormatType::PF_OCT => write!(fmt, "{:#o}", self),
-                    _ => write!(fmt, "{}", self),
-                }
-            }
-        }
-    };
-}
 
 macro_rules! impl_borrow_deref {
     ($ty:ty) => {
@@ -59,7 +40,6 @@ macro_rules! impl_int_type {
             }
         }
 
-        impl_format!($ty);
         impl_borrow_deref!($ty);
     };
 }
@@ -90,7 +70,6 @@ macro_rules! impl_uint_type {
             }
         }
 
-        impl_format!($ty);
         impl_borrow_deref!($ty);
     };
 }

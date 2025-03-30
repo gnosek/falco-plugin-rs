@@ -3,8 +3,6 @@ use std::io::Write;
 
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use crate::types::net::endpoint::{EndpointV4, EndpointV6};
 use crate::types::Borrow;
 use byteorder::{ReadBytesExt, WriteBytesExt};
@@ -143,12 +141,6 @@ impl<'a> FromBytes<'a> for SockTuple<'a> {
             }),
             _ => Ok(Self::Other(variant, buf)),
         }
-    }
-}
-
-impl Format for SockTuple<'_> {
-    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        Debug::fmt(self, fmt)
     }
 }
 

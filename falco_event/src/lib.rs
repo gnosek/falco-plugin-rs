@@ -12,6 +12,7 @@ pub mod fields;
 mod types;
 
 pub use types::format;
+pub use types::SystemTimeFormatter;
 
 #[allow(dead_code)]
 #[allow(non_snake_case)]

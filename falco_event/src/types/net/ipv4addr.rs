@@ -1,12 +1,9 @@
-use std::fmt::Formatter;
 use std::io::Write;
 use std::net::Ipv4Addr;
 
 use byteorder::{NetworkEndian, ReadBytesExt};
 
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 
 impl FromBytes<'_> for Ipv4Addr {
     fn from_bytes(buf: &mut &[u8]) -> FromBytesResult<Self> {
@@ -26,12 +23,6 @@ impl ToBytes for Ipv4Addr {
 
     fn default_repr() -> impl ToBytes {
         Ipv4Addr::from(0)
-    }
-}
-
-impl Format for Ipv4Addr {
-    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        write!(fmt, "{}", self)
     }
 }
 
