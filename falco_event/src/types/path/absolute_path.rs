@@ -1,9 +1,6 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use crate::types::Borrow;
 use std::ffi::CStr;
-use std::fmt::Formatter;
 use std::io::Write;
 use typed_path::{UnixPath, UnixPathBuf};
 
@@ -26,13 +23,6 @@ impl ToBytes for &UnixPath {
 
     fn default_repr() -> impl ToBytes {
         0u8
-    }
-}
-
-impl Format for &UnixPath {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        let bytes = self.as_bytes();
-        bytes.format(format_type, fmt)
     }
 }
 

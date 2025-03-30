@@ -1,6 +1,4 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use std::net::Ipv4Addr;
@@ -36,12 +34,6 @@ impl ToBytes for Ipv4Net {
 impl Debug for Ipv4Net {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(&self.0, f)
-    }
-}
-
-impl Format for Ipv4Net {
-    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        Debug::fmt(self, fmt)
     }
 }
 

@@ -1,6 +1,4 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use chrono::Local;
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
@@ -33,18 +31,13 @@ impl ToBytes for SystemTime {
     }
 }
 
+#[doc(hidden)]
 pub struct SystemTimeFormatter(pub SystemTime);
 
 impl Debug for SystemTimeFormatter {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let dt = chrono::DateTime::<Local>::from(self.0);
         f.write_str(&dt.to_rfc3339_opts(chrono::SecondsFormat::AutoSi, false))
-    }
-}
-
-impl Format for SystemTime {
-    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        ::std::fmt::Debug::fmt(&SystemTimeFormatter(*self), fmt)
     }
 }
 

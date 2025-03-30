@@ -1,6 +1,4 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use crate::types::Borrow;
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
@@ -39,12 +37,6 @@ impl<'a> FromBytes<'a> for RelativePath<'a> {
 impl Debug for RelativePath<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "<...>{}", self.0.display())
-    }
-}
-
-impl Format for RelativePath<'_> {
-    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        Debug::fmt(self, fmt)
     }
 }
 

@@ -1,6 +1,4 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use crate::types::{Borrow, CStrFormatter};
 use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter, Write as _};
@@ -49,12 +47,6 @@ impl<T: AsRef<CStr>> Debug for CStrArrayFormatter<'_, T> {
         }
 
         Ok(())
-    }
-}
-
-impl Format for Vec<&CStr> {
-    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        Debug::fmt(&CStrArrayFormatter(self), fmt)
     }
 }
 

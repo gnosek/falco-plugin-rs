@@ -1,6 +1,4 @@
 use crate::event_derive::{CStrFormatter, FromBytes, FromBytesError, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use crate::types::Borrow;
 use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter, Write as _};
@@ -60,12 +58,6 @@ impl<T: AsRef<CStr>> Debug for CStrPairArrayFormatter<'_, T> {
         }
 
         Ok(())
-    }
-}
-
-impl<'a> Format for Vec<(&'a CStr, &'a CStr)> {
-    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        Debug::fmt(&CStrPairArrayFormatter(self), fmt)
     }
 }
 

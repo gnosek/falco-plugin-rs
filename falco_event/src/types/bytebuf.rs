@@ -1,6 +1,4 @@
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use crate::types::{Borrow, BorrowDeref};
 use std::fmt::{Debug, Formatter, Write as _};
 use std::io::Write;
@@ -53,15 +51,6 @@ impl Debug for ByteBufFormatter<'_> {
         }
 
         Ok(())
-    }
-}
-
-impl Format for &[u8] {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        match format_type {
-            FormatType::PF_HEX => write!(fmt, "{:x?}", ByteBufFormatter(self)),
-            _ => Debug::fmt(self, fmt),
-        }
     }
 }
 

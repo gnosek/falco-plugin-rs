@@ -1,6 +1,4 @@
 use crate::fields::{FromBytes, FromBytesResult, ToBytes};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use crate::types::BorrowDeref;
 use std::fmt::{Debug, Formatter, LowerHex};
 
@@ -9,20 +7,6 @@ macro_rules! default_debug {
         impl Debug for $name {
             fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
                 Debug::fmt(&self.0, fmt)
-            }
-        }
-    };
-}
-
-macro_rules! default_format {
-    ($name:ident) => {
-        impl Format for $name {
-            fn format(
-                &self,
-                _format_type: FormatType,
-                fmt: &mut std::fmt::Formatter,
-            ) -> std::fmt::Result {
-                write!(fmt, "{:?}", self)
             }
         }
     };
@@ -130,15 +114,6 @@ impl LowerHex for SyscallResult {
     }
 }
 
-impl Format for SyscallResult {
-    fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        match format_type {
-            FormatType::PF_HEX => write!(fmt, "{:#x}", self),
-            _ => write!(fmt, "{:?}", self),
-        }
-    }
-}
-
 #[cfg(test)]
 mod syscall_result_tests {
     use crate::types::SyscallResult;
@@ -181,13 +156,11 @@ newtype!(
     SyscallId(u16)
 );
 default_debug!(SyscallId);
-default_format!(SyscallId);
 
 newtype!(
     /// A signal number
     SigType(u8)
 );
-default_format!(SigType);
 
 impl Debug for SigType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -228,7 +201,6 @@ newtype!(
     /// File descriptor
     Fd(i64)
 );
-default_format!(Fd);
 
 impl Debug for Fd {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -256,27 +228,23 @@ newtype!(
     Pid(i64)
 );
 default_debug!(Pid);
-default_format!(Pid);
 
 newtype!(
     /// User id
     Uid(u32)
 );
 default_debug!(Uid);
-default_format!(Uid);
 
 newtype!(
     /// Group id
     Gid(u32)
 );
 default_debug!(Gid);
-default_format!(Gid);
 
 newtype!(
     /// Signal set (bitmask of signals, only the lower 32 bits are used)
     SigSet(u32)
 );
-default_format!(SigSet);
 
 impl SigSet {
     /// Iterate over all signals in this set
@@ -341,7 +309,6 @@ newtype!(
     Port(u16)
 );
 default_debug!(Port);
-default_format!(Port);
 
 newtype!(
     /// Layer 4 protocol (tcp/udp)
@@ -350,7 +317,6 @@ newtype!(
     L4Proto(u8)
 );
 default_debug!(L4Proto);
-default_format!(L4Proto);
 
 newtype!(
     /// Socket family (`PPM_AF_*`)
@@ -359,7 +325,6 @@ newtype!(
     #[derive(Debug)]
     SockFamily(u8)
 );
-default_format!(SockFamily);
 
 newtype!(
     /// Boolean value (0/1)
@@ -367,7 +332,6 @@ newtype!(
     /// This looks unused
     Bool(u32)
 );
-default_format!(Bool);
 
 impl Debug for Bool {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {

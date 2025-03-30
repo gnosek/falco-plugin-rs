@@ -1,7 +1,5 @@
 use crate::event_derive::{FromBytes, FromBytesResult, ToBytes};
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL, PPM_AF_UNSPEC};
-use crate::format::FormatType;
-use crate::types::format::Format;
 use crate::types::{Borrow, EndpointV4, EndpointV6};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::fmt::{Debug, Formatter};
@@ -96,12 +94,6 @@ impl Debug for SockAddr<'_> {
             SockAddr::V6(v6) => write!(f, "[{}]:{}", v6.0, v6.1 .0),
             SockAddr::Other(af, raw) => write!(f, "<af={}>{:02x?}", af, raw),
         }
-    }
-}
-
-impl Format for SockAddr<'_> {
-    fn format(&self, _format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        Debug::fmt(self, fmt)
     }
 }
 
