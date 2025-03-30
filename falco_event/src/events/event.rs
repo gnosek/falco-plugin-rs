@@ -34,8 +34,7 @@ where
     T: Format,
 {
     fn format(&self, format_type: FormatType, fmt: &mut Formatter) -> std::fmt::Result {
-        self.metadata.format(format_type, fmt)?;
-        fmt.write_str(" ")?;
+        write!(fmt, "{:?} ", self.metadata)?;
         self.params.format(format_type, fmt)
     }
 }
