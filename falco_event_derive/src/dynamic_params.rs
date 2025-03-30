@@ -263,12 +263,6 @@ impl DynamicParam {
                     ::std::fmt::Debug::fmt(self, f)
                 }
             }
-
-            impl #lifetime crate::event_derive::Format for #name #lifetime {
-                fn format(&self, _format_type: crate::event_derive::FormatType, fmt: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-                    ::std::fmt::Debug::fmt(self, fmt)
-                }
-            }
         )
     }
 
