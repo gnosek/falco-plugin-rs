@@ -3,8 +3,7 @@ use crate::plugin::base::Plugin;
 use crate::plugin::extract::schema::ExtractFieldInfo;
 use crate::plugin::extract::wrappers::ExtractPluginExported;
 use crate::tables::LazyTableReader;
-use falco_event::events::types::EventType;
-use falco_event::events::RawEvent;
+use falco_event::events::{AnyEventPayload, RawEvent};
 use falco_plugin_api::{ss_plugin_extract_field, ss_plugin_extract_value_offsets};
 use std::any::TypeId;
 use std::collections::BTreeMap;
@@ -123,7 +122,7 @@ pub struct ExtractRequest<'c, 'e, 'r, 't, P: ExtractPlugin> {
     pub context: &'c mut P::ExtractContext,
 
     /// The event being processed
-    pub event: &'e EventInput<'r, RawEvent<'r>>,
+    pub event: &'e EventInput<'r, P::Event<'r>>,
 
     /// An interface to access tables exposed from Falco core and other plugins
     ///
@@ -149,22 +148,20 @@ pub trait ExtractPlugin: Plugin + ExtractPluginExported + Sized
 where
     Self: 'static,
 {
-    /// The set of event types supported by this plugin
+    /// # Event type to perform extractions on
     ///
-    /// If empty, the plugin will get invoked for all event types, otherwise it will only
-    /// get invoked for event types from this list.
+    /// Events will be parsed into this type before being passed to the plugin, so you can
+    /// work directly on the deserialized form and don't need to worry about validating
+    /// the events.
     ///
-    /// **Note**: some notable event types are:
-    /// - [`EventType::ASYNCEVENT_E`], generated from async plugins
-    /// - [`EventType::PLUGINEVENT_E`], generated from source plugins
-    const EVENT_TYPES: &'static [EventType];
-    /// The set of event sources supported by this plugin
+    /// If an event fails this conversion, an error will be returned from [`EventInput::event`],
+    /// which you can propagate directly to the caller.
     ///
-    /// If empty, the plugin will get invoked for events coming from all sources, otherwise it will
-    /// only get invoked for events from sources named in this list.
-    ///
-    /// **Note**: one notable event source is called `syscall`
-    const EVENT_SOURCES: &'static [&'static str];
+    /// If you don't want any specific validation/conversion to be performed, specify the type as
+    /// ```
+    /// type Event<'a> = falco_event::events::RawEvent<'a>;
+    /// ```
+    type Event<'a>: AnyEventPayload + TryFrom<&'a RawEvent<'a>>;
 
     /// The extraction context
     ///
@@ -238,8 +235,7 @@ where
     /// To register extracted fields, add them to the [`ExtractPlugin::EXTRACT_FIELDS`] array, wrapped via [`crate::extract::field`]:
     /// ```
     /// use std::ffi::CStr;
-    /// use falco_plugin::event::events::types::EventType;
-    /// use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
+    /// use falco_event::events::RawEvent;
     /// use falco_plugin::anyhow::Error;
     /// use falco_plugin::base::Plugin;
     /// use falco_plugin::extract::{
@@ -282,9 +278,8 @@ where
     /// }
     ///
     /// impl ExtractPlugin for SampleExtractPlugin {
-    ///     const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
-    ///     const EVENT_SOURCES: &'static [&'static str] = &["dummy"];
     ///     type ExtractContext = ();
+    ///     type Event<'a> = RawEvent<'a>;
     ///     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
     ///         field("sample.always_10", &Self::extract_sample),
     ///         field("sample.arg", &Self::extract_arg)
@@ -336,7 +331,7 @@ where
     /// You probably won't need to provide your own implementation.
     fn extract_fields<'a>(
         &'a mut self,
-        event_input: &EventInput<RawEvent>,
+        event_input: &EventInput<'a, Self::Event<'a>>,
         table_reader: &LazyTableReader,
         fields: &mut [ss_plugin_extract_field],
         offsets: Option<&mut ss_plugin_extract_value_offsets>,

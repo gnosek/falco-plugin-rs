@@ -223,8 +223,8 @@ field has a name, type and a function or method that returns the actual extracte
 Extraction plugins are created by implementing the [`extract::ExtractPlugin`] trait and calling
 [`extract_plugin!`] with the plugin type.
 
-Rules involving fields from extract plugins must match against the correct source (one of [
-`extract::ExtractPlugin::EVENT_SOURCES`]).
+Rules involving fields from extract plugins must match against the correct source (supported by [
+`extract::ExtractPlugin::Event`]).
 
 ## Event parsing plugins
 

@@ -1,7 +1,7 @@
 use anyhow::{Context, Error};
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
-use falco_plugin::event::events::types::{EventType, PPME_PLUGINEVENT_E};
+use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
+use falco_plugin::event::events::Event;
 use falco_plugin::extract::{
     field, ExtractByteRange, ExtractFieldInfo, ExtractPlugin, ExtractRequest,
 };
@@ -28,7 +28,6 @@ impl Plugin for ExtractRemainingFromPayload {
 impl ExtractRemainingFromPayload {
     fn extract_payload(&mut self, req: ExtractRequest<Self>) -> Result<CString, Error> {
         let event = req.event.event()?;
-        let event = event.load::<PPME_PLUGINEVENT_E>()?;
         let payload = event
             .params
             .event_data
@@ -41,7 +40,6 @@ impl ExtractRemainingFromPayload {
 
     fn extract_payload_with_range(&mut self, req: ExtractRequest<Self>) -> Result<CString, Error> {
         let event = req.event.event()?;
-        let event = event.load::<PPME_PLUGINEVENT_E>()?;
         let payload = event
             .params
             .event_data
@@ -63,7 +61,6 @@ impl ExtractRemainingFromPayload {
         reps: u64,
     ) -> Result<Vec<CString>, Error> {
         let event = req.event.event()?;
-        let event = event.load::<PPME_PLUGINEVENT_E>()?;
         let payload = event
             .params
             .event_data
@@ -76,7 +73,6 @@ impl ExtractRemainingFromPayload {
 
     fn extract_events_remaining(&mut self, req: ExtractRequest<Self>) -> Result<u64, Error> {
         let event = req.event.event()?;
-        let event = event.load::<PPME_PLUGINEVENT_E>()?;
         let payload = event
             .params
             .event_data
@@ -94,7 +90,6 @@ impl ExtractRemainingFromPayload {
         reps: u64,
     ) -> Result<Vec<u64>, Error> {
         let event = req.event.event()?;
-        let event = event.load::<PPME_PLUGINEVENT_E>()?;
         let payload = event
             .params
             .event_data
@@ -112,7 +107,6 @@ impl ExtractRemainingFromPayload {
         arg: Option<&CStr>,
     ) -> Result<u64, Error> {
         let event = req.event.event()?;
-        let event = event.load::<PPME_PLUGINEVENT_E>()?;
 
         let buf = match arg {
             Some(s) => s.to_bytes(),
@@ -130,8 +124,7 @@ impl ExtractRemainingFromPayload {
 }
 
 impl ExtractPlugin for ExtractRemainingFromPayload {
-    const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
-    const EVENT_SOURCES: &'static [&'static str] = &["countdown"];
+    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
     type ExtractContext = ();
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
         field("dummy.payload", &Self::extract_payload),

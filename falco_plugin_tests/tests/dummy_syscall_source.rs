@@ -1,6 +1,6 @@
 use falco_plugin::anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::{EventType, PPME_GENERIC_E};
+use falco_plugin::event::events::types::PPME_GENERIC_E;
 use falco_plugin::event::events::{Event, EventMetadata, RawEvent};
 use falco_plugin::event::fields::types::PT_SYSCALLID;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
@@ -97,8 +97,7 @@ impl DummyExtractPlugin {
 }
 
 impl ExtractPlugin for DummyExtractPlugin {
-    const EVENT_TYPES: &'static [EventType] = &[];
-    const EVENT_SOURCES: &'static [&'static str] = &["syscall"];
+    type Event<'a> = Event<PPME_GENERIC_E>;
     type ExtractContext = ();
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] =
         &[field("dummy.tid", &Self::extract_tid)];
