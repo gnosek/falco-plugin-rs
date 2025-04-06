@@ -10,6 +10,7 @@ use falco_plugin_api::{
 use std::any::TypeId;
 use std::collections::BTreeMap;
 use std::ffi::{c_char, CString};
+use std::marker::PhantomData;
 use std::sync::Mutex;
 
 /// Marker trait to mark a parse plugin as exported to the API
@@ -104,7 +105,7 @@ pub unsafe extern "C-unwind" fn plugin_parse_event<T: ParsePlugin>(
         let Some(event) = event.as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let event = EventInput(*event);
+        let event = EventInput(*event, PhantomData);
 
         let Ok(parse_input) = ParseInput::try_from(parse_input, actual_plugin.last_error.clone())
         else {

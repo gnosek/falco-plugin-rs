@@ -136,6 +136,7 @@ pub mod extract {
 ///
 /// ```
 ///# use std::ffi::CStr;
+/// use falco_event::events::RawEvent;
 /// use falco_event::events::types::AnyEvent;
 /// use falco_plugin::anyhow::Error;
 /// use falco_plugin::event::events::types::EventType;
@@ -164,7 +165,7 @@ pub mod extract {
 ///     const EVENT_TYPES: &'static [EventType] = &[]; // inspect all events...
 ///     const EVENT_SOURCES: &'static [&'static str] = &[]; // ... from all event sources
 ///
-///     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput)
+///     fn parse_event(&mut self, event: &EventInput<RawEvent>, parse_input: &ParseInput)
 ///         -> Result<(), Error> {
 ///         let event = event.event()?;
 ///         let event = event.load::<AnyEvent>()?;
@@ -299,7 +300,7 @@ pub mod async_event {
 /// ```
 /// use std::ffi::{CStr, CString};
 /// use anyhow::Error;
-/// use falco_event::events::Event;
+/// use falco_event::events::{Event, RawEvent};
 /// use falco_plugin::base::{Metric, Plugin};
 /// use falco_plugin::{plugin, source_plugin};
 /// use falco_plugin::source::{
@@ -347,7 +348,7 @@ pub mod async_event {
 ///         Ok((MySourcePluginInstance))
 ///     }
 ///
-///     fn event_to_string(&mut self, event: &EventInput) -> Result<CString, Error> {
+///     fn event_to_string(&mut self, event: &EventInput<RawEvent>) -> Result<CString, Error> {
 ///         // a string representation for our event; just copy out the whole event data
 ///         // (it's an ASCII string); please note we need the copy because we need to add
 ///         // a NUL terminator to convert the byte buffer to a C string
@@ -859,6 +860,7 @@ pub mod tables {
     /// use std::sync::Arc;
     /// use falco_plugin::anyhow::Error;
     /// use falco_plugin::base::Plugin;
+    /// use falco_event::events::RawEvent;
     /// use falco_plugin::event::events::types::EventType;
     /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
     /// use falco_plugin::tables::TablesInput;
@@ -905,7 +907,7 @@ pub mod tables {
     ///     const EVENT_TYPES: &'static [EventType] = &[];
     ///     const EVENT_SOURCES: &'static [&'static str] = &[];
     ///
-    ///     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput)
+    ///     fn parse_event(&mut self, event: &EventInput<RawEvent>, parse_input: &ParseInput)
     ///         -> anyhow::Result<()> {
     ///         // creating and accessing entries
     ///         let reader = &parse_input.reader;
@@ -950,6 +952,7 @@ pub mod tables {
     ///
     /// ```
     /// use std::ffi::CStr;
+    /// use falco_event::events::RawEvent;
     /// use falco_plugin::anyhow::Error;
     /// use falco_plugin::base::Plugin;
     /// use falco_plugin::event::events::types::EventType;
@@ -997,7 +1000,7 @@ pub mod tables {
     ///     const EVENT_TYPES: &'static [EventType] = &[];
     ///     const EVENT_SOURCES: &'static [&'static str] = &[];
     ///
-    ///     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput)
+    ///     fn parse_event(&mut self, event: &EventInput<RawEvent>, parse_input: &ParseInput)
     ///         -> anyhow::Result<()> {
     ///         // creating and accessing entries
     ///         let reader = &parse_input.reader;

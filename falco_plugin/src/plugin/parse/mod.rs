@@ -5,6 +5,7 @@ use crate::plugin::parse::wrappers::ParsePluginExported;
 use crate::plugin::tables::vtable::writer::LazyTableWriter;
 use crate::tables::LazyTableReader;
 use falco_event::events::types::EventType;
+use falco_event::events::RawEvent;
 use falco_plugin_api::ss_plugin_event_parse_input;
 
 #[doc(hidden)]
@@ -53,7 +54,11 @@ pub trait ParsePlugin: Plugin + ParsePluginExported {
     /// The plugin is guaranteed to receive an event at most once, after any
     /// operation related the event sourcing capability, and before
     /// any operation related to the field extraction capability.
-    fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput) -> anyhow::Result<()>;
+    fn parse_event(
+        &mut self,
+        event: &EventInput<RawEvent>,
+        parse_input: &ParseInput,
+    ) -> anyhow::Result<()>;
 }
 
 /// # The input to a parse plugin

@@ -1,19 +1,32 @@
+use anyhow::Context;
 use falco_event::events::RawEvent;
 use std::ffi::CStr;
+use std::marker::PhantomData;
 
 pub use falco_plugin_api::ss_plugin_event_input;
 
 /// # An event from which additional data may be extracted
 #[derive(Debug)]
-pub struct EventInput(pub(crate) ss_plugin_event_input);
+pub struct EventInput<'a, T>(
+    pub(crate) ss_plugin_event_input,
+    pub(crate) PhantomData<fn(&'a T)>,
+);
 
-impl EventInput {
+impl<'a, T> EventInput<'a, T>
+where
+    for<'b> T: TryFrom<&'b RawEvent<'a>>,
+    for<'b> <T as TryFrom<&'b RawEvent<'a>>>::Error: std::error::Error + Send + Sync + 'static,
+{
     /// # Get the event
     ///
-    /// This method parses the raw event data into a [`RawEvent`] instance,
-    /// which can be later converted into a specific event type.
-    pub fn event(&self) -> std::io::Result<RawEvent<'_>> {
-        unsafe { RawEvent::from_ptr(self.0.evt as *const _) }
+    /// This method parses the raw event data into another type, e.g. a [`RawEvent`] instance,
+    /// or a specific event type.
+    pub fn event(&self) -> anyhow::Result<T> {
+        let raw = unsafe { RawEvent::from_ptr(self.0.evt as *const _) }?;
+        let event = Ok(<&RawEvent<'_> as TryInto<T>>::try_into(&raw)
+            .with_context(|| format!("parsing event {raw:?}"))?);
+        #[allow(clippy::let_and_return)]
+        event
     }
 
     /// # Get the event source

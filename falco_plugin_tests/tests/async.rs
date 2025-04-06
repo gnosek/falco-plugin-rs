@@ -1,6 +1,7 @@
 use falco_plugin::anyhow::{self, Error};
 use falco_plugin::async_event::{AsyncEventPlugin, AsyncHandler, BackgroundTask};
 use falco_plugin::base::Plugin;
+use falco_plugin::event::events::RawEvent;
 use falco_plugin::extract::EventInput;
 use falco_plugin::source::{EventBatch, SourcePlugin, SourcePluginInstance};
 use falco_plugin::tables::TablesInput;
@@ -53,7 +54,7 @@ impl SourcePlugin for DummyPlugin {
         Ok(DummyPluginInstance)
     }
 
-    fn event_to_string(&mut self, _event: &EventInput) -> Result<CString, Error> {
+    fn event_to_string(&mut self, _event: &EventInput<RawEvent>) -> Result<CString, Error> {
         Ok(CString::from(c"what event?"))
     }
 }

@@ -6,6 +6,7 @@ use criterion::{
 use falco_plugin::base::Plugin;
 use falco_plugin::event::events::types::EventType;
 use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
+use falco_plugin::event::events::RawEvent;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::source::EventInput;
@@ -101,7 +102,11 @@ impl ParsePlugin for CustomTableApi {
     const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
     const EVENT_SOURCES: &'static [&'static str] = &[];
 
-    fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput) -> anyhow::Result<()> {
+    fn parse_event(
+        &mut self,
+        event: &EventInput<RawEvent>,
+        parse_input: &ParseInput,
+    ) -> anyhow::Result<()> {
         let key = event.event_number() as i64;
         let entry = self
             .imported_custom_table
@@ -167,7 +172,11 @@ impl ParsePlugin for CustomTableDirect {
     const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
     const EVENT_SOURCES: &'static [&'static str] = &[];
 
-    fn parse_event(&mut self, event: &EventInput, _parse_input: &ParseInput) -> anyhow::Result<()> {
+    fn parse_event(
+        &mut self,
+        event: &EventInput<RawEvent>,
+        _parse_input: &ParseInput,
+    ) -> anyhow::Result<()> {
         let key = event.event_number() as i64;
         let mut entry = self.exported_custom_table.create_entry()?;
         *entry.val = key;

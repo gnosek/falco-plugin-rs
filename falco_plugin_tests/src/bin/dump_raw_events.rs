@@ -1,6 +1,6 @@
 use anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::EventToBytes;
+use falco_plugin::event::events::{EventToBytes, RawEvent};
 use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
 use falco_plugin::static_plugin;
 use falco_plugin::tables::TablesInput;
@@ -26,7 +26,11 @@ impl ParsePlugin for DumperPlugin {
     const EVENT_TYPES: &'static [falco_plugin::event::events::types::EventType] = &[];
     const EVENT_SOURCES: &'static [&'static str] = &[];
 
-    fn parse_event(&mut self, event: &EventInput, _parse_input: &ParseInput) -> anyhow::Result<()> {
+    fn parse_event(
+        &mut self,
+        event: &EventInput<RawEvent>,
+        _parse_input: &ParseInput,
+    ) -> anyhow::Result<()> {
         let event = event.event()?;
         Ok(event.write(&mut self.0)?)
     }

@@ -1,5 +1,6 @@
 use falco_plugin::anyhow::Error;
 use falco_plugin::base::{Json, Plugin};
+use falco_plugin::event::events::RawEvent;
 use falco_plugin::schemars::JsonSchema;
 use falco_plugin::serde::Deserialize;
 use falco_plugin::source::{EventBatch, EventInput, SourcePlugin, SourcePluginInstance};
@@ -63,7 +64,7 @@ impl SourcePlugin for DummyPlugin {
         Ok(DummyPluginInstance)
     }
 
-    fn event_to_string(&mut self, _event: &EventInput) -> Result<CString, Error> {
+    fn event_to_string(&mut self, _event: &EventInput<RawEvent>) -> Result<CString, Error> {
         Ok(CString::from(c"what event?"))
     }
 }

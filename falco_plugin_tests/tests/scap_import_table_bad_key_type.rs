@@ -2,6 +2,7 @@ use falco_plugin::anyhow;
 use falco_plugin::anyhow::Error;
 use falco_plugin::base::Plugin;
 use falco_plugin::event::events::types::EventType;
+use falco_plugin::event::events::RawEvent;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::static_plugin;
@@ -64,7 +65,7 @@ impl ParsePlugin for DummyPlugin {
 
     fn parse_event(
         &mut self,
-        _event: &EventInput,
+        _event: &EventInput<RawEvent>,
         _parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         Ok(())
