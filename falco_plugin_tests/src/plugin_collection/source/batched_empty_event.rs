@@ -1,5 +1,6 @@
 use anyhow::Error;
 use falco_plugin::base::Plugin;
+use falco_plugin::event::events::RawEvent;
 use falco_plugin::source::{EventBatch, EventInput, SourcePlugin, SourcePluginInstance};
 use falco_plugin::static_plugin;
 use falco_plugin::tables::TablesInput;
@@ -49,7 +50,7 @@ impl SourcePlugin for BatchedEmptyEvent {
         Ok(BatchedEmptyEventInstance)
     }
 
-    fn event_to_string(&mut self, _event: &EventInput) -> Result<CString, Error> {
+    fn event_to_string(&mut self, _event: &EventInput<RawEvent>) -> Result<CString, Error> {
         Ok(CString::from(c"<NA>"))
     }
 }

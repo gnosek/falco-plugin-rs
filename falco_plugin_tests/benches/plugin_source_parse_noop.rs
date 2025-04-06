@@ -4,6 +4,7 @@ use criterion::{criterion_group, criterion_main, BenchmarkGroup, Criterion, Thro
 use falco_plugin::base::Plugin;
 use falco_plugin::event::events::types::EventType;
 use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
+use falco_plugin::event::events::RawEvent;
 use falco_plugin::parse::{EventInput, ParsePlugin};
 use falco_plugin::static_plugin;
 use falco_plugin::tables::TablesInput;
@@ -34,7 +35,7 @@ impl ParsePlugin for NoopParsePlugin {
 
     fn parse_event(
         &mut self,
-        _event: &EventInput,
+        _event: &EventInput<RawEvent>,
         _parse_input: &falco_plugin::parse::ParseInput,
     ) -> anyhow::Result<()> {
         Ok(())

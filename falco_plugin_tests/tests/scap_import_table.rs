@@ -2,7 +2,7 @@ use falco_plugin::anyhow;
 use falco_plugin::anyhow::{Context, Error};
 use falco_plugin::base::Plugin;
 use falco_plugin::event::events::types::{EventType, PPME_SYSCALL_READ_E};
-use falco_plugin::event::events::Event;
+use falco_plugin::event::events::{Event, RawEvent};
 use falco_plugin::event::fields::types::PT_FD;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
@@ -76,7 +76,11 @@ impl ParsePlugin for DummyPlugin {
     const EVENT_TYPES: &'static [EventType] = &[];
     const EVENT_SOURCES: &'static [&'static str] = &["syscall"];
 
-    fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput) -> anyhow::Result<()> {
+    fn parse_event(
+        &mut self,
+        event: &EventInput<RawEvent>,
+        parse_input: &ParseInput,
+    ) -> anyhow::Result<()> {
         self.event_num += 1;
 
         // matching against a random(ish) event in kexec_x86.scap

@@ -10,6 +10,7 @@ use falco_plugin_api::{ss_plugin_field_extract_input, ss_plugin_t};
 use std::any::TypeId;
 use std::collections::BTreeMap;
 use std::ffi::{c_char, CString};
+use std::marker::PhantomData;
 use std::sync::Mutex;
 
 /// Marker trait to mark an extract plugin as exported to the API
@@ -104,7 +105,7 @@ pub unsafe extern "C-unwind" fn plugin_extract_fields<T: ExtractPlugin>(
         let Some(event_input) = event_input.as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
-        let event_input = EventInput(*event_input);
+        let event_input = EventInput(*event_input, PhantomData);
 
         let Some(extract_input) = extract_input.as_ref() else {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;

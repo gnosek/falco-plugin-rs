@@ -2,8 +2,8 @@ use crate::plugin::base::Plugin;
 use crate::plugin::source::wrappers::SourcePluginExported;
 use crate::source::{EventBatch, EventInput};
 use falco_event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
-use falco_event::events::Event;
 use falco_event::events::EventMetadata;
+use falco_event::events::{Event, RawEvent};
 use std::ffi::{CStr, CString};
 
 pub mod event_batch;
@@ -78,7 +78,7 @@ pub trait SourcePlugin: Plugin + SourcePluginExported {
     ///
     /// This string will be available as `%evt.plugininfo` in Falco rules. You may consider
     /// using the helpers from [`crate::strings`] to build the resulting CString.
-    fn event_to_string(&mut self, event: &EventInput) -> Result<CString, anyhow::Error>;
+    fn event_to_string(&mut self, event: &EventInput<RawEvent>) -> Result<CString, anyhow::Error>;
 }
 
 /// Information about capture progress

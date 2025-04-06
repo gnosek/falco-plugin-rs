@@ -3,7 +3,7 @@ use falco_plugin::async_event::{AsyncEventPlugin, AsyncHandler, BackgroundTask};
 use falco_plugin::base::Plugin;
 use falco_plugin::event::events::types::EventType::{GENERIC_E, SYSCALL_EXECVE_8_E};
 use falco_plugin::event::events::types::{EventType, PPME_GENERIC_E};
-use falco_plugin::event::events::{Event, EventMetadata};
+use falco_plugin::event::events::{Event, EventMetadata, RawEvent};
 use falco_plugin::event::fields::types::PT_SYSCALLID;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
@@ -60,7 +60,7 @@ impl ParsePlugin for DummyAsyncPlugin {
 
     fn parse_event(
         &mut self,
-        _event: &EventInput,
+        _event: &EventInput<RawEvent>,
         _parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         Ok(())
@@ -149,7 +149,11 @@ impl ParsePlugin for DummyPlugin {
     const EVENT_TYPES: &'static [EventType] = &[GENERIC_E];
     const EVENT_SOURCES: &'static [&'static str] = &["syscall"];
 
-    fn parse_event(&mut self, _event: &EventInput, parse_input: &ParseInput) -> anyhow::Result<()> {
+    fn parse_event(
+        &mut self,
+        _event: &EventInput<RawEvent>,
+        parse_input: &ParseInput,
+    ) -> anyhow::Result<()> {
         log::info!("got event");
         let mut counter = 0;
         self.imported_table
@@ -199,7 +203,7 @@ impl SourcePlugin for DummyPlugin {
         Ok(DummyPluginInstance)
     }
 
-    fn event_to_string(&mut self, _event: &EventInput) -> Result<CString, Error> {
+    fn event_to_string(&mut self, _event: &EventInput<RawEvent>) -> Result<CString, Error> {
         Ok(CString::from(c"what event?"))
     }
 }

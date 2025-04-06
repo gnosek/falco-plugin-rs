@@ -11,6 +11,7 @@ use falco_plugin_api::{
 };
 use std::ffi::c_char;
 use std::io::Write;
+use std::marker::PhantomData;
 
 /// Marker trait to mark a source plugin as exported to the API
 ///
@@ -279,7 +280,7 @@ pub unsafe extern "C-unwind" fn plugin_event_to_string<T: SourcePlugin>(
         let Some(event) = event.as_ref() else {
             return std::ptr::null();
         };
-        let event = EventInput(*event);
+        let event = EventInput(*event, PhantomData);
 
         match actual_plugin.plugin.event_to_string(&event) {
             Ok(s) => {

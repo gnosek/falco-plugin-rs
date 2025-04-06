@@ -4,6 +4,7 @@ use crate::plugin::extract::schema::ExtractFieldInfo;
 use crate::plugin::extract::wrappers::ExtractPluginExported;
 use crate::tables::LazyTableReader;
 use falco_event::events::types::EventType;
+use falco_event::events::RawEvent;
 use falco_plugin_api::{ss_plugin_extract_field, ss_plugin_extract_value_offsets};
 use std::any::TypeId;
 use std::collections::BTreeMap;
@@ -117,12 +118,12 @@ impl ExtractByteRange {
 
 /// An extraction request
 #[derive(Debug)]
-pub struct ExtractRequest<'c, 'e, 't, P: ExtractPlugin> {
+pub struct ExtractRequest<'c, 'e, 'r, 't, P: ExtractPlugin> {
     /// A context instance, potentially shared between extractions
     pub context: &'c mut P::ExtractContext,
 
     /// The event being processed
-    pub event: &'e EventInput,
+    pub event: &'e EventInput<'r, RawEvent<'r>>,
 
     /// An interface to access tables exposed from Falco core and other plugins
     ///
@@ -335,7 +336,7 @@ where
     /// You probably won't need to provide your own implementation.
     fn extract_fields<'a>(
         &'a mut self,
-        event_input: &EventInput,
+        event_input: &EventInput<RawEvent>,
         table_reader: &LazyTableReader,
         fields: &mut [ss_plugin_extract_field],
         offsets: Option<&mut ss_plugin_extract_value_offsets>,

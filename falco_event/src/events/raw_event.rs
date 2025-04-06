@@ -223,6 +223,18 @@ impl<'e> RawEvent<'e> {
     }
 }
 
+impl<'a, 'b> From<&'a RawEvent<'b>> for RawEvent<'b> {
+    fn from(event: &'a RawEvent<'b>) -> Self {
+        Self {
+            metadata: event.metadata.clone(),
+            len: event.len,
+            event_type: event.event_type,
+            nparams: event.nparams,
+            payload: event.payload,
+        }
+    }
+}
+
 impl EventToBytes for RawEvent<'_> {
     fn binary_size(&self) -> usize {
         self.len as usize

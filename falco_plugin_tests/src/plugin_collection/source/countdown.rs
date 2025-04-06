@@ -2,6 +2,7 @@ use crate::CapturingTestDriver;
 use anyhow::Error;
 use falco_plugin::base::{Json, Metric, MetricLabel, MetricType, MetricValue, Plugin};
 use falco_plugin::event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
+use falco_plugin::event::events::RawEvent;
 use falco_plugin::extract::EventInput;
 use falco_plugin::source::{EventBatch, SourcePlugin, SourcePluginInstance};
 use falco_plugin::strings::CStringWriter;
@@ -98,7 +99,7 @@ impl SourcePlugin for CountdownPlugin {
         })
     }
 
-    fn event_to_string(&mut self, event: &EventInput) -> Result<CString, Error> {
+    fn event_to_string(&mut self, event: &EventInput<RawEvent>) -> Result<CString, Error> {
         let event = event.event()?;
         let plugin_event = event.load::<PluginEvent>()?;
         let mut writer = CStringWriter::default();
