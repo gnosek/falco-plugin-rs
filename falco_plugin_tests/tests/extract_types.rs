@@ -1,7 +1,7 @@
 use falco_plugin::anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::EventType;
-use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
+use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
+use falco_plugin::event::events::Event;
 use falco_plugin::event::fields::types::PT_ABSTIME;
 use falco_plugin::event::fields::types::PT_IPNET;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
@@ -180,8 +180,7 @@ macro_rules! gen_fields_variants {
 }
 
 impl ExtractPlugin for DummyPlugin {
-    const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
-    const EVENT_SOURCES: &'static [&'static str] = &["countdown"];
+    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
     type ExtractContext = ();
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = gen_fields_variants!(
         u64, string, reltime, abstime, bool, ipaddr_v4, ipaddr_v6, ipaddr, ipnet_v4, ipnet_v6,

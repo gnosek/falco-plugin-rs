@@ -54,7 +54,7 @@ pub mod base {
 /// ```
 /// use std::ffi::{CStr, CString};
 /// use anyhow::Error;
-/// use falco_event::events::types::EventType;
+/// use falco_event::events::RawEvent;
 /// use falco_plugin::base::{Metric, Plugin};
 /// use falco_plugin::{extract_plugin, plugin};
 /// use falco_plugin::extract::{
@@ -98,8 +98,7 @@ pub mod base {
 /// }
 ///
 /// impl ExtractPlugin for MyExtractPlugin {
-///     const EVENT_TYPES: &'static [EventType] = &[]; // all event types
-///     const EVENT_SOURCES: &'static [&'static str] = &[]; // all event sources
+///     type Event<'a> = RawEvent<'a>;
 ///     type ExtractContext = ();
 ///
 ///     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[

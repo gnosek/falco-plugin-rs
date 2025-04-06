@@ -4,8 +4,7 @@ use criterion::{
     criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
-use falco_plugin::event::events::types::{EventType, PPME_PLUGINEVENT_E};
+use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
 use falco_plugin::event::events::Event;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
@@ -63,8 +62,7 @@ impl ExtractThreadInfo {
 }
 
 impl ExtractPlugin for ExtractThreadInfo {
-    const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
-    const EVENT_SOURCES: &'static [&'static str] = &[];
+    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
     type ExtractContext = ();
 
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
