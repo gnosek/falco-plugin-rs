@@ -51,6 +51,7 @@ impl SourcePlugin for DummyPlugin {
     type Instance = DummyPluginInstance;
     const EVENT_SOURCE: &'static CStr = c"dummy";
     const PLUGIN_ID: u32 = 1111;
+    type Event<'a> = RawEvent<'a>;
 
     fn open(&mut self, _params: Option<&str>) -> Result<Self::Instance, Error> {
         Ok(DummyPluginInstance)

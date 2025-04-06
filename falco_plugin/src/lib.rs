@@ -338,20 +338,20 @@ pub mod async_event {
 ///     const EVENT_SOURCE: &'static CStr = c"my-source-plugin";
 ///     const PLUGIN_ID: u32 = 0; // we do not have one assigned for this example :)
 ///
+///     type Event<'a> = Event<PluginEvent<'a>>;
+///
 ///     fn open(&mut self, params: Option<&str>) -> Result<Self::Instance, Error> {
 ///         // we do not use the open parameters in this example
 ///         Ok((MySourcePluginInstance))
 ///     }
 ///
-///     fn event_to_string(&mut self, event: &EventInput<RawEvent>) -> Result<CString, Error> {
+///     fn event_to_string(&mut self, event: &EventInput<Self::Event<'_>>) -> Result<CString, Error> {
 ///         // a string representation for our event; just copy out the whole event data
 ///         // (it's an ASCII string); please note we need the copy because we need to add
 ///         // a NUL terminator to convert the byte buffer to a C string
 ///
-///         // get the raw event
-///         let event = event.event()?;
-///         // parse the fields into a PluginEvent
-///         let plugin_event = event.load::<PluginEvent>()?;
+///         // get the plugin event
+///         let plugin_event = event.event()?;
 ///
 ///         // take a copy of the event data (it's in an Option because we never know if events
 ///         // have all the fields, and it's important to handle short events for backwards
