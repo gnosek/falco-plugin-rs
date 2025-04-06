@@ -2,7 +2,7 @@ use crate::plugin::base::Plugin;
 use crate::plugin::source::wrappers::SourcePluginExported;
 use crate::source::{EventBatch, EventInput};
 use falco_event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
-use falco_event::events::EventMetadata;
+use falco_event::events::{AnyEventPayload, EventMetadata};
 use falco_event::events::{Event, RawEvent};
 use std::ffi::{CStr, CString};
 
@@ -48,6 +48,25 @@ pub trait SourcePlugin: Plugin + SourcePluginExported {
     /// > COEXIST WITH OTHER PLUGINS.
     const PLUGIN_ID: u32;
 
+    /// # Event type handled by this plugin
+    ///
+    /// The SDK does not enforce limits on the events generated, but you can make your life
+    /// a bit easier in `event_to_string` by specifying the event type your plugin generates here.
+    /// Events will be parsed into this type before being passed to the plugin, so you can
+    /// work directly on the deserialized form and don't need to worry about validating
+    /// the events.
+    ///
+    /// If an event fails this conversion, an error will be returned from the SDK and your
+    /// string formatting code won't be called.
+    ///
+    /// If you don't want any specific validation/conversion to be performed, specify the type as
+    /// ```
+    /// type Event<'a> = falco_event::events::RawEvent<'a>;
+    /// ```
+    type Event<'a>: AnyEventPayload + TryFrom<&'a RawEvent<'a>>
+    where
+        Self: 'a;
+
     /// # List sample open parameters
     ///
     /// Return a list of suggested open parameters supported by this plugin.
@@ -78,7 +97,10 @@ pub trait SourcePlugin: Plugin + SourcePluginExported {
     ///
     /// This string will be available as `%evt.plugininfo` in Falco rules. You may consider
     /// using the helpers from [`crate::strings`] to build the resulting CString.
-    fn event_to_string(&mut self, event: &EventInput<RawEvent>) -> Result<CString, anyhow::Error>;
+    fn event_to_string(
+        &mut self,
+        event: &EventInput<Self::Event<'_>>,
+    ) -> Result<CString, anyhow::Error>;
 }
 
 /// Information about capture progress

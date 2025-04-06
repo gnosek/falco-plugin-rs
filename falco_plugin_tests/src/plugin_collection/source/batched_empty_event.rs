@@ -1,6 +1,7 @@
 use anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::RawEvent;
+use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
+use falco_plugin::event::events::Event;
 use falco_plugin::source::{EventBatch, EventInput, SourcePlugin, SourcePluginInstance};
 use falco_plugin::static_plugin;
 use falco_plugin::tables::TablesInput;
@@ -45,12 +46,13 @@ impl SourcePlugin for BatchedEmptyEvent {
     type Instance = BatchedEmptyEventInstance;
     const EVENT_SOURCE: &'static CStr = c"batched_empty_event";
     const PLUGIN_ID: u32 = 1111;
+    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
 
     fn open(&mut self, _params: Option<&str>) -> Result<Self::Instance, Error> {
         Ok(BatchedEmptyEventInstance)
     }
 
-    fn event_to_string(&mut self, _event: &EventInput<RawEvent>) -> Result<CString, Error> {
+    fn event_to_string(&mut self, _event: &EventInput<Self::Event<'_>>) -> Result<CString, Error> {
         Ok(CString::from(c"<NA>"))
     }
 }

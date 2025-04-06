@@ -1,8 +1,8 @@
 use crate::CapturingTestDriver;
 use anyhow::Error;
 use falco_plugin::base::{Json, Metric, MetricLabel, MetricType, MetricValue, Plugin};
-use falco_plugin::event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
-use falco_plugin::event::events::RawEvent;
+use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
+use falco_plugin::event::events::Event;
 use falco_plugin::extract::EventInput;
 use falco_plugin::source::{EventBatch, SourcePlugin, SourcePluginInstance};
 use falco_plugin::strings::CStringWriter;
@@ -91,6 +91,7 @@ impl SourcePlugin for CountdownPlugin {
     type Instance = CountdownPluginInstance;
     const EVENT_SOURCE: &'static CStr = c"countdown";
     const PLUGIN_ID: u32 = 1111;
+    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
 
     fn open(&mut self, _params: Option<&str>) -> Result<Self::Instance, Error> {
         Ok(CountdownPluginInstance {
@@ -99,14 +100,13 @@ impl SourcePlugin for CountdownPlugin {
         })
     }
 
-    fn event_to_string(&mut self, event: &EventInput<RawEvent>) -> Result<CString, Error> {
+    fn event_to_string(&mut self, event: &EventInput<Self::Event<'_>>) -> Result<CString, Error> {
         let event = event.event()?;
-        let plugin_event = event.load::<PluginEvent>()?;
         let mut writer = CStringWriter::default();
         write!(
             writer,
             "{}",
-            plugin_event
+            event
                 .params
                 .event_data
                 .map(|e| String::from_utf8_lossy(e))
