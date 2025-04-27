@@ -3,9 +3,8 @@ use crate::plugin_collection::tables::remaining_import::accessors::*;
 use crate::plugin_collection::tables::remaining_import::RemainingCounterImportTable;
 use anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
-use falco_plugin::event::events::types::{EventType, PPME_PLUGINEVENT_E};
-use falco_plugin::event::events::RawEvent;
+use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
+use falco_plugin::event::events::Event;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::static_plugin;
@@ -40,17 +39,15 @@ impl Plugin for ParseIntoTableApiPlugin {
 }
 
 impl ParsePlugin for ParseIntoTableApiPlugin {
-    const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
-    const EVENT_SOURCES: &'static [&'static str] = &["countdown"];
+    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
 
     fn parse_event(
         &mut self,
-        event: &EventInput<RawEvent>,
+        event: &EventInput<Self::Event<'_>>,
         parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         let event_num = event.event_number() as u64;
         let event = event.event()?;
-        let event = event.load::<PPME_PLUGINEVENT_E>()?;
         let payload = event
             .params
             .event_data

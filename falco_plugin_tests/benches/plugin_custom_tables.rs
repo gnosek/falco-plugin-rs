@@ -4,9 +4,9 @@ use criterion::{
     criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::EventType;
 use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
-use falco_plugin::event::events::RawEvent;
+use falco_plugin::event::events::types::{EventType, PPME_PLUGINEVENT_E};
+use falco_plugin::event::events::Event;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::source::EventInput;
@@ -99,12 +99,11 @@ impl ExtractPlugin for CustomTableApi {
 }
 
 impl ParsePlugin for CustomTableApi {
-    const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
-    const EVENT_SOURCES: &'static [&'static str] = &[];
+    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
 
     fn parse_event(
         &mut self,
-        event: &EventInput<RawEvent>,
+        event: &EventInput<Self::Event<'_>>,
         parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         let key = event.event_number() as i64;
@@ -169,12 +168,11 @@ impl ExtractPlugin for CustomTableDirect {
 }
 
 impl ParsePlugin for CustomTableDirect {
-    const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
-    const EVENT_SOURCES: &'static [&'static str] = &[];
+    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
 
     fn parse_event(
         &mut self,
-        event: &EventInput<RawEvent>,
+        event: &EventInput<Self::Event<'_>>,
         _parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         let key = event.event_number() as i64;

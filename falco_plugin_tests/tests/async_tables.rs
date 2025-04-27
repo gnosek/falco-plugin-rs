@@ -1,8 +1,7 @@
 use anyhow::Error;
 use falco_plugin::async_event::{AsyncEventPlugin, AsyncHandler, BackgroundTask};
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::EventType::{GENERIC_E, SYSCALL_EXECVE_8_E};
-use falco_plugin::event::events::types::{EventType, PPME_GENERIC_E};
+use falco_plugin::event::events::types::{PPME_GENERIC_E, PPME_SYSCALL_EXECVE_8_E};
 use falco_plugin::event::events::{Event, EventMetadata, RawEvent};
 use falco_plugin::event::fields::types::PT_SYSCALLID;
 use falco_plugin::extract::EventInput;
@@ -55,12 +54,11 @@ impl Plugin for DummyAsyncPlugin {
 }
 
 impl ParsePlugin for DummyAsyncPlugin {
-    const EVENT_TYPES: &'static [EventType] = &[SYSCALL_EXECVE_8_E]; // a dummy event that will never happen
-    const EVENT_SOURCES: &'static [&'static str] = &["syscall"];
+    type Event<'a> = Event<PPME_SYSCALL_EXECVE_8_E>; // a dummy event that will never happen
 
     fn parse_event(
         &mut self,
-        _event: &EventInput<RawEvent>,
+        _event: &EventInput<Self::Event<'_>>,
         _parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         Ok(())
@@ -146,12 +144,11 @@ impl Plugin for DummyPlugin {
 static ALL_DONE: AtomicBool = AtomicBool::new(false);
 
 impl ParsePlugin for DummyPlugin {
-    const EVENT_TYPES: &'static [EventType] = &[GENERIC_E];
-    const EVENT_SOURCES: &'static [&'static str] = &["syscall"];
+    type Event<'a> = Event<PPME_GENERIC_E>;
 
     fn parse_event(
         &mut self,
-        _event: &EventInput<RawEvent>,
+        _event: &EventInput<Self::Event<'_>>,
         parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         log::info!("got event");

@@ -4,9 +4,9 @@ use criterion::{
     criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::EventType;
 use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
-use falco_plugin::event::events::RawEvent;
+use falco_plugin::event::events::types::{EventType, PPME_PLUGINEVENT_E};
+use falco_plugin::event::events::Event;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
 use falco_plugin::static_plugin;
@@ -96,12 +96,11 @@ impl Plugin for ParseThreadInfoSetCustomField {
 }
 
 impl ParsePlugin for ParseThreadInfoSetCustomField {
-    const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
-    const EVENT_SOURCES: &'static [&'static str] = &[];
+    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
 
     fn parse_event(
         &mut self,
-        _event: &EventInput<RawEvent>,
+        _event: &EventInput<Self::Event<'_>>,
         parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         let entry = self.threads.get_entry(&parse_input.reader, &self.pid)?;

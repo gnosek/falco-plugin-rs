@@ -2,9 +2,8 @@ use anyhow::Error;
 use criterion::measurement::Measurement;
 use criterion::{criterion_group, criterion_main, BenchmarkGroup, Criterion, Throughput};
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::EventType;
-use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
-use falco_plugin::event::events::RawEvent;
+use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
+use falco_plugin::event::events::Event;
 use falco_plugin::parse::{EventInput, ParsePlugin};
 use falco_plugin::static_plugin;
 use falco_plugin::tables::TablesInput;
@@ -30,12 +29,11 @@ impl Plugin for NoopParsePlugin {
 }
 
 impl ParsePlugin for NoopParsePlugin {
-    const EVENT_TYPES: &'static [EventType] = &[PLUGINEVENT_E];
-    const EVENT_SOURCES: &'static [&'static str] = &[];
+    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
 
     fn parse_event(
         &mut self,
-        _event: &EventInput<RawEvent>,
+        _event: &EventInput<Self::Event<'_>>,
         _parse_input: &falco_plugin::parse::ParseInput,
     ) -> anyhow::Result<()> {
         Ok(())

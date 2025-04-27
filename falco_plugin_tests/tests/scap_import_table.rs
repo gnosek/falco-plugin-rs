@@ -1,7 +1,7 @@
 use falco_plugin::anyhow;
 use falco_plugin::anyhow::{Context, Error};
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::{EventType, PPME_SYSCALL_READ_E};
+use falco_plugin::event::events::types::PPME_SYSCALL_READ_E;
 use falco_plugin::event::events::{Event, RawEvent};
 use falco_plugin::event::fields::types::PT_FD;
 use falco_plugin::extract::EventInput;
@@ -73,8 +73,7 @@ impl Plugin for DummyPlugin {
 }
 
 impl ParsePlugin for DummyPlugin {
-    const EVENT_TYPES: &'static [EventType] = &[];
-    const EVENT_SOURCES: &'static [&'static str] = &["syscall"];
+    type Event<'a> = RawEvent<'a>;
 
     fn parse_event(
         &mut self,

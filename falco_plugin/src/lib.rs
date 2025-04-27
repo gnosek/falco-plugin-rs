@@ -137,9 +137,7 @@ pub mod extract {
 /// ```
 ///# use std::ffi::CStr;
 /// use falco_event::events::RawEvent;
-/// use falco_event::events::types::AnyEvent;
 /// use falco_plugin::anyhow::Error;
-/// use falco_plugin::event::events::types::EventType;
 /// use falco_plugin::base::Plugin;
 /// use falco_plugin::{parse_plugin, plugin};
 /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
@@ -162,13 +160,11 @@ pub mod extract {
 /// }
 ///
 /// impl ParsePlugin for MyParsePlugin {
-///     const EVENT_TYPES: &'static [EventType] = &[]; // inspect all events...
-///     const EVENT_SOURCES: &'static [&'static str] = &[]; // ... from all event sources
+///     type Event<'a> = RawEvent<'a>;
 ///
 ///     fn parse_event(&mut self, event: &EventInput<RawEvent>, parse_input: &ParseInput)
 ///         -> Result<(), Error> {
 ///         let event = event.event()?;
-///         let event = event.load::<AnyEvent>()?;
 ///
 ///         // any processing you want here, e.g. involving tables
 ///
@@ -861,7 +857,6 @@ pub mod tables {
     /// use falco_plugin::anyhow::Error;
     /// use falco_plugin::base::Plugin;
     /// use falco_event::events::RawEvent;
-    /// use falco_plugin::event::events::types::EventType;
     /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
     /// use falco_plugin::tables::TablesInput;
     /// use falco_plugin::tables::import::{Entry, Field, Table, TableMetadata};
@@ -904,8 +899,7 @@ pub mod tables {
     /// }
     ///
     /// impl ParsePlugin for MyPlugin {
-    ///     const EVENT_TYPES: &'static [EventType] = &[];
-    ///     const EVENT_SOURCES: &'static [&'static str] = &[];
+    ///     type Event<'a> = RawEvent<'a>;
     ///
     ///     fn parse_event(&mut self, event: &EventInput<RawEvent>, parse_input: &ParseInput)
     ///         -> anyhow::Result<()> {
@@ -955,7 +949,6 @@ pub mod tables {
     /// use falco_event::events::RawEvent;
     /// use falco_plugin::anyhow::Error;
     /// use falco_plugin::base::Plugin;
-    /// use falco_plugin::event::events::types::EventType;
     /// use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
     ///# use falco_plugin::{parse_plugin, plugin};
     /// use falco_plugin::tables::TablesInput;
@@ -997,8 +990,7 @@ pub mod tables {
     /// }
     ///
     /// impl ParsePlugin for MyPlugin {
-    ///     const EVENT_TYPES: &'static [EventType] = &[];
-    ///     const EVENT_SOURCES: &'static [&'static str] = &[];
+    ///     type Event<'a> = RawEvent<'a>;
     ///
     ///     fn parse_event(&mut self, event: &EventInput<RawEvent>, parse_input: &ParseInput)
     ///         -> anyhow::Result<()> {

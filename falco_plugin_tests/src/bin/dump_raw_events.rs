@@ -23,12 +23,11 @@ impl Plugin for DumperPlugin {
 }
 
 impl ParsePlugin for DumperPlugin {
-    const EVENT_TYPES: &'static [falco_plugin::event::events::types::EventType] = &[];
-    const EVENT_SOURCES: &'static [&'static str] = &[];
+    type Event<'a> = RawEvent<'a>;
 
     fn parse_event(
         &mut self,
-        event: &EventInput<RawEvent>,
+        event: &EventInput<Self::Event<'_>>,
         _parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         let event = event.event()?;
