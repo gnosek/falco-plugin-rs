@@ -2,6 +2,7 @@ use crate::parse::EventInput;
 use crate::plugin::base::PluginWrapper;
 use crate::plugin::error::ffi_result::FfiResult;
 use crate::plugin::parse::{ParseInput, ParsePlugin};
+use falco_event::events::AnyEventPayload;
 use falco_plugin_api::plugin_api__bindgen_ty_3 as parse_plugin_api;
 use falco_plugin_api::{
     ss_plugin_event_input, ss_plugin_event_parse_input, ss_plugin_rc,
@@ -57,10 +58,10 @@ pub unsafe extern "C-unwind" fn plugin_get_parse_event_types<T: ParsePlugin>(
     numtypes: *mut u32,
     _plugin: *mut ss_plugin_t,
 ) -> *mut u16 {
-    let types = T::EVENT_TYPES;
+    let types = T::Event::EVENT_TYPES;
     if let Some(numtypes) = unsafe { numtypes.as_mut() } {
         *numtypes = types.len() as u32;
-        types.as_ptr() as *const u16 as *mut u16 // this should ****really**** be const
+        types.as_ptr().cast_mut() // this should ****really**** be const
     } else {
         std::ptr::null_mut()
     }
@@ -78,7 +79,7 @@ pub extern "C-unwind" fn plugin_get_parse_event_sources<T: ParsePlugin + 'static
     sources_map
         .entry(ty)
         .or_insert_with(|| {
-            let sources = serde_json::to_string(T::EVENT_SOURCES)
+            let sources = serde_json::to_string(T::Event::event_sources().as_slice())
                 .expect("failed to serialize event source array");
             CString::new(sources.into_bytes()).expect("failed to add NUL to event source array")
         })

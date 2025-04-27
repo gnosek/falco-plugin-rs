@@ -1,8 +1,8 @@
 use falco_plugin::anyhow;
 use falco_plugin::anyhow::{Context, Error};
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::{AnyEvent, EventType};
-use falco_plugin::event::events::RawEvent;
+use falco_plugin::event::events::types::AnyEvent;
+use falco_plugin::event::events::Event;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::static_plugin;
@@ -37,21 +37,17 @@ impl Plugin for DummyPlugin {
 }
 
 impl ParsePlugin for DummyPlugin {
-    const EVENT_TYPES: &'static [EventType] = &[];
-    const EVENT_SOURCES: &'static [&'static str] = &["syscall"];
+    type Event<'a> = Event<AnyEvent<'a>>;
 
     fn parse_event(
         &mut self,
-        event: &EventInput<RawEvent>,
+        event: &EventInput<Self::Event<'_>>,
         _parse_input: &ParseInput,
     ) -> anyhow::Result<()> {
         GOT_EVENTS.with(|ge| ge.fetch_add(1, Ordering::Relaxed));
-        let event = event
-            .event()
-            .context(format!("loading raw event {})", self.event_num))?;
         event
-            .load::<AnyEvent>()
-            .context(format!("parsing event #{} {event:?}", self.event_num))?;
+            .event()
+            .context(format!("parsing event {})", self.event_num))?;
 
         self.event_num += 1;
         PARSED_EVENTS.with(|pe| pe.fetch_add(1, Ordering::Relaxed));

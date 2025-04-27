@@ -1,7 +1,6 @@
 use falco_plugin::anyhow;
 use falco_plugin::anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::EventType;
 use falco_plugin::event::events::RawEvent;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
@@ -60,8 +59,7 @@ impl Plugin for DummyPlugin {
 }
 
 impl ParsePlugin for DummyPlugin {
-    const EVENT_TYPES: &'static [EventType] = &[];
-    const EVENT_SOURCES: &'static [&'static str] = &["syscall"];
+    type Event<'a> = RawEvent<'a>;
 
     fn parse_event(
         &mut self,
