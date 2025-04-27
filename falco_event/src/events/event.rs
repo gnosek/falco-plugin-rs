@@ -1,5 +1,5 @@
 use crate::events::to_bytes::EventToBytes;
-use crate::events::{EventMetadata, PayloadToBytes};
+use crate::events::{AnyEventPayload, EventMetadata, PayloadToBytes};
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 
@@ -23,4 +23,9 @@ impl<T: PayloadToBytes> EventToBytes for Event<T> {
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.params.write(&self.metadata, writer)
     }
+}
+
+impl<T: AnyEventPayload> AnyEventPayload for Event<T> {
+    const SOURCES: &'static [Option<&'static str>] = T::SOURCES;
+    const EVENT_TYPES: &'static [u16] = T::EVENT_TYPES;
 }

@@ -1,5 +1,6 @@
 use crate::events::EventMetadata;
 use crate::fields::FromBytesError;
+use std::collections::BTreeSet;
 use std::io::Write;
 use thiserror::Error;
 
@@ -22,6 +23,39 @@ pub const fn event_direction(event_type_id: u16) -> EventDirection {
     }
 }
 
+pub trait AnyEventPayload {
+    const SOURCES: &'static [Option<&'static str>];
+    const EVENT_TYPES: &'static [u16];
+
+    /// Get all the event sources for this payload type
+    ///
+    /// This is intended for internal use only. If all the items in `SOURCES` are `Some()`,
+    /// the function returns the inner strings with duplicates removed. If any item is `None`
+    /// (indicating a supported event may come from any source), an empty vector is returned
+    /// (again, indicating all sources).
+    fn event_sources() -> Vec<&'static str> {
+        let mut sources = BTreeSet::new();
+        for source in Self::SOURCES {
+            if let Some(source) = source {
+                sources.insert(*source);
+            } else {
+                return Vec::new();
+            }
+        }
+
+        sources.into_iter().collect()
+    }
+}
+
+impl<T: EventPayload> AnyEventPayload for T {
+    const SOURCES: &'static [Option<&'static str>] = const {
+        match T::SOURCE {
+            Some(s) => &[Some(s)],
+            None => &[],
+        }
+    };
+    const EVENT_TYPES: &'static [u16] = &[T::ID];
+}
 #[derive(Debug, Error)]
 pub enum PayloadFromBytesError {
     /// Failed to parse a particular field

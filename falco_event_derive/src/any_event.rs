@@ -61,6 +61,15 @@ fn derive_try_from_raw_event_for_fields(
     )
 }
 
+fn variant_type(fields: &Fields) -> proc_macro2::TokenStream {
+    let field = match the_field(fields) {
+        Ok(field) => field,
+        Err(err) => return err.to_compile_error(),
+    };
+    let ty = &field.ty;
+    quote!(#ty)
+}
+
 fn derive_any_event(
     crate_path: &proc_macro2::TokenStream,
     name: &Ident,
@@ -84,6 +93,12 @@ fn derive_any_event(
     let try_from = e.variants.iter().map(|variant| {
         derive_try_from_raw_event_for_fields(crate_path, &variant.ident, &variant.fields)
     });
+
+    let variant_types = e
+        .variants
+        .iter()
+        .map(|variant| variant_type(&variant.fields))
+        .collect::<Vec<_>>();
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
@@ -114,6 +129,15 @@ fn derive_any_event(
                     #(#to_bytes)*
                 }
             }
+        }
+
+        impl #impl_generics #crate_path::events::AnyEventPayload for #name #ty_generics #where_clause {
+            const SOURCES: &'static [Option<&'static str>] = &[
+                #(<#variant_types as #crate_path::events::EventPayload>::SOURCE,)*
+            ];
+            const EVENT_TYPES: &'static [u16] = &[
+                #(<#variant_types as #crate_path::events::EventPayload>::ID,)*
+            ];
         }
 
         impl <#impl_ref_generics> #crate_path::events::FromRawEvent<'raw_event> for #name #ty_generics #ref_where_clause {

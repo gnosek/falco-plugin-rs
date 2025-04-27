@@ -77,7 +77,7 @@
 ///
 /// This macro implements the following traits on the enum type:
 /// * [`std::fmt::Debug`], by delegating to each variant (without additional wrapping)
-/// * [`events::EventPayload`], which describes a whole set of type ids and sources supported
+/// * [`events::AnyEventPayload`], which describes a whole set of type ids and sources supported
 ///   by the enum (one for each variant)
 /// * [`events::FromRawEvent`], for deserialization
 /// * [`events::PayloadToBytes`], for serialization
