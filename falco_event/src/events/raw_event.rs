@@ -1,5 +1,5 @@
 use crate::events::payload::PayloadFromBytesError;
-use crate::events::{Event, EventMetadata, EventToBytes};
+use crate::events::{AnyEventPayload, Event, EventMetadata, EventToBytes};
 use crate::fields::{FromBytes, FromBytesError};
 use std::io::Write;
 use std::marker::PhantomData;
@@ -233,4 +233,9 @@ impl EventToBytes for RawEvent<'_> {
             .write_header(self.len, self.event_type, self.nparams, &mut writer)?;
         writer.write_all(self.payload)
     }
+}
+
+impl AnyEventPayload for RawEvent<'_> {
+    const SOURCES: &'static [Option<&'static str>] = &[];
+    const EVENT_TYPES: &'static [u16] = &[];
 }
