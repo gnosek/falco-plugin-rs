@@ -45,8 +45,12 @@ impl<T> SourcePluginFallbackApi for T {}
 #[allow(missing_debug_implementations)]
 pub struct SourcePluginApi<T>(std::marker::PhantomData<T>);
 
-impl<T: SourcePlugin> SourcePluginApi<T> {
-    pub const SOURCE_API: source_plugin_api = source_plugin_api {
+const fn impl_source_plugin_api<T: SourcePlugin>() -> source_plugin_api {
+    if T::PLUGIN_ID != 0 && T::EVENT_SOURCE.is_empty() {
+        panic!("EVENT_SOURCE cannot be empty if PLUGIN_ID is non-zero")
+    }
+
+    source_plugin_api {
         get_id: Some(plugin_get_id::<T>),
         get_event_source: Some(plugin_get_event_source::<T>),
         open: Some(plugin_open::<T>),
@@ -55,7 +59,11 @@ impl<T: SourcePlugin> SourcePluginApi<T> {
         get_progress: Some(plugin_get_progress::<T>),
         event_to_string: Some(plugin_event_to_string::<T>),
         next_batch: Some(plugin_next_batch::<T>),
-    };
+    }
+}
+
+impl<T: SourcePlugin> SourcePluginApi<T> {
+    pub const SOURCE_API: source_plugin_api = impl_source_plugin_api::<T>();
 
     pub const IMPLEMENTS_SOURCE: bool = true;
 }
