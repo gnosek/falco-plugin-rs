@@ -1,8 +1,6 @@
 use crate::plugin::error::as_result::AsResult;
 use crate::strings::from_ptr::try_str_from_ptr;
 use anyhow::Context;
-use falco_event::events::types::PPME_ASYNCEVENT_E as AsyncEvent;
-use falco_event::events::Event;
 use falco_event::events::EventToBytes;
 use falco_plugin_api::{ss_plugin_event, ss_plugin_owner_t, ss_plugin_rc, PLUGIN_MAX_ERRLEN};
 use std::ffi::c_char;
@@ -31,7 +29,7 @@ impl AsyncHandler {
     ///
     /// This method returns an error if and only if the asynchronous handler
     /// returns an error.
-    pub fn emit(&self, event: Event<AsyncEvent>) -> Result<(), anyhow::Error> {
+    pub fn emit(&self, event: impl EventToBytes) -> Result<(), anyhow::Error> {
         let mut err = [0 as c_char; PLUGIN_MAX_ERRLEN as usize];
         let mut buf = Vec::new();
         let err_ptr = &err as *const [c_char] as *const c_char;

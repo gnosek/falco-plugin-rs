@@ -1,7 +1,7 @@
+use crate::event::PluginEvent;
 use crate::plugin::base::Plugin;
 use crate::plugin::source::wrappers::SourcePluginExported;
 use crate::source::{EventBatch, EventInput};
-use falco_event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
 use falco_event::events::{AnyEventPayload, EventMetadata};
 use falco_event::events::{Event, RawEvent};
 use std::ffi::{CStr, CString};
@@ -29,7 +29,7 @@ pub trait SourcePlugin: Plugin + SourcePluginExported {
     /// for plugins collecting syscall information.
     ///
     /// If the plugin defines both `EVENT_SOURCE` (as a non-empty string) and `PLUGIN_ID`
-    /// (as a non-zero value), it will only be allowed to emit events of type [`PluginEvent`]
+    /// (as a non-zero value), it will only be allowed to emit plugin events (e.g. [`crate::event::PluginEvent`])
     /// with the `plugin_id` field matching `PLUGIN_ID` in the definition of this trait.
     ///
     /// This constant must be a non-empty string if `PLUGIN_ID` is set.
@@ -40,7 +40,7 @@ pub trait SourcePlugin: Plugin + SourcePluginExported {
     /// This is the unique ID of the plugin.
     ///
     /// If the plugin defines both `EVENT_SOURCE` (as a non-empty string) and `PLUGIN_ID`
-    /// (as a non-zero value), it will only be allowed to emit events of type [`PluginEvent`]
+    /// (as a non-zero value), it will only be allowed to emit plugin events (e.g. [`crate::event::PluginEvent`])
     /// with the `plugin_id` field matching `PLUGIN_ID` in the definition of this trait.
     ///
     /// > EVERY PLUGIN WITH EVENT SOURCING CAPABILITY IMPLEMENTING A SPECIFIC EVENT SOURCE MUST
@@ -215,15 +215,15 @@ pub trait SourcePluginInstance {
     /// # A helper for generating plugin events
     ///
     /// If your plugin defines a PLUGIN_ID and a source name, the only allowed events are
-    /// of type [`PluginEvent`] and effectively the only customizable field is the event data
-    /// (which is a generic byte buffer).
+    /// plugin events (e.g. [`crate::event::PluginEvent`]), and effectively the only customizable
+    /// field is the event data (which is a generic byte buffer).
     ///
     /// This method makes it easy to generate such events: just pass it the event data and get
     /// the complete event, with all the metadata set to reasonable defaults.
-    fn plugin_event(data: &[u8]) -> Event<PluginEvent<'_>> {
+    fn plugin_event(data: &[u8]) -> Event<PluginEvent<&[u8]>> {
         let event = PluginEvent {
-            plugin_id: Some(Self::Plugin::PLUGIN_ID),
-            event_data: Some(data),
+            plugin_id: Self::Plugin::PLUGIN_ID,
+            event_data: data,
         };
 
         let metadata = EventMetadata::default();

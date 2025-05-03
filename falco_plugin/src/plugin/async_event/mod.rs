@@ -1,8 +1,7 @@
 use crate::base::Plugin;
+use crate::event::AsyncEvent;
 use crate::plugin::async_event::async_handler::AsyncHandler;
 use crate::plugin::async_event::wrappers::AsyncPluginExported;
-
-use falco_event::events::types::PPME_ASYNCEVENT_E as AsyncEvent;
 use falco_event::events::Event;
 
 pub mod async_handler;
@@ -63,11 +62,14 @@ pub trait AsyncEventPlugin: Plugin + AsyncPluginExported {
     }
 
     /// # A helper method to create an asynchronous event
-    fn async_event<'a>(name: &'a std::ffi::CStr, data: &'a [u8]) -> Event<AsyncEvent<'a>> {
+    fn async_event<'a>(
+        name: &'a std::ffi::CStr,
+        data: &'a [u8],
+    ) -> Event<AsyncEvent<'a, &'a [u8]>> {
         let event = AsyncEvent {
-            plugin_id: None, // gets populated by the framework, shall be None
-            name: Some(name),
-            data: Some(data),
+            plugin_id: 0, // gets populated by the framework, shall be None
+            name,
+            data,
         };
 
         let metadata = falco_event::events::EventMetadata::default();
