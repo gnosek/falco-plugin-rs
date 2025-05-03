@@ -43,6 +43,10 @@ pub enum FromBytesError {
     /// Unconsumed data remaining in field buffer
     #[error("trailing field data")]
     LeftoverData,
+
+    /// Other error (from custom conversions)
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }
 
 /// Deserialize a field from a byte buffer

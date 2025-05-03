@@ -1,9 +1,8 @@
 use anyhow::Context;
 use falco_event::events::RawEvent;
+use falco_plugin_api::ss_plugin_event_input;
 use std::ffi::CStr;
 use std::marker::PhantomData;
-
-pub use falco_plugin_api::ss_plugin_event_input;
 
 /// # An event from which additional data may be extracted
 #[derive(Debug)]

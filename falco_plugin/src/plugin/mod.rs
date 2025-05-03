@@ -1,7 +1,7 @@
 pub mod async_event;
 pub mod base;
 pub mod error;
-pub(crate) mod event;
+pub mod event;
 pub mod exported_tables;
 pub mod extract;
 pub mod listen;

@@ -5,7 +5,6 @@
 
 // reexport dependencies
 pub use anyhow;
-pub use falco_event as event;
 pub use falco_plugin_api as api;
 pub use phf;
 pub use schemars;
@@ -23,6 +22,15 @@ pub mod base {
     pub use crate::plugin::base::metrics::{Metric, MetricLabel, MetricType, MetricValue};
     pub use crate::plugin::base::Plugin;
     pub use crate::plugin::schema::Json;
+}
+
+/// # Event-related types
+///
+/// This module reexports the whole of [`falco_event`] (except the macros), as well as exports
+/// the event types defined by this crate (the minimal subset of the full Falco schema)
+pub mod event {
+    pub use crate::plugin::event::*;
+    pub use falco_event::{events, fields, format};
 }
 
 /// # Field extraction plugin support
@@ -273,7 +281,7 @@ pub mod parse {
 /// ```
 pub mod async_event {
     /// The event type that can be emitted from async event plugins
-    pub use falco_event::events::types::PPME_ASYNCEVENT_E as AsyncEvent;
+    pub use crate::plugin::event::AsyncEvent;
 
     pub use crate::plugin::async_event::async_handler::AsyncHandler;
     pub use crate::plugin::async_event::AsyncEventPlugin;
@@ -298,12 +306,7 @@ pub mod async_event {
 /// use falco_event::events::{Event, RawEvent};
 /// use falco_plugin::base::{Metric, Plugin};
 /// use falco_plugin::{plugin, source_plugin};
-/// use falco_plugin::source::{
-///     EventBatch,
-///     EventInput,
-///     PluginEvent,
-///     SourcePlugin,
-///     SourcePluginInstance};
+/// use falco_plugin::source::{EventBatch, EventInput, PluginEvent, SourcePlugin, SourcePluginInstance};
 /// use falco_plugin::tables::TablesInput;
 /// use falco_plugin_api::ss_plugin_event_input;
 ///
@@ -338,7 +341,7 @@ pub mod async_event {
 ///     const EVENT_SOURCE: &'static CStr = c"my-source-plugin";
 ///     const PLUGIN_ID: u32 = 0; // we do not have one assigned for this example :)
 ///
-///     type Event<'a> = Event<PluginEvent<'a>>;
+///     type Event<'a> = Event<PluginEvent<&'a [u8]>>;
 ///
 ///     fn open(&mut self, params: Option<&str>) -> Result<Self::Instance, Error> {
 ///         // we do not use the open parameters in this example
@@ -353,13 +356,8 @@ pub mod async_event {
 ///         // get the plugin event
 ///         let plugin_event = event.event()?;
 ///
-///         // take a copy of the event data (it's in an Option because we never know if events
-///         // have all the fields, and it's important to handle short events for backwards
-///         // compatibility).
-///         let data = plugin_event.params.event_data.map(|e| e.to_vec()).unwrap_or_default();
-///
 ///         // convert the data to a CString and return it
-///         Ok(CString::new(data)?)
+///         Ok(CString::new(plugin_event.params.event_data)?)
 ///     }
 /// }
 ///
@@ -379,10 +377,10 @@ pub mod async_event {
 /// ```
 pub mod source {
     pub use crate::plugin::event::EventInput;
+    pub use crate::plugin::event::PluginEvent;
     pub use crate::plugin::source::event_batch::EventBatch;
     pub use crate::plugin::source::open_params::{serialize_open_params, OpenParam};
     pub use crate::plugin::source::{ProgressInfo, SourcePlugin, SourcePluginInstance};
-    pub use falco_event::events::types::PPME_PLUGINEVENT_E as PluginEvent;
 }
 
 /// # Capture listening plugins
