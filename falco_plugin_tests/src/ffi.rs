@@ -7,6 +7,7 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 
 #[allow(clippy::missing_safety_doc)]
+#[allow(clippy::module_inception)]
 #[cxx::bridge]
 mod ffi {
     struct SinspEvent {
