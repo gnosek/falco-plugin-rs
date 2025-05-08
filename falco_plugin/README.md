@@ -251,6 +251,48 @@ as the capture may be stopped/restarted several times over the lifetime of a plu
 They are created by implementing [`listen::CaptureListenPlugin`] and calling [`capture_listen_plugin!`]
 with the plugin type.
 
+# Event types in plugins
+
+Source, parsing and field extraction plugins need to specify an event type they are working with. Depending
+on your plugin's needs, there may be several valid choices here.
+
+Many plugins will deal only with plugin-generated events (sync or async), so they can use [the types provided
+by this crate](`event`). For example,
+
+```
+use falco_plugin::event::PluginEvent;
+
+// in a plugin trait implementation:
+type Event<'a> = falco_event::events::Event<PluginEvent<&'a [u8]>>;
+```
+
+For plugins dealing with a single Falco syscall event type, you can use that particular event type directly, e.g.:
+
+```
+use falco_event::events::types::PPME_SYSCALL_OPENAT2_X;
+
+// in a plugin trait implementation:
+type Event<'a> = falco_event::events::Event<PPME_SYSCALL_OPENAT2_X<'a>>;
+```
+
+Plugins dealing with several Falco syscall event types may want to define a custom enum for these types.
+See the relevant section in [`falco_event` documentation](`falco_event#raw-event-to-typed-event`).
+
+Plugins that want to work with the raw byte representation of event payloads will probably want
+to use [`falco_event::events::RawEvent`]:
+
+```ignore
+use falco_event::events::RawEvent;
+
+type Event<'a> = RawEvent<'a>;
+```
+
+Occasionally, you may want to use the [`falco_event::events::types::AnyEvent`] type as the payload. It parses
+all defined events into a large enum, so it provides a strongly typed representation for all possible events.
+However, there's very little you can actually do with that type without matching individual variants
+(apart from getting a string representation). It's usually better to use a more specific enum, simply to avoid
+the cost of parsing all possible events.
+
 # Logging in plugins
 
 The SDK uses the [`log`] crate for logging, redirecting all messages to the Falco libs logger, so you can use
