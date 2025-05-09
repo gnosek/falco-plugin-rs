@@ -22,8 +22,6 @@ derive_deftly = ["dep:derive-deftly"]
 
 [dependencies]
 falco_event_derive = { path = "../falco_event_derive", version = "0.4.0" }
-num-derive = "0.4.2"
-num-traits = "0.2.17"
 thiserror = "2.0.12"
 bitflags = { version = "2.4.2" }
 anyhow = "1.0.81"

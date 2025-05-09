@@ -115,17 +115,16 @@ This is mostly equivalent to a match you can write by hand:
 #    nparams: 0,
 #    payload: &[],
 # };
-use falco_event::events::types::EventType;
 use falco_event::events::types;
-use falco_event::num_traits::FromPrimitive;
+use falco_event::events::EventPayload;
 
-match EventType::from_u16(event.event_type) {
-    Some(EventType::SYSCALL_OPENAT2_E) => {
+match event.event_type {
+    types::PPME_SYSCALL_OPENAT2_E::ID => {
         let openat2_e_event = event.load::<types::PPME_SYSCALL_OPENAT2_E>()?;
         // openat2_e_event is Event<types::PPME_SYSCALL_OPENAT2_E>
         // ...
     }
-    Some(EventType::SYSCALL_OPENAT2_X) => {
+    types::PPME_SYSCALL_OPENAT2_X::ID => {
         let openat2_x_event = event.load::<types::PPME_SYSCALL_OPENAT2_X>()?;
         // openat2_x_event is Event<types::PPME_SYSCALL_OPENAT2_X>
         // ...
@@ -148,7 +147,6 @@ an if-let chain:
 #    nparams: 0,
 #    payload: &[],
 # };
-use falco_event::events::types::EventType;
 use falco_event::events::types;
 
 if let Ok(openat2_e_event) = event.load::<types::PPME_SYSCALL_OPENAT2_E>() {

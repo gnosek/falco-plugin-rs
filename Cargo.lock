@@ -454,8 +454,6 @@ dependencies = [
  "derive-deftly",
  "falco_event_derive",
  "nix",
- "num-derive",
- "num-traits",
  "thiserror",
  "typed-path",
 ]

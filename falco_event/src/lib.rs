@@ -133,7 +133,6 @@ pub use derive_deftly;
 /// * [`events::FromRawEvent`] to provide deserialization
 /// * [`events::PayloadToBytes`] to provide serialization
 pub use falco_event_derive::EventPayload;
-pub use num_traits;
 
 #[allow(missing_docs)]
 pub mod events;

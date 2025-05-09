@@ -306,20 +306,6 @@ impl EventInfo {
         )
     }
 
-    fn type_variant(&self) -> proc_macro2::TokenStream {
-        let event_code = &self.event_code;
-        let event_type = Ident::new(
-            &event_code.to_string().replace("PPME_", ""),
-            event_code.span(),
-        );
-        let raw_ident = Ident::new(
-            &format!("ppm_event_code_{}", self.event_code),
-            self.event_code.span(),
-        );
-
-        quote!(#event_type = crate::ffi::#raw_ident as u16)
-    }
-
     fn enum_variant(&self) -> proc_macro2::TokenStream {
         let event_code = &self.event_code;
         let event_type = Ident::new(
@@ -379,10 +365,6 @@ impl Events {
         )
     }
 
-    fn type_variants(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
-        self.events.iter().map(|e| e.type_variant())
-    }
-
     fn enum_variants(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
         self.events.iter().map(move |e| e.enum_variant())
     }
@@ -409,30 +391,13 @@ fn event_info_variant(events: &Events) -> proc_macro2::TokenStream {
     )
 }
 
-fn event_type_enum(events: &Events) -> proc_macro2::TokenStream {
-    let type_variants = events.type_variants();
-
-    quote!(
-        use num_derive::FromPrimitive;
-        #[derive(Debug)]
-        #[derive(FromPrimitive)]
-        #[allow(non_camel_case_types)]
-        #[repr(u16)]
-        pub enum EventType {
-            #(#type_variants,)*
-        }
-    )
-}
-
 pub fn event_info(input: TokenStream) -> TokenStream {
     let events = parse_macro_input!(input as Events);
 
     let event_info_borrowed = event_info_variant(&events);
-    let event_type_enum = event_type_enum(&events);
 
     quote!(
         #event_info_borrowed
-        #event_type_enum
     )
     .into()
 }
