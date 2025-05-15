@@ -294,14 +294,14 @@ pub unsafe extern "C-unwind" fn plugin_event_to_string<T: SourcePlugin>(
 /// # Register a source plugin
 ///
 /// This macro must be called at most once in a crate (it generates public functions with fixed
-/// `#[no_mangle]` names) with a type implementing [`SourcePlugin`] as the sole parameter.
+/// `#[unsafe(no_mangle)]` names) with a type implementing [`SourcePlugin`] as the sole parameter.
 #[macro_export]
 macro_rules! source_plugin {
     ($ty:ty) => {
         unsafe impl $crate::internals::source::wrappers::SourcePluginExported for $ty {}
 
         $crate::wrap_ffi! {
-            #[no_mangle]
+            #[unsafe(no_mangle)]
             use $crate::internals::source::wrappers: <$ty>;
             unsafe fn plugin_next_batch(
                 plugin: *mut falco_plugin::api::ss_plugin_t,

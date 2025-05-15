@@ -109,7 +109,7 @@ pub unsafe extern "C-unwind" fn plugin_capture_close<T: CaptureListenPlugin>(
 /// # Register an asynchronous event plugin
 ///
 /// This macro must be called at most once in a crate (it generates public functions with fixed
-/// `#[no_mangle]` names) with a type implementing [`CaptureListenPlugin`] as the sole
+/// `#[unsafe(no_mangle)]` names) with a type implementing [`CaptureListenPlugin`] as the sole
 /// parameter.
 #[macro_export]
 macro_rules! capture_listen_plugin {
@@ -117,7 +117,7 @@ macro_rules! capture_listen_plugin {
         unsafe impl $crate::internals::listen::wrappers::CaptureListenPluginExported for $ty {}
 
         $crate::wrap_ffi! {
-            #[no_mangle]
+            #[unsafe(no_mangle)]
             use $crate::internals::listen::wrappers: <$ty>;
 
             unsafe fn plugin_capture_open(

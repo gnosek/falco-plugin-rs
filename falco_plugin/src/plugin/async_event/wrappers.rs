@@ -161,7 +161,7 @@ pub unsafe extern "C-unwind" fn plugin_dump_state<T: AsyncEventPlugin>(
 /// # Register an asynchronous event plugin
 ///
 /// This macro must be called at most once in a crate (it generates public functions with fixed
-/// `#[no_mangle]` names) with a type implementing [`AsyncEventPlugin`] as the sole
+/// `#[unsafe(no_mangle)]` names) with a type implementing [`AsyncEventPlugin`] as the sole
 /// parameter.
 #[macro_export]
 macro_rules! async_event_plugin {
@@ -169,7 +169,7 @@ macro_rules! async_event_plugin {
         unsafe impl $crate::internals::async_event::wrappers::AsyncPluginExported for $ty {}
 
         $crate::wrap_ffi! {
-            #[no_mangle]
+            #[unsafe(no_mangle)]
             use $crate::internals::async_event::wrappers: <$ty>;
 
             unsafe fn plugin_get_async_events() -> *const ::std::ffi::c_char;
