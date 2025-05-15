@@ -337,7 +337,7 @@ macro_rules! plugin {
     (unsafe { $maj:expr; $min:expr; $patch:expr } => #[no_capabilities] $ty:ty) => {
         unsafe impl $crate::internals::base::wrappers::BasePluginExported for $ty {}
 
-        $crate::base_plugin_ffi_wrappers!($maj; $min; $patch => #[no_mangle] $ty);
+        $crate::base_plugin_ffi_wrappers!($maj; $min; $patch => #[unsafe(no_mangle)] $ty);
     };
     (unsafe { $maj:expr; $min:expr; $patch:expr } => $ty:ty) => {
         plugin!(unsafe {$maj; $min; $patch} => #[no_capabilities] $ty);
@@ -399,7 +399,7 @@ macro_rules! plugin {
 ///
 /// This expands to:
 /// ```ignore
-/// #[no_mangle]
+/// #[unsafe(no_mangle)]
 /// static MY_PLUGIN_API: falco_plugin::api::plugin_api = /* ... */;
 /// ```
 ///
@@ -461,7 +461,7 @@ macro_rules! static_plugin {
         );
     };
     ($name:ident @ unsafe { $maj:expr; $min:expr; $patch:expr } = #[no_capabilities] $ty:ty) => {
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         static $name: falco_plugin::api::plugin_api = const {
             $crate::base_plugin_ffi_wrappers!($maj; $min; $patch => #[deny(dead_code)] $ty);
             __plugin_base_api()

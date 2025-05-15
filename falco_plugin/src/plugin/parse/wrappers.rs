@@ -121,14 +121,14 @@ pub unsafe extern "C-unwind" fn plugin_parse_event<T: ParsePlugin>(
 /// # Register an event parsing plugin
 ///
 /// This macro must be called at most once in a crate (it generates public functions with fixed
-/// `#[no_mangle]` names) with a type implementing [`ParsePlugin`] as the sole parameter.
+/// `#[unsafe(no_mangle)]` names) with a type implementing [`ParsePlugin`] as the sole parameter.
 #[macro_export]
 macro_rules! parse_plugin {
     ($ty:ty) => {
         unsafe impl $crate::internals::parse::wrappers::ParsePluginExported for $ty {}
 
         $crate::wrap_ffi! {
-            #[no_mangle]
+            #[unsafe(no_mangle)]
             use $crate::internals::parse::wrappers: <$ty>;
 
             unsafe fn plugin_get_parse_event_types(

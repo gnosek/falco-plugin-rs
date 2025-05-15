@@ -142,7 +142,7 @@ macro_rules! extract_plugin {
         unsafe impl $crate::internals::extract::wrappers::ExtractPluginExported for $ty {}
 
         $crate::wrap_ffi! {
-            #[no_mangle]
+            #[unsafe(no_mangle)]
             use $crate::internals::extract::wrappers: <$ty>;
 
             unsafe fn plugin_get_extract_event_sources() -> *const ::std::ffi::c_char;
