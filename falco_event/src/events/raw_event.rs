@@ -170,7 +170,11 @@ impl<'e> RawEvent<'e> {
     }
 
     pub fn load<'a, T: FromRawEvent<'e>>(&'a self) -> Result<Event<T>, PayloadFromBytesError> {
-        let params = T::parse(self)?;
+        #[allow(clippy::question_mark)]
+        let params = match T::parse(self) {
+            Ok(p) => p,
+            Err(e) => return Err(e),
+        };
         Ok(Event {
             metadata: self.metadata.clone(),
             params,
