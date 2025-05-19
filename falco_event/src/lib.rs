@@ -22,7 +22,6 @@ pub mod format {
     pub use crate::types::CStrArrayFormatter;
     pub use crate::types::CStrFormatter;
     pub use crate::types::CStrPairArrayFormatter;
-    pub use crate::types::SystemTimeFormatter;
 }
 
 #[allow(dead_code)]
