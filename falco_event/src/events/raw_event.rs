@@ -12,7 +12,7 @@ pub trait FromRawEvent<'a>: Sized {
 pub trait LengthField: TryFrom<usize, Error = TryFromIntError> {
     fn read(buf: &mut &[u8]) -> Option<usize>;
 
-    fn write<W: Write>(&self, writer: W) -> std::io::Result<()>;
+    fn to_usize(&self) -> usize;
 }
 
 impl LengthField for u16 {
@@ -21,9 +21,8 @@ impl LengthField for u16 {
         Some(u16::from_ne_bytes(len.try_into().unwrap()) as usize)
     }
 
-    fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
-        let bytes = self.to_ne_bytes();
-        writer.write_all(&bytes)
+    fn to_usize(&self) -> usize {
+        *self as usize
     }
 }
 
@@ -33,9 +32,8 @@ impl LengthField for u32 {
         Some(u32::from_ne_bytes(len.try_into().unwrap()) as usize)
     }
 
-    fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
-        let bytes = self.to_ne_bytes();
-        writer.write_all(&bytes)
+    fn to_usize(&self) -> usize {
+        *self as usize
     }
 }
 
