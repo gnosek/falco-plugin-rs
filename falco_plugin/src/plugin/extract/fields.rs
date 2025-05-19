@@ -1,4 +1,4 @@
-use falco_event::fields::types::PT_IPNET;
+use falco_event::fields::types::{PT_ABSTIME, PT_IPNET};
 use falco_event::fields::ToBytes;
 use falco_plugin_api::{
     ss_plugin_byte_buffer, ss_plugin_extract_field, ss_plugin_field_type_FTYPE_ABSTIME,
@@ -10,7 +10,7 @@ use num_derive::FromPrimitive;
 use std::ffi::{c_void, CString};
 use std::net::IpAddr;
 use std::ptr::null_mut;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
 #[non_exhaustive]
 #[repr(u32)]
@@ -249,7 +249,7 @@ macro_rules! extract {
 
 extract!(u64: direct => ExtractFieldTypeId::U64);
 extract!(Duration: direct => ExtractFieldTypeId::RelTime);
-extract!(SystemTime: direct => ExtractFieldTypeId::AbsTime);
+extract!(PT_ABSTIME: direct => ExtractFieldTypeId::AbsTime);
 extract!(bool: direct => ExtractFieldTypeId::Bool);
 extract!(CString: by_ref => ExtractFieldTypeId::String);
 extract!(IpAddr: by_bytebuf => ExtractFieldTypeId::IpAddr);

@@ -7,12 +7,7 @@ impl Serialize for SerializedField<&types::PT_ABSTIME> {
     where
         S: Serializer,
     {
-        let nanos = self
-            .0
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .map_err(serde::ser::Error::custom)? as u64;
-        nanos.serialize(serializer)
+        self.0.0.serialize(serializer)
     }
 }
 

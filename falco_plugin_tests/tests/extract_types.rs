@@ -2,6 +2,7 @@ use falco_plugin::anyhow::Error;
 use falco_plugin::base::Plugin;
 use falco_plugin::event::events::types::EventType;
 use falco_plugin::event::events::types::EventType::PLUGINEVENT_E;
+use falco_plugin::event::fields::types::PT_ABSTIME;
 use falco_plugin::event::fields::types::PT_IPNET;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::source::{
@@ -13,7 +14,7 @@ use falco_plugin::{anyhow, static_plugin, FailureReason};
 use std::ffi::{CStr, CString};
 use std::io::Write;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, UNIX_EPOCH};
 
 struct DummyPlugin {
     num_batches: usize,
@@ -154,12 +155,12 @@ impl DummyPlugin {
     );
     gen_dummy_extractor_fn_impls!(
         abstime,
-        SystemTime,
-        UNIX_EPOCH + Duration::from_millis(10),
+        PT_ABSTIME,
+        PT_ABSTIME::from(UNIX_EPOCH + Duration::from_millis(10)),
         vec![
-            UNIX_EPOCH + Duration::from_millis(10),
-            UNIX_EPOCH + Duration::from_millis(20),
-            UNIX_EPOCH + Duration::from_millis(30),
+            PT_ABSTIME::from(UNIX_EPOCH + Duration::from_millis(10)),
+            PT_ABSTIME::from(UNIX_EPOCH + Duration::from_millis(20)),
+            PT_ABSTIME::from(UNIX_EPOCH + Duration::from_millis(30)),
         ]
     );
     gen_dummy_extractor_fn_impls!(bool, bool, true, vec![true, false, true]);

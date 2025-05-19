@@ -1,5 +1,4 @@
-use crate::format::OptionFormatter;
-use crate::types::SystemTimeFormatter;
+use chrono::Local;
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -69,12 +68,14 @@ impl EventMetadata {
 
 impl Debug for EventMetadata {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{:?} tid={:?}",
-            OptionFormatter(self.timestamp().map(SystemTimeFormatter)),
-            self.tid
-        )
+        if let Some(timestamp) = self.timestamp() {
+            let dt = chrono::DateTime::<Local>::from(timestamp);
+            f.write_str(&dt.to_rfc3339_opts(chrono::SecondsFormat::AutoSi, false))?;
+        } else {
+            f.write_str("<no timestamp>")?;
+        }
+
+        write!(f, " tid={:?}", self.tid)
     }
 }
 
