@@ -1,6 +1,6 @@
-use std::io::Write;
-
 use byteorder::{NativeEndian, ReadBytesExt};
+use std::io::Write;
+use std::marker::PhantomData;
 
 use crate::events::payload::PayloadFromBytesError;
 use crate::events::{Event, EventMetadata, EventToBytes};
@@ -8,6 +8,45 @@ use crate::fields::FromBytesError;
 
 pub trait FromRawEvent<'a>: Sized {
     fn parse(raw_event: &RawEvent<'a>) -> Result<Self, PayloadFromBytesError>;
+}
+
+pub trait LengthField {
+    fn read(buf: &mut &[u8]) -> Option<usize>;
+}
+
+impl LengthField for u16 {
+    fn read(buf: &mut &[u8]) -> Option<usize> {
+        let len = buf.split_off(..size_of::<u16>())?;
+        Some(u16::from_ne_bytes(len.try_into().unwrap()) as usize)
+    }
+}
+
+impl LengthField for u32 {
+    fn read(buf: &mut &[u8]) -> Option<usize> {
+        let len = buf.split_off(..size_of::<u32>())?;
+        Some(u32::from_ne_bytes(len.try_into().unwrap()) as usize)
+    }
+}
+
+pub struct ParamIter<'a, T: LengthField> {
+    lengths: &'a [u8],
+    params: &'a [u8],
+    length_type: PhantomData<T>,
+}
+
+impl<'a, T: LengthField> Iterator for ParamIter<'a, T> {
+    type Item = Result<&'a [u8], FromBytesError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let len = T::read(&mut self.lengths)?;
+        match self.params.split_off(..len) {
+            Some(param) => Some(Ok(param)),
+            None => Some(Err(FromBytesError::TruncatedField {
+                wanted: len,
+                got: self.params.len(),
+            })),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -117,12 +156,7 @@ impl<'e> RawEvent<'e> {
     /// Get an iterator over the event parameters
     ///
     /// `T` must correspond to the type of the length field (u16 or u32, depending on the event type)
-    pub fn params<T>(
-        &self,
-    ) -> Result<
-        impl Iterator<Item = Result<&'e [u8], FromBytesError>> + use<'e, T>,
-        PayloadFromBytesError,
-    > {
+    pub fn params<T: LengthField>(&self) -> Result<ParamIter<'e, T>, PayloadFromBytesError> {
         let length_size = size_of::<T>();
         let ll = self.nparams as usize * length_size;
 
@@ -133,21 +167,13 @@ impl<'e> RawEvent<'e> {
             });
         }
 
-        let (mut lengths, mut params) = self.payload.split_at(ll);
+        let (lengths, params) = self.payload.split_at(ll);
 
-        Ok(std::iter::from_fn(move || {
-            let len = lengths.read_uint::<NativeEndian>(length_size).ok()? as usize;
-            if len > params.len() {
-                // truncated event, do not return the param fragment, if any
-                return Some(Err(FromBytesError::TruncatedField {
-                    wanted: len,
-                    got: params.len(),
-                }));
-            }
-            let (param, tail) = params.split_at(len);
-            params = tail;
-            Some(Ok(param))
-        }))
+        Ok(ParamIter {
+            lengths,
+            params,
+            length_type: PhantomData,
+        })
     }
 }
 
