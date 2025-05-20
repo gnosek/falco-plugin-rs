@@ -11,6 +11,10 @@ workspace = true
 name = "binary_event"
 harness = false
 
+[[bench]]
+name = "binary_event_all"
+harness = false
+
 [dependencies]
 anyhow = "1.0.88"
 chrono = "0.4.39"
