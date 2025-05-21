@@ -1,11 +1,14 @@
 use crate::fields::{FromBytes, FromBytesError, ToBytes};
-use byteorder::{NetworkEndian, ReadBytesExt};
 use std::io::Write;
 use std::net::Ipv4Addr;
 
 impl FromBytes<'_> for Ipv4Addr {
     fn from_bytes(buf: &mut &[u8]) -> Result<Self, FromBytesError> {
-        let bytes = buf.read_u32::<NetworkEndian>()?;
+        let ip_buf = buf.split_off(..4).ok_or(FromBytesError::TruncatedField {
+            wanted: 4,
+            got: buf.len(),
+        })?;
+        let bytes = u32::from_be_bytes(ip_buf.try_into().unwrap());
         Ok(bytes.into())
     }
 }

@@ -4,7 +4,6 @@ use std::io::Write;
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
 use crate::fields::{FromBytes, FromBytesError, ToBytes};
 use crate::types::net::endpoint::{EndpointV4, EndpointV6};
-use byteorder::{ReadBytesExt, WriteBytesExt};
 use typed_path::UnixPath;
 
 /// Socket tuple: describing both endpoints of a connection
@@ -88,23 +87,23 @@ impl ToBytes for SockTuple<'_> {
                 dest_ptr: dest_addr,
                 path,
             } => {
-                writer.write_u8(PPM_AF_LOCAL as u8)?;
+                writer.write_all(&[PPM_AF_LOCAL as u8])?;
                 source_addr.write(&mut writer)?;
                 dest_addr.write(&mut writer)?;
                 path.write(writer)
             }
             Self::V4 { source, dest } => {
-                writer.write_u8(PPM_AF_INET as u8)?;
+                writer.write_all(&[PPM_AF_INET as u8])?;
                 source.write(&mut writer)?;
                 dest.write(writer)
             }
             Self::V6 { source, dest } => {
-                writer.write_u8(PPM_AF_INET6 as u8)?;
+                writer.write_all(&[PPM_AF_INET6 as u8])?;
                 source.write(&mut writer)?;
                 dest.write(writer)
             }
             Self::Other(af, buf) => {
-                writer.write_u8(*af)?;
+                writer.write_all(&[*af])?;
                 ToBytes::write(buf, writer)
             }
         }
@@ -117,8 +116,9 @@ impl ToBytes for SockTuple<'_> {
 
 impl<'a> FromBytes<'a> for SockTuple<'a> {
     fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
-        let variant = buf.read_u8()?;
-        match variant as u32 {
+        let variant = buf.split_off_first().ok_or(FromBytesError::InvalidLength)?;
+
+        match *variant as u32 {
             PPM_AF_LOCAL => Ok(Self::Unix {
                 source_ptr: FromBytes::from_bytes(buf)?,
                 dest_ptr: FromBytes::from_bytes(buf)?,
@@ -132,7 +132,7 @@ impl<'a> FromBytes<'a> for SockTuple<'a> {
                 source: FromBytes::from_bytes(buf)?,
                 dest: FromBytes::from_bytes(buf)?,
             }),
-            _ => Ok(Self::Other(variant, std::mem::take(buf))),
+            _ => Ok(Self::Other(*variant, std::mem::take(buf))),
         }
     }
 }

@@ -1,7 +1,6 @@
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL, PPM_AF_UNSPEC};
 use crate::fields::{FromBytes, FromBytesError, ToBytes};
 use crate::types::{EndpointV4, EndpointV6};
-use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use typed_path::UnixPath;
@@ -34,19 +33,19 @@ impl ToBytes for SockAddr<'_> {
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
         match self {
             Self::Unix(p) => {
-                writer.write_u8(PPM_AF_LOCAL as u8)?;
+                writer.write_all(&[PPM_AF_LOCAL as u8])?;
                 p.write(writer)
             }
             Self::V4(addr) => {
-                writer.write_u8(PPM_AF_INET as u8)?;
+                writer.write_all(&[PPM_AF_INET as u8])?;
                 addr.write(writer)
             }
             Self::V6(addr) => {
-                writer.write_u8(PPM_AF_INET6 as u8)?;
+                writer.write_all(&[PPM_AF_INET6 as u8])?;
                 addr.write(writer)
             }
             Self::Other(af, addr) => {
-                writer.write_u8(*af)?;
+                writer.write_all(&[*af])?;
                 ToBytes::write(addr, writer)
             }
         }
@@ -59,8 +58,9 @@ impl ToBytes for SockAddr<'_> {
 
 impl<'a> FromBytes<'a> for SockAddr<'a> {
     fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
-        let variant = buf.read_u8()?;
-        match variant as u32 {
+        let variant = buf.split_off_first().ok_or(FromBytesError::InvalidLength)?;
+
+        match *variant as u32 {
             PPM_AF_LOCAL => {
                 let path: &UnixPath = FromBytes::from_bytes(buf)?;
                 Ok(Self::Unix(path))
@@ -73,7 +73,7 @@ impl<'a> FromBytes<'a> for SockAddr<'a> {
                 let addr = EndpointV6::from_bytes(buf)?;
                 Ok(Self::V6(addr))
             }
-            _ => Ok(Self::Other(variant, std::mem::take(buf))),
+            _ => Ok(Self::Other(*variant, std::mem::take(buf))),
         }
     }
 }

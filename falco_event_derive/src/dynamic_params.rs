@@ -103,7 +103,7 @@ impl DynamicParamVariant {
         let disc = &self.discriminant;
 
         quote!(Self:: #disc(val) => {
-            writer.write_u8(crate::ffi::#disc as u8)?;
+            writer.write_all([crate::ffi::#disc as u8].as_slice())?;
             crate::fields::ToBytes::write(val, writer)
         })
     }
@@ -192,8 +192,6 @@ impl DynamicParam {
                     }
                 }
                 fn write<W: std::io::Write>(&self, mut writer: W) -> std::io::Result<()> {
-                    use byteorder::WriteBytesExt;
-
                     match self {
                         #(#variant_write)*
                     }

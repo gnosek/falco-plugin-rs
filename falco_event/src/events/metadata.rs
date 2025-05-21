@@ -1,6 +1,5 @@
 use crate::format::OptionFormatter;
 use crate::types::SystemTimeFormatter;
-use byteorder::{NativeEndian, WriteBytesExt};
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -32,12 +31,12 @@ impl EventMetadata {
         nparams: u32,
         mut writer: W,
     ) -> std::io::Result<()> {
-        writer.write_u64::<NativeEndian>(self.ts)?;
-        writer.write_i64::<NativeEndian>(self.tid)?;
+        writer.write_all(self.ts.to_ne_bytes().as_slice())?;
+        writer.write_all(self.tid.to_ne_bytes().as_slice())?;
 
-        writer.write_u32::<NativeEndian>(len)?;
-        writer.write_u16::<NativeEndian>(event_type)?;
-        writer.write_u32::<NativeEndian>(nparams)?;
+        writer.write_all(len.to_ne_bytes().as_slice())?;
+        writer.write_all(event_type.to_ne_bytes().as_slice())?;
+        writer.write_all(nparams.to_ne_bytes().as_slice())?;
 
         Ok(())
     }
