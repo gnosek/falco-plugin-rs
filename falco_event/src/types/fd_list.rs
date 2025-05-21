@@ -1,6 +1,5 @@
 use crate::fields::event_flags::PT_FLAGS16_file_flags;
 use crate::fields::{FromBytes, FromBytesError, ToBytes};
-use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 
@@ -33,7 +32,7 @@ impl ToBytes for FdList {
     }
 
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
-        writer.write_u16::<NativeEndian>(self.0.len() as u16)?;
+        writer.write_all((self.0.len() as u16).to_ne_bytes().as_slice())?;
         for item in &self.0 {
             item.0.write(&mut writer)?;
             item.1.write(&mut writer)?;
@@ -50,8 +49,9 @@ impl ToBytes for FdList {
 impl FromBytes<'_> for FdList {
     fn from_bytes(buf: &mut &[u8]) -> Result<Self, FromBytesError> {
         let mut fds = Vec::new();
-        let len = buf.read_u16::<NativeEndian>()?;
-        for _ in 0..len as usize {
+        let len_buf = buf.split_off(..2).ok_or(FromBytesError::InvalidLength)?;
+        let len = u16::from_ne_bytes(len_buf.try_into().unwrap()) as usize;
+        for _ in 0..len {
             let fd = u64::from_bytes(buf)?;
             let flags = PT_FLAGS16_file_flags::from_bytes(buf)?;
             fds.push((fd, flags))

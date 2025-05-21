@@ -1,17 +1,18 @@
-use byteorder::{NativeEndian, ReadBytesExt};
-use std::io::Write;
-use std::marker::PhantomData;
-
 use crate::events::payload::PayloadFromBytesError;
 use crate::events::{Event, EventMetadata, EventToBytes};
 use crate::fields::FromBytesError;
+use std::io::Write;
+use std::marker::PhantomData;
+use std::num::TryFromIntError;
 
 pub trait FromRawEvent<'a>: Sized {
     fn parse(raw_event: &RawEvent<'a>) -> Result<Self, PayloadFromBytesError>;
 }
 
-pub trait LengthField {
+pub trait LengthField: TryFrom<usize, Error = TryFromIntError> {
     fn read(buf: &mut &[u8]) -> Option<usize>;
+
+    fn write<W: Write>(&self, writer: W) -> std::io::Result<()>;
 }
 
 impl LengthField for u16 {
@@ -19,12 +20,22 @@ impl LengthField for u16 {
         let len = buf.split_off(..size_of::<u16>())?;
         Some(u16::from_ne_bytes(len.try_into().unwrap()) as usize)
     }
+
+    fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
+        let bytes = self.to_ne_bytes();
+        writer.write_all(&bytes)
+    }
 }
 
 impl LengthField for u32 {
     fn read(buf: &mut &[u8]) -> Option<usize> {
         let len = buf.split_off(..size_of::<u32>())?;
         Some(u32::from_ne_bytes(len.try_into().unwrap()) as usize)
+    }
+
+    fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
+        let bytes = self.to_ne_bytes();
+        writer.write_all(&bytes)
     }
 }
 
@@ -59,21 +70,36 @@ pub struct RawEvent<'a> {
 }
 
 impl<'e> RawEvent<'e> {
-    pub fn from(mut buf: &[u8]) -> std::io::Result<RawEvent> {
-        let ts = buf.read_u64::<NativeEndian>()?;
-        let tid = buf.read_i64::<NativeEndian>()?;
+    fn from_impl(mut buf: &[u8]) -> Option<RawEvent> {
+        let ts_buf = buf.split_off(..8)?;
+        let ts = u64::from_ne_bytes(ts_buf.try_into().unwrap());
 
-        let len = buf.read_u32::<NativeEndian>()?;
-        let event_type = buf.read_u16::<NativeEndian>()?;
-        let nparams = buf.read_u32::<NativeEndian>()?;
+        let tid_buf = buf.split_off(..8)?;
+        let tid = i64::from_ne_bytes(tid_buf.try_into().unwrap());
 
-        Ok(RawEvent {
+        let len_buf = buf.split_off(..4)?;
+        let len = u32::from_ne_bytes(len_buf.try_into().unwrap());
+
+        let event_type_buf = buf.split_off(..2)?;
+        let event_type = u16::from_ne_bytes(event_type_buf.try_into().unwrap());
+
+        let nparams_buf = buf.split_off(..4)?;
+        let nparams = u32::from_ne_bytes(nparams_buf.try_into().unwrap());
+
+        Some(RawEvent {
             metadata: EventMetadata { ts, tid },
             len,
             event_type,
             nparams,
             payload: buf,
         })
+    }
+
+    /// Parse a byte slice into a RawEvent
+    ///
+    /// This decodes the header while leaving the payload as a raw byte buffer.
+    pub fn from(buf: &[u8]) -> std::io::Result<RawEvent> {
+        Self::from_impl(buf).ok_or(std::io::ErrorKind::InvalidData.into())
     }
 
     /// Trim event payload
@@ -138,8 +164,8 @@ impl<'e> RawEvent<'e> {
     ///  - include `nparams` lengths
     ///  - have enough data bytes for all the fields (sum of lengths)
     pub unsafe fn from_ptr<'a>(buf: *const u8) -> std::io::Result<RawEvent<'a>> {
-        let mut len_ptr = unsafe { std::slice::from_raw_parts(buf.offset(16), 4) };
-        let len = len_ptr.read_u32::<NativeEndian>()?;
+        let len_buf = unsafe { std::slice::from_raw_parts(buf.offset(16), 4) };
+        let len = u32::from_ne_bytes(len_buf.try_into().unwrap());
 
         let buf: &'a [u8] = unsafe { std::slice::from_raw_parts(buf, len as usize) };
         Self::from(buf)

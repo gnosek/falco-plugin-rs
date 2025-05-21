@@ -1,5 +1,4 @@
 use crate::fields::{FromBytes, FromBytesError, ToBytes};
-use byteorder::{NativeEndian, ReadBytesExt};
 use std::io::Write;
 use std::time::Duration;
 
@@ -8,7 +7,8 @@ impl FromBytes<'_> for Duration {
     where
         Self: Sized,
     {
-        Ok(buf.read_u64::<NativeEndian>().map(Self::from_nanos)?)
+        let nanos = u64::from_bytes(buf)?;
+        Ok(Self::from_nanos(nanos))
     }
 }
 
