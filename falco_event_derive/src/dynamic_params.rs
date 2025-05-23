@@ -177,7 +177,7 @@ impl DynamicParam {
 
         quote!(
             #[allow(non_camel_case_types)]
-            #[derive(Clone)]
+            #[derive(Clone, Copy)]
             #[derive(derive_deftly::Deftly)]
             #[derive_deftly_adhoc(export)]
             pub enum #name #lifetime {
