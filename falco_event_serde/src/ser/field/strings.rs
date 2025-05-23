@@ -1,6 +1,5 @@
 use crate::ser::field::SerializedField;
 use falco_event::fields::types;
-use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 
 pub struct StrOrBytes<'a>(pub &'a [u8]);
@@ -67,11 +66,13 @@ impl Serialize for SerializedField<&types::PT_CHARBUFARRAY<'_>> {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_seq(Some(self.0.len()))?;
-        for item in self.0 {
-            state.serialize_element(&StrOrBytes(item.to_bytes()))?;
-        }
-        state.end()
+        // collect into a physical vec for serializers that don't support unknown-length sequences happy
+        let vec = self
+            .0
+            .iter()
+            .map(|s| StrOrBytes(s.to_bytes()))
+            .collect::<Vec<_>>();
+        vec.serialize(serializer)
     }
 }
 
@@ -80,10 +81,12 @@ impl Serialize for SerializedField<&types::PT_CHARBUF_PAIR_ARRAY<'_>> {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_seq(Some(self.0.len()))?;
-        for (k, v) in self.0 {
-            state.serialize_element(&(StrOrBytes(k.to_bytes()), StrOrBytes(v.to_bytes())))?;
-        }
-        state.end()
+        // collect into a physical vec for serializers that don't support unknown-length sequences happy
+        let vec = self
+            .0
+            .iter()
+            .map(|(k, v)| (StrOrBytes(k.to_bytes()), StrOrBytes(v.to_bytes())))
+            .collect::<Vec<_>>();
+        vec.serialize(serializer)
     }
 }

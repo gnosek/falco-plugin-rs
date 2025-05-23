@@ -21,6 +21,7 @@ pub use crate::types::SyscallId as PT_SYSCALLID;
 pub use crate::types::SyscallResult as PT_ERRNO;
 pub use crate::types::SystemTime as PT_ABSTIME;
 pub use crate::types::Uid as PT_UID;
+use crate::types::{CStrArray, CStrPairArray};
 use std::ffi::CStr;
 pub use std::net::IpAddr as PT_IPADDR;
 pub use std::net::Ipv4Addr as PT_IPV4ADDR;
@@ -49,8 +50,8 @@ pub type PT_CHARBUF = CStr;
 /// Arbitrary byte buffer (`[u8]`)
 pub type PT_BYTEBUF = [u8];
 /// Array of C-style strings (`Vec<&CStr>`)
-pub type PT_CHARBUFARRAY<'a> = Vec<&'a CStr>;
+pub type PT_CHARBUFARRAY<'a> = CStrArray<'a>;
 /// Array of pairs of C-style strings (`Vec<(&CStr, &CStr)>`)
-pub type PT_CHARBUF_PAIR_ARRAY<'a> = Vec<(&'a CStr, &'a CStr)>;
+pub type PT_CHARBUF_PAIR_ARRAY<'a> = CStrPairArray<'a>;
 
 // PT_DOUBLE = 33, /* this is a double precision floating point number. */ // this remains unimplemented
