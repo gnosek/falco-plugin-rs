@@ -8,12 +8,6 @@ pub fn display_wrapper_for(
     match pt_type.to_string().as_str() {
         "PT_BYTEBUF" => quote!(#val_tt.map(|t| crate::format::ByteBufFormatter(t))),
         "PT_CHARBUF" => quote!(#val_tt.map(|t| crate::format::CStrFormatter(t))),
-        "PT_CHARBUFARRAY" => {
-            quote!(#val_tt.map(|t| crate::format::CStrArrayFormatter(&t)))
-        }
-        "PT_CHARBUF_PAIR_ARRAY" => {
-            quote!(#val_tt.map(|t| crate::format::CStrPairArrayFormatter(&t)))
-        }
         "PT_FSPATH" => quote!(#val_tt.map(|p| p.display())),
         _ => val_tt,
     }

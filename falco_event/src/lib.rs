@@ -19,9 +19,7 @@ mod types;
 pub mod format {
     pub use crate::types::format::OptionFormatter;
     pub use crate::types::ByteBufFormatter;
-    pub use crate::types::CStrArrayFormatter;
     pub use crate::types::CStrFormatter;
-    pub use crate::types::CStrPairArrayFormatter;
 }
 
 #[allow(dead_code)]

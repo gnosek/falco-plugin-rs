@@ -1,53 +1,65 @@
-use crate::fields::ToBytes;
-use crate::fields::{FromBytes, FromBytesError};
+use crate::fields::{FromBytes, FromBytesError, ToBytes};
 use crate::types::CStrFormatter;
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter, Write as _};
 use std::io::Write;
 
-impl ToBytes for Vec<&CStr> {
+#[derive(Copy, Clone)]
+pub struct CStrArray<'a>(&'a [u8]);
+
+pub struct CStrArrayIter<'a>(&'a [u8]);
+
+impl<'a> Iterator for CStrArrayIter<'a> {
+    type Item = &'a CStr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0.is_empty() {
+            None
+        } else {
+            <&'a CStr>::from_bytes(&mut self.0).ok()
+        }
+    }
+}
+
+impl<'a> CStrArray<'a> {
+    pub fn iter(&self) -> CStrArrayIter<'a> {
+        CStrArrayIter(self.0)
+    }
+}
+
+impl ToBytes for CStrArray<'_> {
     fn binary_size(&self) -> usize {
-        self.iter().map(|s| s.binary_size()).sum()
+        self.0.binary_size()
     }
 
-    fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
-        for s in self {
-            s.write(&mut writer)?;
-        }
-
-        Ok(())
+    fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
+        self.0.write(writer)
     }
 
     fn default_repr() -> impl ToBytes {
-        Self::new()
+        &[] as &[u8]
     }
 }
 
-impl<'a> FromBytes<'a> for Vec<&'a CStr> {
+impl<'a> FromBytes<'a> for CStrArray<'a> {
     fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
-        let mut data = Vec::new();
-        while !buf.is_empty() {
-            data.push(FromBytes::from_bytes(buf)?);
+        match buf.last() {
+            Some(&0) | None => Ok(CStrArray(std::mem::take(buf))),
+            _ => Err(FromBytesError::MissingNul),
         }
-        Ok(data)
     }
 }
 
-/// Falco-style array-of-CStr formatter
-///
-/// Formats the array as `;`-separated strings (see [`CStrFormatter`]).
-pub struct CStrArrayFormatter<'a, T: AsRef<CStr>>(pub &'a Vec<T>);
-
-impl<T: AsRef<CStr>> Debug for CStrArrayFormatter<'_, T> {
+impl Debug for CStrArray<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut is_first = true;
-        for s in self.0 {
+        for s in self.iter() {
             if is_first {
                 is_first = false;
             } else {
                 f.write_char(';')?;
             }
-            Debug::fmt(&CStrFormatter(s.as_ref()), f)?;
+            Debug::fmt(&CStrFormatter(s), f)?;
         }
 
         Ok(())
@@ -57,50 +69,49 @@ impl<T: AsRef<CStr>> Debug for CStrArrayFormatter<'_, T> {
 #[cfg(test)]
 mod tests {
     use crate::fields::{FromBytes, ToBytes};
-    use std::ffi::CStr;
+    use crate::types::CStrArray;
 
     #[test]
     fn test_str_array() {
-        let arr = vec![
-            CStr::from_bytes_until_nul(b"foo\0").unwrap(),
-            CStr::from_bytes_until_nul(b"bar\0").unwrap(),
-        ];
+        let binary = b"foo\0bar\0".as_slice();
+        let array = CStrArray::from_bytes(&mut &*binary).unwrap();
 
-        let mut binary = Vec::new();
-        arr.write(&mut binary).unwrap();
+        let mut iter = array.iter();
+        assert_eq!(iter.next().unwrap(), c"foo");
+        assert_eq!(iter.next().unwrap(), c"bar");
+        assert_eq!(iter.next(), None);
 
-        hexdump::hexdump(binary.as_slice());
-
-        assert_eq!(binary.as_slice(), b"foo\0bar\0".as_slice());
-
-        let mut buf = binary.as_slice();
-        let loaded = <Vec<&CStr>>::from_bytes(&mut buf).unwrap();
-
-        assert_eq!(arr, loaded)
+        let mut serialized = Vec::new();
+        array.write(&mut serialized).unwrap();
+        assert_eq!(serialized.as_slice(), binary);
     }
 
     #[test]
     fn test_str_empty_array() {
-        let arr: Vec<&CStr> = Vec::new();
+        let binary = b"".as_slice();
+        let array = CStrArray::from_bytes(&mut &*binary).unwrap();
 
-        let mut binary = Vec::new();
-        arr.write(&mut binary).unwrap();
+        let mut iter = array.iter();
+        assert_eq!(iter.next(), None);
 
-        hexdump::hexdump(binary.as_slice());
-
-        assert!(binary.as_slice().is_empty());
-
-        let mut buf = binary.as_slice();
-        let loaded = <Vec<&CStr>>::from_bytes(&mut buf).unwrap();
-
-        assert_eq!(arr, loaded)
+        let mut serialized = Vec::new();
+        array.write(&mut serialized).unwrap();
+        assert_eq!(serialized.as_slice(), binary);
     }
 
     #[test]
     fn test_str_array_with_empty_strings() {
-        let mut buf = b"\0\0\0".as_slice();
-        let loaded = <Vec<&CStr>>::from_bytes(&mut buf).unwrap();
-        assert_eq!(loaded.len(), 3);
-        assert!(loaded.iter().all(|s| s.is_empty()))
+        let binary = b"\0\0\0".as_slice();
+        let array = CStrArray::from_bytes(&mut &*binary).unwrap();
+
+        let mut iter = array.iter();
+        assert_eq!(iter.next().unwrap(), c"");
+        assert_eq!(iter.next().unwrap(), c"");
+        assert_eq!(iter.next().unwrap(), c"");
+        assert_eq!(iter.next(), None);
+
+        let mut serialized = Vec::new();
+        array.write(&mut serialized).unwrap();
+        assert_eq!(serialized.as_slice(), binary);
     }
 }

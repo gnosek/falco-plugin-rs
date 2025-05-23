@@ -22,9 +22,12 @@ fn test_deserialize_strings() {
     let event = event.load::<PPME_TRACER_E>().unwrap();
 
     assert_eq!(event.params.id, Some(123));
-    assert_eq!(event.params.tags, Some(vec![c"tag1", c"tag2"]));
     assert_eq!(
-        event.params.args,
+        event.params.tags.map(|t| t.iter().collect()),
+        Some(vec![c"tag1", c"tag2"])
+    );
+    assert_eq!(
+        event.params.args.map(|a| a.iter().collect()),
         Some(vec![(c"arg1", c"value1"), (c"arg2", c"value2")])
     );
 }
@@ -51,9 +54,12 @@ fn test_roundtrip_strings() {
     let event = event.load::<PPME_TRACER_E>().unwrap();
 
     assert_eq!(event.params.id, Some(123));
-    assert_eq!(event.params.tags, Some(vec![c"tag1", c"tag2"]));
     assert_eq!(
-        event.params.args,
+        event.params.tags.map(|t| t.iter().collect()),
+        Some(vec![c"tag1", c"tag2"])
+    );
+    assert_eq!(
+        event.params.args.map(|a| a.iter().collect()),
         Some(vec![(c"arg1", c"value1"), (c"arg2", c"value2")])
     );
 

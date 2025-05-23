@@ -1,64 +1,69 @@
 use crate::fields::{FromBytes, FromBytesError, ToBytes};
 use crate::types::string::cstr::CStrFormatter;
+use crate::types::string::cstr_array::CStrArrayIter;
+use crate::types::CStrArray;
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter, Write as _};
 use std::io::Write;
 
-impl<'a> ToBytes for Vec<(&'a CStr, &'a CStr)> {
+#[derive(Copy, Clone)]
+pub struct CStrPairArray<'a>(CStrArray<'a>);
+
+pub struct CStrPairArrayIter<'a>(CStrArrayIter<'a>);
+
+impl<'a> Iterator for CStrPairArrayIter<'a> {
+    type Item = (&'a CStr, &'a CStr);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let k = self.0.next()?;
+        let v = self.0.next()?;
+        Some((k, v))
+    }
+}
+
+impl<'a> CStrPairArray<'a> {
+    pub fn iter(&self) -> CStrPairArrayIter<'a> {
+        CStrPairArrayIter(self.0.iter())
+    }
+}
+
+impl<'a> FromBytes<'a> for CStrPairArray<'a> {
+    fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
+        let nuls = buf.iter().filter(|b| **b == 0).count();
+        if nuls % 2 != 0 {
+            return Err(FromBytesError::OddPairItemCount);
+        }
+        let array = CStrArray::from_bytes(buf)?;
+        Ok(Self(array))
+    }
+}
+
+impl<'a> ToBytes for CStrPairArray<'a> {
     fn binary_size(&self) -> usize {
-        self.iter()
-            .map(|(s1, s2)| s1.binary_size() + s2.binary_size())
-            .sum()
+        self.0.binary_size()
     }
 
-    fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
-        for (s1, s2) in self {
-            s1.write(&mut writer)?;
-            s2.write(&mut writer)?;
-        }
-
-        Ok(())
+    fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
+        self.0.write(writer)
     }
 
     fn default_repr() -> impl ToBytes {
-        Self::new()
+        &[] as &[u8]
     }
 }
 
-impl<'a> FromBytes<'a> for Vec<(&'a CStr, &'a CStr)> {
-    fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
-        let flat_data: Vec<&'a CStr> = FromBytes::from_bytes(buf)?;
-        let mut chunks = flat_data.chunks_exact(2);
-        let mut data = Vec::new();
-        for chunk in chunks.by_ref() {
-            data.push((chunk[0], chunk[1]));
-        }
-        if !chunks.remainder().is_empty() {
-            return Err(FromBytesError::OddPairItemCount);
-        }
-
-        Ok(data)
-    }
-}
-
-/// Falco-style array-of-CStr-pair formatter
-///
-/// Formats the array as `;`-separated `key=value` pair, where each key and value is formatted
-/// as a string (see [`CStrFormatter`]).
-pub struct CStrPairArrayFormatter<'a, T: AsRef<CStr>>(pub &'a Vec<(T, T)>);
-
-impl<T: AsRef<CStr>> Debug for CStrPairArrayFormatter<'_, T> {
+impl Debug for CStrPairArray<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut is_first = true;
-        for (k, v) in self.0 {
+        for (k, v) in self.iter() {
             if is_first {
                 is_first = false;
             } else {
                 f.write_char(';')?;
             }
-            Debug::fmt(&CStrFormatter(k.as_ref()), f)?;
+            Debug::fmt(&CStrFormatter(k), f)?;
             f.write_char('=')?;
-            Debug::fmt(&CStrFormatter(v.as_ref()), f)?;
+            Debug::fmt(&CStrFormatter(v), f)?;
         }
 
         Ok(())
@@ -69,31 +74,25 @@ impl<T: AsRef<CStr>> Debug for CStrPairArrayFormatter<'_, T> {
 mod tests {
     use crate::fields::FromBytes;
     use crate::fields::ToBytes;
-    use std::ffi::CStr;
+    use crate::types::CStrPairArray;
 
     #[test]
     fn test_str_pair_array() {
-        let arr = vec![(
-            CStr::from_bytes_until_nul(b"foo\0").unwrap(),
-            CStr::from_bytes_until_nul(b"bar\0").unwrap(),
-        )];
+        let binary = b"foo\0bar\0".as_slice();
+        let pair_array = CStrPairArray::from_bytes(&mut &*binary).unwrap();
 
-        let mut binary = Vec::new();
-        arr.write(&mut binary).unwrap();
+        let mut iter = pair_array.iter();
+        assert_eq!(iter.next(), Some((c"foo", c"bar")));
+        assert_eq!(iter.next(), None);
 
-        hexdump::hexdump(binary.as_slice());
-
-        assert_eq!(binary.as_slice(), b"foo\0bar\0".as_slice());
-
-        let mut buf = binary.as_slice();
-        let loaded = <Vec<(&CStr, &CStr)>>::from_bytes(&mut buf).unwrap();
-
-        assert_eq!(arr, loaded)
+        let mut serialized = Vec::new();
+        pair_array.write(&mut serialized).unwrap();
+        assert_eq!(serialized.as_slice(), binary);
     }
 
     #[test]
     fn test_str_pair_array_odd() {
-        let mut buf = b"foo\0bar\0baz\0".as_slice();
-        assert!(<Vec<(&CStr, &CStr)>>::from_bytes(&mut buf).is_err());
+        let binary = b"foo\0bar\0baz\0".as_slice();
+        assert!(CStrPairArray::from_bytes(&mut &*binary).is_err());
     }
 }
