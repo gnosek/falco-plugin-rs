@@ -8,6 +8,7 @@ use typed_path::UnixPath;
 /// Events containing a parameter of this type will have an extra method available, derived
 /// from the field name. For example, if the field is called `name`, the event type will have
 /// a method called `name_dirfd` that returns the corresponding `dirfd` (as an `Option<PT_FD>`)
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct RelativePath<'a>(pub &'a UnixPath);
 
 impl<'a> ToBytes for RelativePath<'a> {
