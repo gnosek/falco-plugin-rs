@@ -337,60 +337,6 @@ impl EventInfo {
 
         quote!(#event_type(#event_code #lifetime))
     }
-
-    fn enum_match(&self) -> proc_macro2::TokenStream {
-        let event_code = &self.event_code;
-        let event_type = Ident::new(
-            &event_code.to_string().replace("PPME_", ""),
-            event_code.span(),
-        );
-        let raw_ident = Ident::new(
-            &format!("ppm_event_code_{}", self.event_code),
-            self.event_code.span(),
-        );
-        quote!(crate::ffi:: #raw_ident => {
-            let params = <#event_code>::parse(self)?;
-            AnyEvent::#event_type(params)
-        })
-    }
-
-    fn variant_fmt(&self) -> proc_macro2::TokenStream {
-        let event_code = &self.event_code;
-        let event_type = Ident::new(
-            &event_code.to_string().replace("PPME_", ""),
-            event_code.span(),
-        );
-
-        quote!(
-            AnyEvent::#event_type(inner) => ::std::fmt::Debug::fmt(&inner, f),
-        )
-    }
-
-    fn variant_to_bytes(&self) -> proc_macro2::TokenStream {
-        let event_code = &self.event_code;
-        let event_type = Ident::new(
-            &event_code.to_string().replace("PPME_", ""),
-            event_code.span(),
-        );
-
-        quote!(
-            AnyEvent::#event_type(inner) => {
-                inner.write(metadata, writer)
-            }
-        )
-    }
-
-    fn variant_binary_size(&self) -> proc_macro2::TokenStream {
-        let event_code = &self.event_code;
-        let event_type = Ident::new(
-            &event_code.to_string().replace("PPME_", ""),
-            event_code.span(),
-        );
-
-        quote!(
-            AnyEvent::#event_type(inner) => inner.binary_size(),
-        )
-    }
 }
 
 struct Events {
@@ -436,31 +382,12 @@ impl Events {
     fn enum_variants(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
         self.events.iter().map(move |e| e.enum_variant())
     }
-
-    fn enum_matches(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
-        self.events.iter().map(|e| e.enum_match())
-    }
-
-    fn variant_fmts(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
-        self.events.iter().map(|e| e.variant_fmt())
-    }
-
-    fn variants_to_bytes(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
-        self.events.iter().map(|e| e.variant_to_bytes())
-    }
-
-    fn variants_binary_size(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
-        self.events.iter().map(|e| e.variant_binary_size())
-    }
 }
 
 fn event_info_variant(events: &Events) -> proc_macro2::TokenStream {
     let typedefs = events.typedefs();
     let derive_deftly = events.derive_deftly();
     let variants = events.enum_variants();
-    let variant_fmts = events.variant_fmts();
-    let variants_to_bytes = events.variants_to_bytes();
-    let variants_binary_size = events.variants_binary_size();
     let lifetime = quote!(<'a>);
 
     quote!(
@@ -468,33 +395,12 @@ fn event_info_variant(events: &Events) -> proc_macro2::TokenStream {
         #derive_deftly
 
         #[allow(non_camel_case_types)]
+        #[derive(falco_event_derive::AnyEvent)]
+        #[falco_event_crate(crate)]
         #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive(derive_deftly::Deftly))]
         #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive_deftly_adhoc(export))]
         pub enum AnyEvent #lifetime {
             #(#variants,)*
-        }
-
-        impl #lifetime crate::events::PayloadToBytes for AnyEvent #lifetime {
-            #[inline]
-            fn binary_size(&self) -> usize {
-                match self {
-                    #(#variants_binary_size)*
-                }
-            }
-
-            fn write<W: std::io::Write>(&self, metadata: &crate::events::EventMetadata, writer: W) -> std::io::Result<()> {
-                match self {
-                    #(#variants_to_bytes)*
-                }
-            }
-        }
-
-        impl #lifetime ::std::fmt::Debug for AnyEvent #lifetime {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-                match self {
-                    #(#variant_fmts)*
-                }
-            }
         }
     )
 }
@@ -514,23 +420,14 @@ fn event_type_enum(events: &Events) -> proc_macro2::TokenStream {
     )
 }
 
-fn raw_event_load_any(events: &Events) -> proc_macro2::TokenStream {
-    let matches = events.enum_matches();
-
+fn raw_event_load_any() -> proc_macro2::TokenStream {
     quote!(
         impl<'e> crate::events::RawEvent<'e> {
-            pub fn load_any(&self) -> Result<crate::events::Event<AnyEvent<'e>>, crate::events::PayloadFromBytesError> {
-                use crate::events::FromRawEvent;
-
-                let any: AnyEvent = match self.event_type as u32 {
-                    #(#matches,)*
-                    other => return Err(crate::events::PayloadFromBytesError::UnsupportedEventType(other)),
-                };
-
-                Ok(crate::events::Event {
-                    metadata: self.metadata.clone(),
-                    params: any,
-                })
+            pub fn load_any(
+                &self,
+            ) -> Result<crate::events::Event<AnyEvent<'e>>, crate::events::PayloadFromBytesError>
+            {
+                self.load::<AnyEvent>()
             }
         }
     )
@@ -541,7 +438,7 @@ pub fn event_info(input: TokenStream) -> TokenStream {
 
     let event_info_borrowed = event_info_variant(&events);
     let event_type_enum = event_type_enum(&events);
-    let raw_event_load_any = raw_event_load_any(&events);
+    let raw_event_load_any = raw_event_load_any();
 
     quote!(
         #event_info_borrowed

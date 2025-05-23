@@ -40,7 +40,7 @@ pub enum PayloadFromBytesError {
 
     /// Unsupported event type
     #[error("unsupported event type {0}")]
-    UnsupportedEventType(u32),
+    UnsupportedEventType(u16),
 }
 
 pub trait PayloadToBytes {

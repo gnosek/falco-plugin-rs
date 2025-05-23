@@ -1,10 +1,12 @@
 use proc_macro::TokenStream;
 
+mod any_event;
 mod binary_payload;
 mod dynamic_params;
 mod event_flags;
 mod event_info;
 mod format;
+mod helpers;
 
 #[proc_macro_derive(ToBytes)]
 pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
@@ -14,6 +16,11 @@ pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(FromBytes)]
 pub fn derive_from_bytes(input: TokenStream) -> TokenStream {
     binary_payload::derive_from_bytes(input)
+}
+
+#[proc_macro_derive(AnyEvent, attributes(falco_event_crate))]
+pub fn any_event(input: TokenStream) -> TokenStream {
+    any_event::any_event(input)
 }
 
 #[proc_macro]
