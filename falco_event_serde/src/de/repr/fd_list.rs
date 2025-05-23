@@ -4,7 +4,7 @@ use falco_event::fields::types;
 use serde::{Deserialize, Deserializer};
 use std::marker::PhantomData;
 
-impl<'de> Deserialize<'de> for TaggedRepr<types::PT_FDLIST> {
+impl<'de> Deserialize<'de> for TaggedRepr<types::PT_FDLIST<'_>> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,

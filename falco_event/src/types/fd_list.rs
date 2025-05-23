@@ -3,14 +3,43 @@ use crate::fields::{FromBytes, FromBytesError, ToBytes};
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 
-/// A list of file descriptors with flags
-#[derive(Clone, Eq, PartialEq)]
-pub struct FdList(pub Vec<(u64, PT_FLAGS16_file_flags)>);
+/// An iterator over all items in a [`FdList`]
+///
+/// Yields pairs of (fd, flags)
+pub struct FdListIter<'a>(&'a [u8]);
 
-impl Debug for FdList {
+impl Iterator for FdListIter<'_> {
+    type Item = (u64, PT_FLAGS16_file_flags);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let fd = u64::from_bytes(&mut self.0).ok()?;
+        let flags = PT_FLAGS16_file_flags::from_bytes(&mut self.0).ok()?;
+
+        Some((fd, flags))
+    }
+}
+
+impl ExactSizeIterator for FdListIter<'_> {
+    fn len(&self) -> usize {
+        self.0.len() / 10 // Each fd and flags pair is 10 bytes
+    }
+}
+
+/// A list of file descriptors with flags
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub struct FdList<'a>(usize, &'a [u8]);
+
+impl<'a> FdList<'a> {
+    /// Return an iterator over the (fd, flags) pairs in this list
+    pub fn iter(&self) -> FdListIter<'a> {
+        FdListIter(self.1)
+    }
+}
+
+impl Debug for FdList<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut first = true;
-        for item in &self.0 {
+        for item in self.iter() {
             if first {
                 first = false;
                 write!(f, "[")?;
@@ -26,17 +55,14 @@ impl Debug for FdList {
     }
 }
 
-impl ToBytes for FdList {
+impl ToBytes for FdList<'_> {
     fn binary_size(&self) -> usize {
-        2 + (8 + 2) * self.0.len()
+        2 + self.1.len()
     }
 
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
-        writer.write_all((self.0.len() as u16).to_ne_bytes().as_slice())?;
-        for item in &self.0 {
-            item.0.write(&mut writer)?;
-            item.1.write(&mut writer)?;
-        }
+        writer.write_all((self.0 as u16).to_ne_bytes().as_slice())?;
+        writer.write_all(self.1)?;
 
         Ok(())
     }
@@ -46,18 +72,18 @@ impl ToBytes for FdList {
     }
 }
 
-impl FromBytes<'_> for FdList {
-    fn from_bytes(buf: &mut &[u8]) -> Result<Self, FromBytesError> {
-        let mut fds = Vec::new();
-        let len_buf = buf.split_off(..2).ok_or(FromBytesError::InvalidLength)?;
-        let len = u16::from_ne_bytes(len_buf.try_into().unwrap()) as usize;
-        for _ in 0..len {
-            let fd = u64::from_bytes(buf)?;
-            let flags = PT_FLAGS16_file_flags::from_bytes(buf)?;
-            fds.push((fd, flags))
-        }
+impl<'a> FromBytes<'a> for FdList<'a> {
+    fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
+        let len = u16::from_bytes(buf)?;
 
-        Ok(Self(fds))
+        let payload =
+            buf.split_off(..len as usize * 10)
+                .ok_or_else(|| FromBytesError::TruncatedField {
+                    wanted: 2 + len as usize,
+                    got: buf.len(),
+                })?;
+
+        Ok(Self(len as usize, payload))
     }
 }
 
@@ -67,22 +93,16 @@ mod tests {
 
     #[test]
     fn test_fd_list() {
-        let fdlist = FdList(vec![(13, PT_FLAGS16_file_flags::O_RDONLY)]);
+        let binary = b"\x01\x00\x0d\x00\x00\x00\x00\x00\x00\x00\x01\x00".as_slice();
+        let fdlist = FdList::from_bytes(&mut &*binary).unwrap();
 
-        dbg!(&fdlist);
+        let mut iter = fdlist.iter();
+        assert_eq!(iter.next(), Some((13, PT_FLAGS16_file_flags::O_RDONLY)));
+        assert_eq!(iter.next(), None);
 
-        let mut binary = Vec::new();
-        fdlist.write(&mut binary).unwrap();
+        let mut serialized = Vec::new();
+        fdlist.write(&mut serialized).unwrap();
 
-        assert_eq!(
-            binary.as_slice(),
-            b"\x01\x00\x0d\x00\x00\x00\x00\x00\x00\x00\x01\x00".as_slice()
-        );
-
-        let mut buf = binary.as_slice();
-
-        let fdlist2 = <FdList>::from_bytes(&mut buf).unwrap();
-
-        assert_eq!(fdlist, fdlist2)
+        assert_eq!(serialized.as_slice(), binary);
     }
 }
