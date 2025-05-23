@@ -7,7 +7,7 @@ use crate::types::net::endpoint::{EndpointV4, EndpointV6};
 use typed_path::UnixPath;
 
 /// Socket tuple: describing both endpoints of a connection
-#[derive(Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub enum SockTuple<'a> {
     /// Unix socket connection
     Unix {
