@@ -1,4 +1,3 @@
-use crate::events::types::EventType;
 use crate::events::EventMetadata;
 use crate::fields::FromBytesError;
 use std::io::Write;
@@ -11,13 +10,13 @@ pub enum EventDirection {
 }
 
 pub trait EventPayload {
-    const ID: EventType;
+    const ID: u16;
     const NAME: &'static str;
 
     type LengthType;
 
     fn direction() -> EventDirection {
-        match Self::ID as u32 % 2 {
+        match Self::ID % 2 {
             0 => EventDirection::Entry,
             1 => EventDirection::Exit,
             _ => unreachable!(),
