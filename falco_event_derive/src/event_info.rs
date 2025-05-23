@@ -255,6 +255,7 @@ impl EventInfo {
 
         quote!(
             #[allow(non_camel_case_types)]
+            #[derive(Clone, Copy)]
             #[derive(falco_event_derive::FromBytes)]
             #[derive(falco_event_derive::ToBytes)]
             #[derive(derive_deftly::Deftly)]
