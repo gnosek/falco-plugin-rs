@@ -5,6 +5,7 @@ use std::fmt::{Debug, Formatter};
 use std::io::Write;
 
 impl<'a> FromBytes<'a> for &'a CStr {
+    #[inline]
     fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
         let cstr = CStr::from_bytes_until_nul(buf).map_err(|_| FromBytesError::MissingNul)?;
         let len = cstr.to_bytes().len();
@@ -14,14 +15,17 @@ impl<'a> FromBytes<'a> for &'a CStr {
 }
 
 impl ToBytes for &CStr {
+    #[inline]
     fn binary_size(&self) -> usize {
         self.to_bytes().len() + 1
     }
 
+    #[inline]
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
         writer.write_all(self.to_bytes_with_nul())
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         0u8
     }

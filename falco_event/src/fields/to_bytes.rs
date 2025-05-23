@@ -24,10 +24,12 @@ pub trait ToBytes {
 pub struct NoDefault;
 
 impl ToBytes for NoDefault {
+    #[inline]
     fn binary_size(&self) -> usize {
         0
     }
 
+    #[inline]
     fn write<W: Write>(&self, _writer: W) -> std::io::Result<()> {
         Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
@@ -35,12 +37,14 @@ impl ToBytes for NoDefault {
         ))
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         Self
     }
 }
 
 impl<T: ToBytes> ToBytes for Option<T> {
+    #[inline]
     fn binary_size(&self) -> usize {
         if let Some(inner) = &self {
             inner.binary_size()
@@ -49,6 +53,7 @@ impl<T: ToBytes> ToBytes for Option<T> {
         }
     }
 
+    #[inline]
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         match self {
             Some(val) => val.write(writer),
@@ -56,6 +61,7 @@ impl<T: ToBytes> ToBytes for Option<T> {
         }
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         T::default_repr()
     }
