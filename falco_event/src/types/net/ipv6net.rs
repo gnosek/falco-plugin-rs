@@ -11,20 +11,24 @@ use std::net::Ipv6Addr;
 pub struct Ipv6Net(pub Ipv6Addr);
 
 impl FromBytes<'_> for Ipv6Net {
+    #[inline]
     fn from_bytes(buf: &mut &[u8]) -> Result<Self, FromBytesError> {
         Ok(Self(Ipv6Addr::from_bytes(buf)?))
     }
 }
 
 impl ToBytes for Ipv6Net {
+    #[inline]
     fn binary_size(&self) -> usize {
         self.0.binary_size()
     }
 
+    #[inline]
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.0.write(writer)
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         Ipv6Addr::default_repr()
     }

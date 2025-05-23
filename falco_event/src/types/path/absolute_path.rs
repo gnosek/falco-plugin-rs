@@ -4,6 +4,7 @@ use std::io::Write;
 use typed_path::UnixPath;
 
 impl<'a> FromBytes<'a> for &'a UnixPath {
+    #[inline]
     fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
         let buf = <&CStr>::from_bytes(buf)?;
         Ok(UnixPath::new(buf.to_bytes()))
@@ -11,15 +12,18 @@ impl<'a> FromBytes<'a> for &'a UnixPath {
 }
 
 impl ToBytes for &UnixPath {
+    #[inline]
     fn binary_size(&self) -> usize {
         self.as_bytes().len() + 1
     }
 
+    #[inline]
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
         self.as_bytes().write(&mut writer)?;
         0u8.write(writer)
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         0u8
     }

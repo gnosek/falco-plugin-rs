@@ -3,6 +3,7 @@ use std::io::Write;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 impl FromBytes<'_> for IpAddr {
+    #[inline]
     fn from_bytes(buf: &mut &[u8]) -> Result<Self, FromBytesError> {
         match buf.len() {
             4 => Ok(IpAddr::V4(Ipv4Addr::from_bytes(buf)?)),
@@ -13,6 +14,7 @@ impl FromBytes<'_> for IpAddr {
 }
 
 impl ToBytes for IpAddr {
+    #[inline]
     fn binary_size(&self) -> usize {
         match self {
             IpAddr::V4(_) => 4,
@@ -20,6 +22,7 @@ impl ToBytes for IpAddr {
         }
     }
 
+    #[inline]
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         match self {
             IpAddr::V4(v4) => v4.write(writer),
@@ -27,6 +30,7 @@ impl ToBytes for IpAddr {
         }
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         IpAddr::V4(Ipv4Addr::from(0))
     }

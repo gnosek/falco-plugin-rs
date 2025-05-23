@@ -12,20 +12,24 @@ use typed_path::UnixPath;
 pub struct RelativePath<'a>(pub &'a UnixPath);
 
 impl<'a> ToBytes for RelativePath<'a> {
+    #[inline]
     fn binary_size(&self) -> usize {
         self.0.binary_size()
     }
 
+    #[inline]
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.0.write(writer)
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         <&'a UnixPath>::default_repr()
     }
 }
 
 impl<'a> FromBytes<'a> for RelativePath<'a> {
+    #[inline]
     fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
         Ok(Self(<&'a UnixPath>::from_bytes(buf)?))
     }

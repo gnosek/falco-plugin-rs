@@ -18,6 +18,7 @@ macro_rules! newtype {
         pub struct $name(pub $repr);
 
         impl FromBytes<'_> for $name {
+            #[inline]
             fn from_bytes(buf: &mut &[u8]) -> Result<Self, FromBytesError>
             where
                 Self: Sized,
@@ -27,14 +28,17 @@ macro_rules! newtype {
         }
 
         impl ToBytes for $name {
+            #[inline]
             fn binary_size(&self) -> usize {
                 self.0.binary_size()
             }
 
+            #[inline]
             fn write<W: std::io::Write>(&self, writer: W) -> std::io::Result<()> {
                 self.0.write(writer)
             }
 
+            #[inline]
             fn default_repr() -> impl ToBytes {
                 <$repr>::default_repr()
             }

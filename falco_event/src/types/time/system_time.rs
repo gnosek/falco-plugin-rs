@@ -24,6 +24,7 @@ impl SystemTime {
 }
 
 impl FromBytes<'_> for SystemTime {
+    #[inline]
     fn from_bytes(buf: &mut &[u8]) -> Result<Self, FromBytesError>
     where
         Self: Sized,
@@ -34,14 +35,17 @@ impl FromBytes<'_> for SystemTime {
 }
 
 impl ToBytes for SystemTime {
+    #[inline]
     fn binary_size(&self) -> usize {
         std::mem::size_of::<u64>()
     }
 
+    #[inline]
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.0.write(writer)
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         0u64
     }

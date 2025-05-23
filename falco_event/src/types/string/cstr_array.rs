@@ -28,20 +28,24 @@ impl<'a> CStrArray<'a> {
 }
 
 impl ToBytes for CStrArray<'_> {
+    #[inline]
     fn binary_size(&self) -> usize {
         self.0.binary_size()
     }
 
+    #[inline]
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.0.write(writer)
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         &[] as &[u8]
     }
 }
 
 impl<'a> FromBytes<'a> for CStrArray<'a> {
+    #[inline]
     fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
         match buf.last() {
             Some(&0) | None => Ok(CStrArray(std::mem::take(buf))),

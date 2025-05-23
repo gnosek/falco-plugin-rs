@@ -12,20 +12,24 @@ use std::net::IpAddr;
 pub struct IpNet(pub IpAddr);
 
 impl FromBytes<'_> for IpNet {
+    #[inline]
     fn from_bytes(buf: &mut &[u8]) -> Result<Self, FromBytesError> {
         Ok(Self(IpAddr::from_bytes(buf)?))
     }
 }
 
 impl ToBytes for IpNet {
+    #[inline]
     fn binary_size(&self) -> usize {
         self.0.binary_size()
     }
 
+    #[inline]
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.0.write(writer)
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         IpAddr::default_repr()
     }

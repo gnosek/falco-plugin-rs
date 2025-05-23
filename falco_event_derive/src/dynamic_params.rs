@@ -185,22 +185,27 @@ impl DynamicParam {
             }
 
             impl #lifetime crate::fields::ToBytes for #name #lifetime {
+                #[inline]
                 fn binary_size(&self) -> usize {
                     use crate::fields::ToBytes;
                     match self {
                         #(#variant_binary_size,)*
                     }
                 }
+
+                #[inline]
                 fn write<W: std::io::Write>(&self, mut writer: W) -> std::io::Result<()> {
                     match self {
                         #(#variant_write)*
                     }
                 }
 
+                #[inline]
                 fn default_repr() -> impl crate::fields::ToBytes { crate::fields::NoDefault }
             }
 
             impl<'a> crate::fields::FromBytes<'a> for #name #lifetime {
+                #[inline]
                 fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, crate::fields::FromBytesError> {
                     let variant = buf.split_off_first().ok_or_else(|| crate::fields::FromBytesError::InvalidLength)?;
                     match *variant as u32 {

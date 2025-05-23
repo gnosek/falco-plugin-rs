@@ -28,6 +28,7 @@ impl<'a> CStrPairArray<'a> {
 }
 
 impl<'a> FromBytes<'a> for CStrPairArray<'a> {
+    #[inline]
     fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
         let nuls = buf.iter().filter(|b| **b == 0).count();
         if nuls % 2 != 0 {
@@ -39,14 +40,17 @@ impl<'a> FromBytes<'a> for CStrPairArray<'a> {
 }
 
 impl<'a> ToBytes for CStrPairArray<'a> {
+    #[inline]
     fn binary_size(&self) -> usize {
         self.0.binary_size()
     }
 
+    #[inline]
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.0.write(writer)
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         &[] as &[u8]
     }

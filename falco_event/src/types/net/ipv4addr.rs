@@ -3,6 +3,7 @@ use std::io::Write;
 use std::net::Ipv4Addr;
 
 impl FromBytes<'_> for Ipv4Addr {
+    #[inline]
     fn from_bytes(buf: &mut &[u8]) -> Result<Self, FromBytesError> {
         let ip_buf = buf.split_off(..4).ok_or(FromBytesError::TruncatedField {
             wanted: 4,
@@ -14,14 +15,17 @@ impl FromBytes<'_> for Ipv4Addr {
 }
 
 impl ToBytes for Ipv4Addr {
+    #[inline]
     fn binary_size(&self) -> usize {
         4
     }
 
+    #[inline]
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.octets().as_slice().write(writer)
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         Ipv4Addr::from(0)
     }

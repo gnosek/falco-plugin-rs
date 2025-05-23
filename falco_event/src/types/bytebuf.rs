@@ -3,20 +3,24 @@ use std::fmt::{Debug, Formatter, Write as _};
 use std::io::Write;
 
 impl<'a> FromBytes<'a> for &'a [u8] {
+    #[inline]
     fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
         Ok(std::mem::take(buf))
     }
 }
 
 impl ToBytes for &[u8] {
+    #[inline]
     fn binary_size(&self) -> usize {
         self.len()
     }
 
+    #[inline]
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
         writer.write_all(self)
     }
 
+    #[inline]
     fn default_repr() -> impl ToBytes {
         &[] as &[u8]
     }
