@@ -14,7 +14,8 @@ pub(crate) enum LifetimeType {
 pub(crate) fn lifetime_type(name: &str) -> LifetimeType {
     match name {
         "PT_CHARBUF" | "PT_BYTEBUF" | "PT_FSPATH" => LifetimeType::Ref,
-        "PT_SOCKADDR"
+        "PT_FDLIST"
+        | "PT_SOCKADDR"
         | "PT_SOCKTUPLE"
         | "PT_FSRELPATH"
         | "PT_CHARBUFARRAY"

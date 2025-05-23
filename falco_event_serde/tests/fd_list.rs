@@ -20,7 +20,7 @@ fn test_deserialize_fd_list() {
     let event = event.load::<PPME_SYSCALL_POLL_E>().unwrap();
 
     assert_eq!(event.params.timeout, Some(1000));
-    let fds = event.params.fds.unwrap().0;
+    let fds: Vec<_> = event.params.fds.unwrap().iter().collect();
     assert_eq!(fds.len(), 1);
     assert_eq!(fds[0].0, 1);
     assert_eq!(fds[0].1, PT_FLAGS16_file_flags::O_WRONLY);
@@ -46,7 +46,7 @@ fn test_roundtrip_fd_list() {
     let event = event.load::<PPME_SYSCALL_POLL_E>().unwrap();
 
     assert_eq!(event.params.timeout, Some(1000));
-    let fds = event.params.fds.clone().unwrap().0;
+    let fds: Vec<_> = event.params.fds.unwrap().iter().collect();
     assert_eq!(fds.len(), 1);
     assert_eq!(fds[0].0, 1);
     assert_eq!(fds[0].1, PT_FLAGS16_file_flags::O_WRONLY);
