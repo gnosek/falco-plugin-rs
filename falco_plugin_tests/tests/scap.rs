@@ -1,7 +1,7 @@
 use falco_plugin::anyhow;
 use falco_plugin::anyhow::{Context, Error};
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::EventType;
+use falco_plugin::event::events::types::{AnyEvent, EventType};
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::static_plugin;
@@ -45,7 +45,7 @@ impl ParsePlugin for DummyPlugin {
             .event()
             .context(format!("loading raw event {})", self.event_num))?;
         event
-            .load_any()
+            .load::<AnyEvent>()
             .context(format!("parsing event #{} {event:?}", self.event_num))?;
 
         self.event_num += 1;

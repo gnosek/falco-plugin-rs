@@ -136,6 +136,7 @@ pub mod extract {
 ///
 /// ```
 ///# use std::ffi::CStr;
+/// use falco_event::events::types::AnyEvent;
 /// use falco_plugin::anyhow::Error;
 /// use falco_plugin::event::events::types::EventType;
 /// use falco_plugin::base::Plugin;
@@ -166,7 +167,7 @@ pub mod extract {
 ///     fn parse_event(&mut self, event: &EventInput, parse_input: &ParseInput)
 ///         -> Result<(), Error> {
 ///         let event = event.event()?;
-///         let event = event.load_any()?;
+///         let event = event.load::<AnyEvent>()?;
 ///
 ///         // any processing you want here, e.g. involving tables
 ///

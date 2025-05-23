@@ -114,9 +114,8 @@ if let Ok(openat2_e_event) = event.load::<types::PPME_SYSCALL_OPENAT2_E>() {
 ```
 
 On the other hand, if you do not expect any particular event type, but still want to have it
-as a strongly typed struct, you can use [events::RawEvent::load_any], which returns
-an `Event<AnyEvent>`, where [events::types::AnyEvent] is a large enum, encompassing all known event
-types.
+as a strongly typed struct, you can call `load::<AnyEvent>()`, where [events::types::AnyEvent]
+is a large enum, encompassing all known event types.
 
 Please note that the available methods in this case are very limited. Realistically, you can
 only expect a [std::fmt::Debug] implementation, though this may change over time. You can
