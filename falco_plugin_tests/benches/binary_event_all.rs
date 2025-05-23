@@ -6,13 +6,13 @@ use std::path::PathBuf;
 
 fn load(events: &[u8]) -> Vec<Event<AnyEvent<'_>>> {
     RawEvent::scan(events)
-        .map(|event| event.unwrap().load_any().unwrap())
+        .map(|event| event.unwrap().load::<AnyEvent>().unwrap())
         .collect()
 }
 
 fn test_parse(events: &[u8]) {
     RawEvent::scan(events)
-        .map(|event| event.unwrap().load_any().unwrap())
+        .map(|event| event.unwrap().load::<AnyEvent>().unwrap())
         .for_each(|event| {
             black_box(event);
         });

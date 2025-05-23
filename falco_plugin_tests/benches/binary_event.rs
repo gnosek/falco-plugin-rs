@@ -505,7 +505,7 @@ const EVENTS: &[&[u8]] = &[
 ];
 
 fn test_parse(event: &[u8]) {
-    RawEvent::from(event).unwrap().load_any().unwrap();
+    RawEvent::from(event).unwrap().load::<AnyEvent>().unwrap();
 }
 
 fn test_dump(event: &Event<AnyEvent>, out: &mut Vec<u8>) {
@@ -529,7 +529,7 @@ fn bench_dump(c: &mut Criterion) {
     let mut g = c.benchmark_group("event_dump_one");
     for (i, event) in EVENTS.iter().enumerate() {
         let raw_event = RawEvent::from(event).unwrap();
-        let event = raw_event.load_any().unwrap();
+        let event = raw_event.load::<AnyEvent>().unwrap();
         let mut out = Vec::new();
         g.throughput(Throughput::Elements(1));
         g.bench_with_input(BenchmarkId::new("dump", i), &event, |b, e| {

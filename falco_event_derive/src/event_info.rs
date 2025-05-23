@@ -420,30 +420,15 @@ fn event_type_enum(events: &Events) -> proc_macro2::TokenStream {
     )
 }
 
-fn raw_event_load_any() -> proc_macro2::TokenStream {
-    quote!(
-        impl<'e> crate::events::RawEvent<'e> {
-            pub fn load_any(
-                &self,
-            ) -> Result<crate::events::Event<AnyEvent<'e>>, crate::events::PayloadFromBytesError>
-            {
-                self.load::<AnyEvent>()
-            }
-        }
-    )
-}
-
 pub fn event_info(input: TokenStream) -> TokenStream {
     let events = parse_macro_input!(input as Events);
 
     let event_info_borrowed = event_info_variant(&events);
     let event_type_enum = event_type_enum(&events);
-    let raw_event_load_any = raw_event_load_any();
 
     quote!(
         #event_info_borrowed
         #event_type_enum
-        #raw_event_load_any
     )
     .into()
 }
