@@ -208,10 +208,6 @@ impl EventInfo {
 
     fn typedef(&self) -> proc_macro2::TokenStream {
         let event_code = &self.event_code;
-        let event_type = Ident::new(
-            &event_code.to_string().replace("PPME_", ""),
-            event_code.span(),
-        );
 
         let fields = self.args().map(|arg| arg.field_definition());
         let wants_lifetime = !self.args().all(|arg| {
@@ -246,8 +242,14 @@ impl EventInfo {
         });
         let dirfd_methods = self.args().map(|a| a.dirfd_method(self));
 
-        let is_large = self.flags.iter().any(|flag| *flag == "EF_LARGE_PAYLOAD");
         let name = &self.name;
+        let raw_ident = Ident::new(
+            &format!("ppm_event_code_{}", self.event_code),
+            self.event_code.span(),
+        );
+        let raw_ident = quote!(crate::ffi::#raw_ident);
+
+        let is_large = self.flags.iter().any(|flag| *flag == "EF_LARGE_PAYLOAD");
         let length_type = match is_large {
             true => quote!(u32),
             false => quote!(u16),
@@ -269,7 +271,7 @@ impl EventInfo {
             }
 
             impl #lifetime crate::events::EventPayload for #event_code #lifetime {
-                const ID: EventType = EventType:: #event_type;
+                const ID: u16 = #raw_ident as u16;
                 const NAME: &'static str = #name;
 
                 type LengthType = #length_type;
