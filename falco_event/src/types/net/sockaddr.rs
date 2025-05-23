@@ -6,6 +6,7 @@ use std::io::Write;
 use typed_path::UnixPath;
 
 /// A socket address
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SockAddr<'a> {
     /// Unix sockets
     Unix(&'a UnixPath),
