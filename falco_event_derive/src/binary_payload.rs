@@ -1,12 +1,23 @@
-use proc_macro::TokenStream;
-
 use crate::helpers::get_crate_path;
+use attribute_derive::FromAttr;
+use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Fields};
+
+#[derive(FromAttr)]
+#[from_attr(ident = event_payload)]
+struct EventPayloadAttrs {
+    length_type: syn::Type,
+    code: syn::Expr,
+}
 
 pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
     // Parse it as a proc macro
     let input = parse_macro_input!(input as DeriveInput);
+    let attrs = match EventPayloadAttrs::from_attributes(&input.attrs) {
+        Ok(attrs) => attrs,
+        Err(err) => return err.to_compile_error().into(),
+    };
 
     let crate_path = match get_crate_path(&input.attrs) {
         Ok(path) => path,
@@ -17,9 +28,12 @@ pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
 
     if let syn::Data::Struct(ref data) = input.data {
         if let Fields::Named(ref fields) = data.fields {
+            let length_type = attrs.length_type;
+            let event_code = attrs.code;
+
             let field_sizes = fields.named.iter().map(|field| {
                 let name = &field.ident;
-                quote!(<Self as EventPayload>::LengthType::try_from(self.#name.binary_size()).unwrap())
+                quote!(#length_type::try_from(self.#name.binary_size()).unwrap())
             });
 
             let field_sizes_usize = fields.named.iter().map(|field| {
@@ -53,10 +67,10 @@ pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
                     use #crate_path::fields::ToBytes;
 
                     const NUM_FIELDS: usize = #num_fields;
-                    let lengths: [<Self as EventPayload>::LengthType; NUM_FIELDS] =
+                    let lengths: [#length_type; NUM_FIELDS] =
                         [#(#field_sizes),*];
 
-                    metadata.write_header_with_lengths(Self::ID as u16, lengths, &mut writer)?;
+                    metadata.write_header_with_lengths(#event_code, lengths, &mut writer)?;
                     #(#field_writes)*
                     Ok(())
                 }
@@ -76,6 +90,10 @@ pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
 pub fn derive_from_bytes(input: TokenStream) -> TokenStream {
     // Parse it as a proc macro
     let input = parse_macro_input!(input as DeriveInput);
+    let attrs = match EventPayloadAttrs::from_attributes(&input.attrs) {
+        Ok(attrs) => attrs,
+        Err(err) => return err.to_compile_error().into(),
+    };
 
     let crate_path = match get_crate_path(&input.attrs) {
         Ok(path) => path,
@@ -86,6 +104,9 @@ pub fn derive_from_bytes(input: TokenStream) -> TokenStream {
 
     if let syn::Data::Struct(ref data) = input.data {
         if let Fields::Named(ref fields) = data.fields {
+            let length_type = attrs.length_type;
+            let event_code = attrs.code;
+
             let field_reads = fields.named.iter().map(|field| {
                 let name = &field.ident;
                 let name_str = name.as_ref().map(|i| i.to_string());
@@ -112,17 +133,16 @@ pub fn derive_from_bytes(input: TokenStream) -> TokenStream {
             return TokenStream::from(quote!(
             impl<'a> crate::events::FromRawEvent<'a> for #name #ty_generics #where_clause {
                 fn parse(raw: &#crate_path::events::RawEvent<'a>) -> Result<Self, #crate_path::events::PayloadFromBytesError> {
-                    use #crate_path::events::EventPayload;
                     use #crate_path::events::PayloadFromBytesError;
                     use #crate_path::events::RawEvent;
                     use #crate_path::fields::FromBytes;
                     use #crate_path::fields::FromBytesError;
 
-                    if raw.event_type != Self::ID as u16 {
+                    if raw.event_type != #event_code {
                         return Err(PayloadFromBytesError::TypeMismatch);
                     }
 
-                    let mut params = raw.params::<<Self as EventPayload>::LengthType>()?;
+                    let mut params = raw.params::<#length_type>()?;
 
                     #(#field_reads)*
 
