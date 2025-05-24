@@ -57,7 +57,7 @@ pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
                     use crate::fields::ToBytes;
 
                     let mut size = 26;
-                    size += ::std::mem::size_of::<<Self as EventPayload>::LengthType>() * #num_fields;
+                    size += ::std::mem::size_of::<#length_type>() * #num_fields;
                     #(size += #field_sizes_usize;)*
                     size
                 }

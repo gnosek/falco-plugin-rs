@@ -11,8 +11,6 @@ pub enum EventDirection {
 
 pub trait EventPayload {
     const ID: u16;
-
-    type LengthType;
 }
 
 pub const fn event_direction(event_type_id: u16) -> EventDirection {
