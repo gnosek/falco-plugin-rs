@@ -18,7 +18,7 @@ falco_event::derive_deftly_for_events! {
             ];
 
             let event_type_id = <falco_event::events::types::$ttype as EventPayload>::ID;
-            let large_payload = match size_of::<<falco_event::events::types::$ttype as EventPayload>::LengthType>() {
+            let large_payload = match size_of::<${tmeta(length_type) as ty}>() {
                 2 => false,
                 4 => true,
                 _ => panic!("Invalid length type for event payload"),

@@ -254,6 +254,10 @@ impl EventInfo {
             true => quote!(u32),
             false => quote!(u16),
         };
+        let length_type_str = match is_large {
+            true => "u32",
+            false => "u16",
+        };
 
         quote!(
             #[allow(non_camel_case_types)]
@@ -264,6 +268,7 @@ impl EventInfo {
             #[event_payload(length_type = #length_type, code = #raw_ident)]
             #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive(derive_deftly::Deftly))]
             #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive_deftly_adhoc(export))]
+            #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), deftly(length_type = #length_type_str))]
             pub struct #event_code #lifetime {
                 #(#fields,)*
             }
@@ -274,8 +279,6 @@ impl EventInfo {
 
             impl #lifetime crate::events::EventPayload for #event_code #lifetime {
                 const ID: u16 = #raw_ident;
-
-                type LengthType = #length_type;
             }
 
             impl #lifetime ::std::fmt::Debug for #event_code #lifetime {
