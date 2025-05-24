@@ -273,7 +273,6 @@ impl EventInfo {
 
             impl #lifetime crate::events::EventPayload for #event_code #lifetime {
                 const ID: u16 = #raw_ident;
-                const NAME: &'static str = #name;
 
                 type LengthType = #length_type;
             }
