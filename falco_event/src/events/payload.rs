@@ -11,7 +11,6 @@ pub enum EventDirection {
 
 pub trait EventPayload {
     const ID: u16;
-    const NAME: &'static str;
 
     type LengthType;
 }
