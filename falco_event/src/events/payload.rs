@@ -14,13 +14,13 @@ pub trait EventPayload {
     const NAME: &'static str;
 
     type LengthType;
+}
 
-    fn direction() -> EventDirection {
-        match Self::ID % 2 {
-            0 => EventDirection::Entry,
-            1 => EventDirection::Exit,
-            _ => unreachable!(),
-        }
+pub const fn event_direction(event_type_id: u16) -> EventDirection {
+    match event_type_id % 2 {
+        0 => EventDirection::Entry,
+        1 => EventDirection::Exit,
+        _ => unreachable!(),
     }
 }
 
