@@ -247,7 +247,7 @@ impl EventInfo {
             &format!("ppm_event_code_{}", self.event_code),
             self.event_code.span(),
         );
-        let raw_ident = quote!(crate::ffi::#raw_ident);
+        let raw_ident = quote!(crate::ffi::#raw_ident as u16);
 
         let is_large = self.flags.iter().any(|flag| *flag == "EF_LARGE_PAYLOAD");
         let length_type = match is_large {
@@ -272,7 +272,7 @@ impl EventInfo {
             }
 
             impl #lifetime crate::events::EventPayload for #event_code #lifetime {
-                const ID: u16 = #raw_ident as u16;
+                const ID: u16 = #raw_ident;
                 const NAME: &'static str = #name;
 
                 type LengthType = #length_type;
@@ -282,7 +282,7 @@ impl EventInfo {
                 fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                     use std::fmt::Write;
 
-                    match <Self as crate::events::EventPayload>::direction() {
+                    match crate::events::event_direction(#raw_ident) {
                         crate::events::EventDirection::Entry => f.write_str("> ")?,
                         crate::events::EventDirection::Exit => f.write_str("< ")?,
                     }

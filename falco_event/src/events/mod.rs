@@ -1,5 +1,6 @@
 pub use event::Event;
 pub use metadata::EventMetadata;
+pub use payload::event_direction;
 pub use payload::EventDirection;
 pub use payload::EventPayload;
 pub use payload::PayloadFromBytesError;
