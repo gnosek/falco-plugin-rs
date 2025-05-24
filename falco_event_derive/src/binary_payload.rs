@@ -22,22 +22,7 @@ fn derive_to_bytes(
     let (impl_generics, ty_generics, where_clause) = g.split_for_impl();
     let length_type = &attrs.length_type;
     let event_code = &attrs.code;
-
-    let field_sizes = s
-        .fields
-        .members()
-        .map(|field| quote!(#length_type::try_from(self.#field.binary_size()).unwrap()));
-
-    let field_writes = s
-        .fields
-        .members()
-        .map(|field| quote!(self.#field.write(&mut writer)?;));
-
-    let field_sizes_usize = s
-        .fields
-        .members()
-        .map(|field| quote!(self.#field.binary_size()));
-
+    let members: Vec<_> = s.fields.members().collect();
     let num_fields = s.fields.members().count();
 
     quote!(
@@ -48,7 +33,7 @@ fn derive_to_bytes(
 
                 let mut size = 26;
                 size += ::std::mem::size_of::<#length_type>() * #num_fields;
-                #(size += #field_sizes_usize;)*
+                #(size += self.#members.binary_size();)*
                 size
             }
 
@@ -58,10 +43,10 @@ fn derive_to_bytes(
 
                 const NUM_FIELDS: usize = #num_fields;
                 let lengths: [#length_type; NUM_FIELDS] =
-                    [#(#field_sizes),*];
+                    [#(#length_type::try_from(self.#members.binary_size()).unwrap()),*];
 
                 metadata.write_header_with_lengths(#event_code, lengths, &mut writer)?;
-                #(#field_writes)*
+                #(self.#members.write(&mut writer)?;)*
                 Ok(())
             }
         }
