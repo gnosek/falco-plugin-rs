@@ -1,4 +1,4 @@
-use crate::helpers::get_crate_path;
+use crate::helpers::{add_raw_event_lifetimes, get_crate_path};
 use attribute_derive::FromAttr;
 use proc_macro2::Ident;
 use quote::quote;
@@ -64,10 +64,11 @@ fn derive_from_bytes(
     let length_type = &attrs.length_type;
     let event_code = &attrs.code;
     let members = s.fields.members();
+    let (impl_ref_generics, ref_where_clause) = add_raw_event_lifetimes(name, g, where_clause);
 
     quote!(
-        impl<'a> #crate_path::events::FromRawEvent<'a> for #name #ty_generics #where_clause {
-            fn parse(raw: &#crate_path::events::RawEvent<'a>) -> Result<Self, #crate_path::events::PayloadFromBytesError> {
+        impl <#impl_ref_generics> #crate_path::events::FromRawEvent<'raw_event> for #name #ty_generics #ref_where_clause {
+            fn parse(raw: &#crate_path::events::RawEvent<'raw_event>) -> Result<Self, #crate_path::events::PayloadFromBytesError> {
             use #crate_path::events::PayloadFromBytesError;
                 use #crate_path::events::RawEvent;
                 use #crate_path::fields::FromBytes;
