@@ -63,22 +63,7 @@ fn derive_from_bytes(
     let (_impl_generics, ty_generics, where_clause) = g.split_for_impl();
     let length_type = &attrs.length_type;
     let event_code = &attrs.code;
-
-    let field_reads = s.fields.members().map(|field| {
-        quote!(
-            let mut maybe_next_field = params.next().transpose()
-                .map_err(|e| PayloadFromBytesError::NamedField(stringify!(#field), e))?;
-            let #field = FromBytes::from_maybe_bytes(maybe_next_field.as_mut())
-                .map_err(|e| PayloadFromBytesError::NamedField(stringify!(#field), e))?;
-            if let Some(buf) = maybe_next_field {
-                if !buf.is_empty() {
-                    return Err(PayloadFromBytesError::NamedField(stringify!(#field), FromBytesError::LeftoverData));
-                }
-            }
-        )
-    });
-
-    let field_names = s.fields.members();
+    let members = s.fields.members();
 
     quote!(
         impl<'a> #crate_path::events::FromRawEvent<'a> for #name #ty_generics #where_clause {
@@ -93,11 +78,8 @@ fn derive_from_bytes(
                 }
 
                 let mut params = raw.params::<#length_type>()?;
-
-                #(#field_reads)*
-
                 Ok(#name {
-                    #(#field_names),*
+                    #(#members: params.next_field().map_err(|e| PayloadFromBytesError::NamedField(stringify!(#members), e))?,)*
                 })
             }
         }

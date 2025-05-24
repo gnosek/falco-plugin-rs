@@ -1,6 +1,6 @@
 use crate::events::payload::PayloadFromBytesError;
 use crate::events::{Event, EventMetadata, EventToBytes};
-use crate::fields::FromBytesError;
+use crate::fields::{FromBytes, FromBytesError};
 use std::io::Write;
 use std::marker::PhantomData;
 use std::num::TryFromIntError;
@@ -55,6 +55,24 @@ impl<'a, T: LengthField> Iterator for ParamIter<'a, T> {
                 got: self.params.len(),
             })),
         }
+    }
+}
+
+impl<'a, T: LengthField> ParamIter<'a, T> {
+    #[inline]
+    pub fn next_field<U>(&mut self) -> Result<U, FromBytesError>
+    where
+        U: FromBytes<'a>,
+    {
+        let mut maybe_next_field = self.next().transpose()?;
+        let val = FromBytes::from_maybe_bytes(maybe_next_field.as_mut())?;
+        if let Some(buf) = maybe_next_field {
+            if !buf.is_empty() {
+                return Err(FromBytesError::LeftoverData);
+            }
+        }
+
+        Ok(val)
     }
 }
 
