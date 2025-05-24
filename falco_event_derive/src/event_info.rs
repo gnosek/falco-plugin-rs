@@ -261,6 +261,7 @@ impl EventInfo {
             #[derive(falco_event_derive::FromBytes)]
             #[derive(falco_event_derive::ToBytes)]
             #[falco_event_crate(crate)]
+            #[event_payload(length_type = #length_type, code = #raw_ident)]
             #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive(derive_deftly::Deftly))]
             #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive_deftly_adhoc(export))]
             pub struct #event_code #lifetime {
