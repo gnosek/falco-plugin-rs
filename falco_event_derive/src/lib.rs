@@ -8,12 +8,12 @@ mod event_info;
 mod format;
 mod helpers;
 
-#[proc_macro_derive(ToBytes)]
+#[proc_macro_derive(ToBytes, attributes(falco_event_crate))]
 pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
     binary_payload::derive_to_bytes(input)
 }
 
-#[proc_macro_derive(FromBytes)]
+#[proc_macro_derive(FromBytes, attributes(falco_event_crate))]
 pub fn derive_from_bytes(input: TokenStream) -> TokenStream {
     binary_payload::derive_from_bytes(input)
 }
