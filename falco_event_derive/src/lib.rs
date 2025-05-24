@@ -8,14 +8,9 @@ mod event_info;
 mod format;
 mod helpers;
 
-#[proc_macro_derive(ToBytes, attributes(event_payload, falco_event_crate))]
-pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
-    binary_payload::derive_to_bytes(input)
-}
-
-#[proc_macro_derive(FromBytes, attributes(event_payload, falco_event_crate))]
-pub fn derive_from_bytes(input: TokenStream) -> TokenStream {
-    binary_payload::derive_from_bytes(input)
+#[proc_macro_derive(EventPayload, attributes(event_payload, falco_event_crate))]
+pub fn derive_event_payload(input: TokenStream) -> TokenStream {
+    binary_payload::event_payload(input)
 }
 
 #[proc_macro_derive(AnyEvent, attributes(falco_event_crate))]

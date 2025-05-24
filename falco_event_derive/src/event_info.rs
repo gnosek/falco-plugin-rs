@@ -262,8 +262,7 @@ impl EventInfo {
         quote!(
             #[allow(non_camel_case_types)]
             #[derive(Clone, Copy)]
-            #[derive(falco_event_derive::FromBytes)]
-            #[derive(falco_event_derive::ToBytes)]
+            #[derive(falco_event_derive::EventPayload)]
             #[falco_event_crate(crate)]
             #[event_payload(length_type = #length_type, code = #raw_ident)]
             #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive(derive_deftly::Deftly))]
