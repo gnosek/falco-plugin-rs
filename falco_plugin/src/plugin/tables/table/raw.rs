@@ -282,7 +282,7 @@ impl RawTable {
         &self,
         reader_vtable: &impl TableReader,
         mut func: F,
-    ) -> anyhow::Result<ControlFlow<()>>
+    ) -> anyhow::Result<IterationResult>
     where
         F: FnMut(RawEntry) -> ControlFlow<()>,
     {
@@ -369,6 +369,12 @@ impl RawTable {
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum IterationResult {
+    Finished,
+    Exited,
+}
+
 fn iter_inner<F>(
     table: *mut ss_plugin_table_t,
     iterate_entries: unsafe extern "C-unwind" fn(
@@ -377,7 +383,7 @@ fn iter_inner<F>(
         s: *mut ss_plugin_table_iterator_state_t,
     ) -> ss_plugin_bool,
     mut func: F,
-) -> ControlFlow<()>
+) -> IterationResult
 where
     F: FnMut(*mut ss_plugin_table_entry_t) -> bool,
 {
@@ -410,7 +416,7 @@ where
     };
 
     match finished {
-        true => ControlFlow::Continue(()),
-        false => ControlFlow::Break(()),
+        true => IterationResult::Finished,
+        false => IterationResult::Exited,
     }
 }
