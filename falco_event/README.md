@@ -53,11 +53,58 @@ to [`events::RawEvent::from`].
 
 ### Raw event to typed event
 
-There are two methods you can use to further refine the event type, depending on your use case.
+There are several methods you can use to further refine the event type, depending on your use case.
 
-If you are expecting an event of a particular type (or a handful of types), you can match
-on [`events::RawEvent::event_type`] and call [`events::RawEvent::load`] with the appropriate
-generic type, for example:
+If you are expecting an event of a particular type, the easiest way is to call [`events::RawEvent::load`]
+with the appropriate generic type, for example:
+
+```ignore
+# use falco_event::events::RawEvent;
+# let event = RawEvent {
+#    metadata: Default::default(),
+#    len: 0,
+#    event_type: 0,
+#    nparams: 0,
+#    payload: &[],
+# };
+use falco_event::events::types;
+use falco_event::events::EventPayload;
+
+let openat2_e_event = event.load::<types::PPME_SYSCALL_OPENAT2_E>()?;
+// openat2_e_event is Event<types::PPME_SYSCALL_OPENAT2_E>
+// ...
+
+# Result::<(), anyhow::Error>::Ok(())
+```
+
+For parsing an event that belongs to one of several types, it might be best to create a custom
+enum, describing those particular types, for example:
+
+```ignore
+# use falco_event::events::RawEvent;
+# let event = RawEvent {
+#    metadata: Default::default(),
+#    len: 0,
+#    event_type: 0,
+#    nparams: 0,
+#    payload: &[],
+# };
+use falco_event::events::types;
+
+#[derive(falco_event::AnyEvent)]
+enum OpenAt2Event<'a> {
+  OpenAt2Enter(types::PPME_SYSCALL_OPENAT2_E<'a>),
+  OpenAt2Exit(types::PPME_SYSCALL_OPENAT2_X<'a>),
+}
+
+let openat2_event = event.load::<OpenAt2Event>()?;
+// openat2_event is Event<OpenAt2Event>
+// ...
+
+# Result::<(), anyhow::Error>::Ok(())
+```
+
+This is mostly equivalent to a match you can write by hand:
 
 ```
 # use falco_event::events::RawEvent;
