@@ -10,6 +10,7 @@ use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Generics};
 struct EventPayloadAttrs {
     length_type: syn::Type,
     code: syn::Expr,
+    source: syn::Expr,
 }
 
 fn derive_to_bytes(
@@ -95,10 +96,12 @@ fn derive_meta(
 ) -> proc_macro2::TokenStream {
     let (impl_generics, ty_generics, where_clause) = g.split_for_impl();
     let event_code = &attrs.code;
+    let event_source = &attrs.source;
 
     quote!(
         impl #impl_generics #crate_path::events::EventPayload for #name #ty_generics #where_clause {
             const ID: u16 = #event_code as u16;
+            const SOURCE: Option<&'static str> = #event_source;
         }
     )
 }
