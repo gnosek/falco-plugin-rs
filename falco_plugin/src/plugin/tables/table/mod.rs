@@ -2,7 +2,7 @@ use crate::plugin::tables::data::{seal, FieldTypeId, Key, TableData, Value};
 use crate::plugin::tables::field::Field;
 use crate::plugin::tables::runtime::NoMetadata;
 use crate::plugin::tables::runtime_table_validator::RuntimeTableValidator;
-use crate::plugin::tables::table::raw::RawTable;
+use crate::plugin::tables::table::raw::{IterationResult, RawTable};
 use crate::plugin::tables::traits::{Entry, TableAccess, TableMetadata};
 use crate::plugin::tables::vtable::fields::TableFields;
 use crate::plugin::tables::vtable::reader::TableReader;
@@ -266,7 +266,7 @@ where
         &self,
         reader_vtable: &impl TableReader,
         mut func: F,
-    ) -> anyhow::Result<ControlFlow<()>>
+    ) -> anyhow::Result<IterationResult>
     where
         F: FnMut(&mut E) -> ControlFlow<()>,
     {
