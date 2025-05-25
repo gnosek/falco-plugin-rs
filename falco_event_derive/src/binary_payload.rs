@@ -87,6 +87,22 @@ fn derive_from_bytes(
     )
 }
 
+fn derive_meta(
+    crate_path: &proc_macro2::TokenStream,
+    name: &Ident,
+    g: &Generics,
+    attrs: &EventPayloadAttrs,
+) -> proc_macro2::TokenStream {
+    let (impl_generics, ty_generics, where_clause) = g.split_for_impl();
+    let event_code = &attrs.code;
+
+    quote!(
+        impl #impl_generics #crate_path::events::EventPayload for #name #ty_generics #where_clause {
+            const ID: u16 = #event_code as u16;
+        }
+    )
+}
+
 pub fn event_payload(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let attrs = match EventPayloadAttrs::from_attributes(&input.attrs) {
@@ -104,10 +120,12 @@ pub fn event_payload(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
             let from_bytes =
                 derive_from_bytes(&crate_path, &input.ident, &s, &input.generics, &attrs);
             let to_bytes = derive_to_bytes(&crate_path, &input.ident, &s, &input.generics, &attrs);
+            let meta = derive_meta(&crate_path, &input.ident, &input.generics, &attrs);
 
             quote!(
                 #to_bytes
                 #from_bytes
+                #meta
             )
             .into()
         }

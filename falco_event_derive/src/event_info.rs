@@ -276,10 +276,6 @@ impl EventInfo {
                 #(#dirfd_methods)*
             }
 
-            impl #lifetime crate::events::EventPayload for #event_code #lifetime {
-                const ID: u16 = #raw_ident;
-            }
-
             impl #lifetime ::std::fmt::Debug for #event_code #lifetime {
                 fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                     use std::fmt::Write;
