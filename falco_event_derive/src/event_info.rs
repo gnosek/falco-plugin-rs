@@ -259,12 +259,17 @@ impl EventInfo {
             false => "u16",
         };
 
+        let source = match event_code.to_string().as_ref() {
+            "PPME_PLUGINEVENT_E" | "PPME_ASYNCEVENT_E" => quote!(None),
+            _ => quote!(Some("syscall")),
+        };
+
         quote!(
             #[allow(non_camel_case_types)]
             #[derive(Clone, Copy)]
             #[derive(falco_event_derive::EventPayload)]
             #[falco_event_crate(crate)]
-            #[event_payload(length_type = #length_type, code = #raw_ident)]
+            #[event_payload(length_type = #length_type, code = #raw_ident, source = #source)]
             #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive(derive_deftly::Deftly))]
             #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive_deftly_adhoc(export))]
             #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), deftly(length_type = #length_type_str))]

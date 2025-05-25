@@ -14,14 +14,14 @@
 /// use falco_event::events::PayloadFromBytesError;
 ///
 /// #[derive(Default, Debug, falco_event::EventPayload)]
-/// #[event_payload(code = 322, length_type = u32)]
+/// #[event_payload(source = Some("syscall"), code = 322, length_type = u32)]
 /// pub struct MyPluginEvent<'a> {
 ///     pub plugin_id: u32,
 ///     pub data: &'a [u8],
 /// }
 ///
 /// #[derive(Default, Debug, falco_event::EventPayload)]
-/// #[event_payload(code = 322, length_type = u32)]
+/// #[event_payload(source = Some("syscall"), code = 322, length_type = u32)]
 /// pub struct MyAsyncEvent<'a> {
 ///     pub plugin_id: u32,
 ///     pub name: &'a [u8],
@@ -80,7 +80,7 @@ pub use derive_deftly;
 /// # use std::borrow::Cow;
 ///
 /// #[derive(Default, falco_event::EventPayload)]
-/// #[event_payload(code = 322, length_type = u32)]
+/// #[event_payload(source = Some("syscall"), code = 322, length_type = u32)]
 /// pub struct MyPluginEvent<'a> {
 ///     pub plugin_id: u32,
 ///     pub data: &'a [u8],
@@ -94,7 +94,7 @@ pub use derive_deftly;
 /// # use std::borrow::Cow;
 ///
 /// #[derive(Default, falco_event::EventPayload)]
-/// #[event_payload(code = 322, length_type = u32)]
+/// #[event_payload(source = "syscall", code = 322, length_type = u32)]
 /// #[falco_event_crate(falco_event_alt)]
 /// pub struct MyPluginEvent<'a> {
 ///     pub plugin_id: u32,
