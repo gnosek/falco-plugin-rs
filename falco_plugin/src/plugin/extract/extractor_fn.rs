@@ -16,7 +16,7 @@ pub struct ExtractLambda<P: ExtractPlugin> {
         plugin: &mut P,
         field: &mut ss_plugin_extract_field,
         request: ExtractRequest<'_, '_, '_, P>,
-        storage: &mut bumpalo::Bump,
+        storage: &bumpalo::Bump,
     ) -> Result<(), Error>,
 }
 
@@ -26,7 +26,7 @@ impl<P: ExtractPlugin> ExtractLambda<P> {
         plugin: &mut P,
         field: &mut ss_plugin_extract_field,
         request: ExtractRequest<'_, '_, '_, P>,
-        storage: &mut bumpalo::Bump,
+        storage: &bumpalo::Bump,
     ) -> Result<(), Error> {
         (self.func)(self.obj, plugin, field, request, storage)
     }
@@ -66,7 +66,7 @@ where
         plugin: &'a mut P,
         field: &mut ss_plugin_extract_field,
         request: ExtractRequest<'a, '_, '_, P>,
-        storage: &mut bumpalo::Bump,
+        storage: &bumpalo::Bump,
     ) -> Result<(), Error> {
         let result = Self::call(obj, plugin, request, unsafe { field.key_unchecked() })?;
         Ok(result.extract_to(field, storage)?)

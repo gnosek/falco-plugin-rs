@@ -210,7 +210,7 @@ pub unsafe extern "C-unwind" fn plugin_next_batch<T: SourcePlugin>(
         };
 
         instance.batch.reset();
-        let mut batch = EventBatch::new(&mut instance.batch);
+        let mut batch = EventBatch::new(&instance.batch);
         let batch_result = instance
             .instance
             .next_batch(&mut actual_plugin.plugin, &mut batch);

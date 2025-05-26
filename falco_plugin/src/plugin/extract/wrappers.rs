@@ -122,12 +122,7 @@ pub unsafe extern "C-unwind" fn plugin_extract_fields<T: ExtractPlugin>(
         plugin.field_storage.reset();
         actual_plugin
             .plugin
-            .extract_fields(
-                &event_input,
-                &table_reader,
-                fields,
-                &mut plugin.field_storage,
-            )
+            .extract_fields(&event_input, &table_reader, fields, &plugin.field_storage)
             .rc(&mut plugin.error_buf)
     }
 }
