@@ -116,8 +116,11 @@ pub mod extract {
     pub use crate::plugin::event::EventInput;
     pub use crate::plugin::extract::schema::field;
     pub use crate::plugin::extract::schema::ExtractFieldInfo;
+    pub use crate::plugin::extract::ExtractByteRange;
     pub use crate::plugin::extract::ExtractPlugin;
     pub use crate::plugin::extract::ExtractRequest;
+    pub use crate::plugin::extract::INVALID_RANGE;
+    pub use crate::plugin::extract::UNSPECIFIED_RANGE;
 }
 
 /// # Event parsing support
