@@ -4,10 +4,11 @@ use crate::plugin::extract::schema::ExtractFieldInfo;
 use crate::plugin::extract::wrappers::ExtractPluginExported;
 use crate::tables::LazyTableReader;
 use falco_event::events::types::EventType;
-use falco_plugin_api::ss_plugin_extract_field;
+use falco_plugin_api::{ss_plugin_extract_field, ss_plugin_extract_value_offsets};
 use std::any::TypeId;
 use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
+use std::ops::Range;
 use std::sync::Mutex;
 
 mod extractor_fn;
@@ -51,19 +52,95 @@ impl ExtractField for ss_plugin_extract_field {
     }
 }
 
+/// An invalid range (not supported)
+///
+/// This is used when an extractor that does not support ranges is used together with extractors
+/// that do, and range extraction is requested. Due to the design of the Falco plugin API,
+/// there must be a range for all the fields (or none of them), so we fill out the missing ranges
+/// with this value.
+///
+/// **Note**: you should not use this value in plugins yourself. If an extractor returns data that is
+/// not corresponding to any particular byte offset in the plugin payload, it should set the range
+/// to [`UNSPECIFIED_RANGE`].
+#[allow(clippy::reversed_empty_ranges)]
+pub const INVALID_RANGE: Range<usize> = 1..0;
+
+/// An unspecified range (computed data)
+///
+/// Use this range to indicate that the extracted value does not correspond to any specific
+/// byte range in the event (for example, it was calculated based on the event data).
+pub const UNSPECIFIED_RANGE: Range<usize> = 0..0;
+
+/// The offset in the event where a plugin event payload starts
+///
+/// Since the event payload is at a fixed offset, you can add this value
+/// to the start of an extracted field within the payload to get the offset
+/// from the start of the event.
+///
+/// 26 bytes for the event header, plus 2*4 bytes for the parameter lengths,
+/// plus 4 bytes for the plugin ID.
+const PLUGIN_EVENT_PAYLOAD_OFFSET: usize = 38;
+
+/// Range extraction request/response
+#[derive(Debug, Eq, PartialEq)]
+pub enum ExtractByteRange {
+    /// Range extraction was not requested
+    NotRequested,
+
+    /// Range extraction was requested but not performed
+    ///
+    /// This value is set upon entry to the extractor function. The function may replace the value
+    /// with [`ExtractByteRange::Found`] if it supports finding byte ranges. If the extractor does
+    /// not support byte ranges, it can ignore this value completely and leave it unchanged.
+    Requested,
+
+    /// Range extraction finished successfully
+    ///
+    /// Note that for fields extracted from the plugin event data field, you will probably want
+    /// to construct this value using [`ExtractByteRange::in_plugin_data`].
+    Found(Range<usize>),
+}
+
+impl ExtractByteRange {
+    /// Create a range pointing into a plugin event data field
+    ///
+    /// This is a helper for the common case of returning offsets inside the data field
+    /// of a plugin event. It simply shifts the provided range by 38 bytes (26 header bytes,
+    /// 2*4 length bytes, 4 plugin id bytes) to make the resulting range relative to the full
+    /// event buffer.
+    pub fn in_plugin_data(range: Range<usize>) -> Self {
+        Self::Found(
+            PLUGIN_EVENT_PAYLOAD_OFFSET + range.start..PLUGIN_EVENT_PAYLOAD_OFFSET + range.end,
+        )
+    }
+}
+
 /// An extraction request
 #[derive(Debug)]
 pub struct ExtractRequest<'c, 'e, 't, P: ExtractPlugin> {
-    /// a context instance, potentially shared between extractions
+    /// A context instance, potentially shared between extractions
     pub context: &'c mut P::ExtractContext,
 
-    /// the event being processed
+    /// The event being processed
     pub event: &'e EventInput,
 
-    /// an interface to access tables exposed from Falco core and other plugins
+    /// An interface to access tables exposed from Falco core and other plugins
     ///
-    /// See [`crate::tables`] for details
+    /// See [`crate::tables`] for details.
     pub table_reader: &'t LazyTableReader<'t>,
+
+    /// Offset of extracted data in event payload
+    ///
+    /// If set to [`ExtractByteRange::Requested`], and the plugin supports it, replace this
+    /// with a [`ExtractByteRange::Found`] containing the byte range containing the extracted value,
+    /// *within the whole event buffer*. In the typical case of a range inside the plugin event
+    /// data, you can use the [`ExtractByteRange::in_plugin_data`] helper.
+    ///
+    /// If the data is computed (not directly coming from any byte range in the event), use
+    /// [`UNSPECIFIED_RANGE`] instead.
+    ///
+    /// **Note**: range support is optional, and this field can be ignored.
+    pub offset: &'c mut ExtractByteRange,
 }
 
 /// # Support for field extraction plugins
@@ -261,23 +338,77 @@ where
         event_input: &EventInput,
         table_reader: &LazyTableReader,
         fields: &mut [ss_plugin_extract_field],
+        offsets: Option<&mut ss_plugin_extract_value_offsets>,
         storage: &'a bumpalo::Bump,
     ) -> Result<(), anyhow::Error> {
         let mut context = Self::ExtractContext::default();
+
+        let (mut offset_vec, mut length_vec) = if offsets.is_some() {
+            (
+                Some(bumpalo::collections::Vec::with_capacity_in(
+                    fields.len(),
+                    storage,
+                )),
+                Some(bumpalo::collections::Vec::with_capacity_in(
+                    fields.len(),
+                    storage,
+                )),
+            )
+        } else {
+            (None, None)
+        };
+
+        let mut any_offsets = false;
 
         for req in fields {
             let info = Self::EXTRACT_FIELDS
                 .get(req.field_id as usize)
                 .ok_or_else(|| anyhow::anyhow!("field index out of bounds"))?;
 
+            let mut offset = if offsets.is_some() {
+                ExtractByteRange::Requested
+            } else {
+                ExtractByteRange::NotRequested
+            };
+
             let request = ExtractRequest::<Self> {
                 context: &mut context,
                 event: event_input,
                 table_reader,
+                offset: &mut offset,
             };
 
             info.func.call(self, req, request, storage)?;
+
+            if let (Some(offsets_vec), Some(lengths_vec)) =
+                (offset_vec.as_mut(), length_vec.as_mut())
+            {
+                let range = match offset {
+                    ExtractByteRange::Found(range) => {
+                        any_offsets = true;
+                        range
+                    }
+                    _ => INVALID_RANGE,
+                };
+                offsets_vec.push(range.start as u32);
+                lengths_vec.push(range.end.wrapping_sub(range.start) as u32);
+            }
         }
+
+        fn pointer_to_vec<T>(v: &Option<bumpalo::collections::Vec<T>>) -> *mut T {
+            match v {
+                None => std::ptr::null_mut(),
+                Some(v) => v.as_ptr().cast_mut(),
+            }
+        }
+
+        if let Some(offsets) = offsets {
+            if any_offsets {
+                offsets.start = pointer_to_vec(&offset_vec);
+                offsets.length = pointer_to_vec(&length_vec);
+            }
+        }
+
         Ok(())
     }
 }

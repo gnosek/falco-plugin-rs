@@ -117,12 +117,20 @@ pub unsafe extern "C-unwind" fn plugin_extract_fields<T: ExtractPlugin>(
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
 
+        let offsets = extract_input.value_offsets.as_mut();
+
         let table_reader = LazyTableReader::new(reader_ext, actual_plugin.last_error.clone());
 
         plugin.field_storage.reset();
         actual_plugin
             .plugin
-            .extract_fields(&event_input, &table_reader, fields, &plugin.field_storage)
+            .extract_fields(
+                &event_input,
+                &table_reader,
+                fields,
+                offsets,
+                &plugin.field_storage,
+            )
             .rc(&mut plugin.error_buf)
     }
 }
