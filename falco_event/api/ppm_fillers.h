@@ -43,6 +43,7 @@ or GPL2.txt for full copies of the license.
 	FN(sys_sendmsg_e)                    \
 	FN(sys_sendmsg_x)                    \
 	FN(sys_sendmmsg_x)                   \
+	FN(sys_sendmmsg_x_failure)           \
 	FN(sys_recv_x)                       \
 	FN(sys_recvfrom_x)                   \
 	FN(sys_recvmsg_x)                    \
@@ -196,6 +197,7 @@ or GPL2.txt for full copies of the license.
 	FN(sys_process_vm_writev_x)          \
 	FN(sys_delete_module_x)              \
 	FN(sys_pread64_x)                    \
+	FN(sys_pwrite64_x)                   \
 	FN(terminate_filler)
 
 #define FILLER_ENUM_FN(x) PPM_FILLER_##x,
