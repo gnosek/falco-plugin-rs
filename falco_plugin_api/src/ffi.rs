@@ -254,7 +254,7 @@ pub const SCNoPTR: &[u8; 3] = b"lo\0";
 pub const SCNuPTR: &[u8; 3] = b"lu\0";
 pub const SCNxPTR: &[u8; 3] = b"lx\0";
 pub const PLUGIN_API_VERSION_MAJOR: u32 = 3;
-pub const PLUGIN_API_VERSION_MINOR: u32 = 10;
+pub const PLUGIN_API_VERSION_MINOR: u32 = 11;
 pub const PLUGIN_API_VERSION_PATCH: u32 = 0;
 pub const PLUGIN_MAX_ERRLEN: u32 = 1024;
 pub type __u_char = ::std::os::raw::c_uchar;
@@ -455,6 +455,23 @@ const _: () = {
         [::std::mem::offset_of!(ss_plugin_byte_buffer, len) - 0usize];
     ["Offset of field: ss_plugin_byte_buffer::ptr"]
         [::std::mem::offset_of!(ss_plugin_byte_buffer, ptr) - 8usize];
+};
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ss_plugin_extract_value_offsets {
+    pub start: *mut u32,
+    pub length: *mut u32,
+}
+#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+const _: () = {
+    ["Size of ss_plugin_extract_value_offsets"]
+        [::std::mem::size_of::<ss_plugin_extract_value_offsets>() - 16usize];
+    ["Alignment of ss_plugin_extract_value_offsets"]
+        [::std::mem::align_of::<ss_plugin_extract_value_offsets>() - 8usize];
+    ["Offset of field: ss_plugin_extract_value_offsets::start"]
+        [::std::mem::offset_of!(ss_plugin_extract_value_offsets, start) - 0usize];
+    ["Offset of field: ss_plugin_extract_value_offsets::length"]
+        [::std::mem::offset_of!(ss_plugin_extract_value_offsets, length) - 8usize];
 };
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -1114,11 +1131,12 @@ pub struct ss_plugin_field_extract_input {
     pub fields: *mut ss_plugin_extract_field,
     pub table_reader: ss_plugin_table_reader_vtable,
     pub table_reader_ext: *mut ss_plugin_table_reader_vtable_ext,
+    pub value_offsets: *mut ss_plugin_extract_value_offsets,
 }
 #[allow(clippy::unnecessary_operation, clippy::identity_op)]
 const _: () = {
     ["Size of ss_plugin_field_extract_input"]
-        [::std::mem::size_of::<ss_plugin_field_extract_input>() - 72usize];
+        [::std::mem::size_of::<ss_plugin_field_extract_input>() - 80usize];
     ["Alignment of ss_plugin_field_extract_input"]
         [::std::mem::align_of::<ss_plugin_field_extract_input>() - 8usize];
     ["Offset of field: ss_plugin_field_extract_input::owner"]
@@ -1133,6 +1151,8 @@ const _: () = {
         [::std::mem::offset_of!(ss_plugin_field_extract_input, table_reader) - 32usize];
     ["Offset of field: ss_plugin_field_extract_input::table_reader_ext"]
         [::std::mem::offset_of!(ss_plugin_field_extract_input, table_reader_ext) - 64usize];
+    ["Offset of field: ss_plugin_field_extract_input::value_offsets"]
+        [::std::mem::offset_of!(ss_plugin_field_extract_input, value_offsets) - 72usize];
 };
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

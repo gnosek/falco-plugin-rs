@@ -397,6 +397,7 @@ impl ExtractPlugin {
             fields: &mut extract_fields,
             table_reader: TABLE_READER,
             table_reader_ext: &TABLE_READER_EXT as *const _ as *mut _,
+            value_offsets: std::ptr::null_mut(),
         };
 
         let extract = self.api().extract_fields?;
