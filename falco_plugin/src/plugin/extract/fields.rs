@@ -41,7 +41,7 @@ pub trait Extract {
     fn extract_to(
         &self,
         req: &mut ss_plugin_extract_field,
-        storage: &mut bumpalo::Bump,
+        storage: &bumpalo::Bump,
     ) -> Result<(), std::io::Error>;
 }
 
@@ -50,7 +50,7 @@ mod direct {
 
     pub(super) fn extract_one<T: ToBytes>(
         val: &T,
-        storage: &mut bumpalo::Bump,
+        storage: &bumpalo::Bump,
     ) -> Result<(*mut c_void, u64), std::io::Error> {
         let mut buf = bumpalo::collections::Vec::new_in(storage);
         val.write(&mut buf)?;
@@ -59,7 +59,7 @@ mod direct {
 
     pub(super) fn extract_many<T: ToBytes>(
         val: &[T],
-        storage: &mut bumpalo::Bump,
+        storage: &bumpalo::Bump,
     ) -> Result<(*mut c_void, u64), std::io::Error> {
         let mut buf = bumpalo::collections::Vec::new_in(storage);
         for item in val.iter() {
@@ -74,7 +74,7 @@ mod by_pointer {
 
     pub(super) fn extract_one<T: ToBytes>(
         val: &T,
-        storage: &mut bumpalo::Bump,
+        storage: &bumpalo::Bump,
     ) -> Result<(*mut c_void, u64), std::io::Error> {
         let mut buf = bumpalo::collections::Vec::new_in(storage);
         val.write(&mut buf)?;
@@ -85,7 +85,7 @@ mod by_pointer {
 
     pub(super) fn extract_many<T: ToBytes>(
         val: &[T],
-        storage: &mut bumpalo::Bump,
+        storage: &bumpalo::Bump,
     ) -> Result<(*mut c_void, u64), std::io::Error> {
         let mut sizes = bumpalo::collections::Vec::new_in(storage);
         sizes.reserve(val.len());
@@ -112,7 +112,7 @@ mod by_bytebuf {
 
     pub(super) fn extract_one<T: ToBytes>(
         val: &T,
-        storage: &mut bumpalo::Bump,
+        storage: &bumpalo::Bump,
     ) -> Result<(*mut c_void, u64), std::io::Error> {
         let mut buf = bumpalo::collections::Vec::new_in(storage);
         val.write(&mut buf)?;
@@ -127,7 +127,7 @@ mod by_bytebuf {
 
     pub(super) fn extract_many<T: ToBytes>(
         val: &[T],
-        storage: &mut bumpalo::Bump,
+        storage: &bumpalo::Bump,
     ) -> Result<(*mut c_void, u64), std::io::Error> {
         let mut sizes = bumpalo::collections::Vec::new_in(storage);
         sizes.reserve(val.len());
@@ -162,7 +162,7 @@ macro_rules! extract {
             fn extract_to(
                 &self,
                 req: &mut ss_plugin_extract_field,
-                storage: &mut bumpalo::Bump,
+                storage: &bumpalo::Bump,
             ) -> Result<(), std::io::Error> {
                 let (buf, len) = $strategy_mod::extract_one(self, storage)?;
                 req.res.u64_ = buf as *mut _;
@@ -178,7 +178,7 @@ macro_rules! extract {
             fn extract_to(
                 &self,
                 req: &mut ss_plugin_extract_field,
-                storage: &mut bumpalo::Bump,
+                storage: &bumpalo::Bump,
             ) -> Result<(), std::io::Error> {
                 match &self {
                     Some(val) => {
@@ -202,7 +202,7 @@ macro_rules! extract {
             fn extract_to(
                 &self,
                 req: &mut ss_plugin_extract_field,
-                storage: &mut bumpalo::Bump,
+                storage: &bumpalo::Bump,
             ) -> Result<(), std::io::Error> {
                 let (buf, len) = $strategy_mod::extract_many(self.as_slice(), storage)?;
                 req.res.u64_ = buf as *mut _;
@@ -218,7 +218,7 @@ macro_rules! extract {
             fn extract_to(
                 &self,
                 req: &mut ss_plugin_extract_field,
-                storage: &mut bumpalo::Bump,
+                storage: &bumpalo::Bump,
             ) -> Result<(), std::io::Error> {
                 match &self {
                     Some(val) => {

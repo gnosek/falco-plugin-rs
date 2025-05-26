@@ -261,7 +261,7 @@ where
         event_input: &EventInput,
         table_reader: &LazyTableReader,
         fields: &mut [ss_plugin_extract_field],
-        storage: &'a mut bumpalo::Bump,
+        storage: &'a bumpalo::Bump,
     ) -> Result<(), anyhow::Error> {
         let mut context = Self::ExtractContext::default();
 
