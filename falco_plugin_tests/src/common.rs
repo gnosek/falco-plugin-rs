@@ -1,9 +1,9 @@
 use anyhow::Context;
 use cxx::{type_id, ExternType};
+pub use falco_plugin_runner::ScapStatus;
 use std::ffi::CStr;
 use std::fmt::Debug;
-
-pub use falco_plugin_runner::ScapStatus;
+use std::ops::Range;
 
 pub struct CaptureNotStarted;
 
@@ -66,6 +66,12 @@ pub trait CapturingTestDriver {
         field_name: &CStr,
         event: &Self::Event,
     ) -> anyhow::Result<Option<String>>;
+
+    fn event_field_as_string_with_range(
+        &mut self,
+        field_name: &CStr,
+        event: &Self::Event,
+    ) -> anyhow::Result<Option<(String, Range<usize>)>>;
 
     fn event_field_is_none(&mut self, field_name: &CStr, event: &Self::Event) -> bool;
 

@@ -22,6 +22,7 @@ public:
     void start_capture(const char* name, const char* config);
     SinspEvent next();
     std::unique_ptr<std::string> event_field_as_string(const char* field_name, const SinspEvent& event);
+    std::unique_ptr<std::string> event_field_as_string_with_offsets(const char* field_name, const SinspEvent& event, uint32_t& start, uint32_t& length);
     std::unique_ptr<std::vector<SinspMetric>> get_metrics();
 
 private:

@@ -5,6 +5,7 @@ use cxx::UniquePtr;
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use std::ops::Range;
 
 #[allow(clippy::missing_safety_doc)]
 #[allow(clippy::module_inception)]
@@ -63,6 +64,14 @@ mod ffi {
             self: Pin<&mut SinspTestDriver>,
             field_name: *const c_char,
             event: &SinspEvent,
+        ) -> Result<UniquePtr<CxxString>>;
+
+        unsafe fn event_field_as_string_with_offsets(
+            self: Pin<&mut SinspTestDriver>,
+            field_name: *const c_char,
+            event: &SinspEvent,
+            start: &mut u32,
+            length: &mut u32,
         ) -> Result<UniquePtr<CxxString>>;
 
         fn get_metrics(
@@ -220,6 +229,36 @@ impl CapturingTestDriver for SinspTestDriver<CaptureStarted> {
             Ok(None)
         } else {
             Ok(Some(event_str.to_string_lossy().to_string()))
+        }
+    }
+
+    fn event_field_as_string_with_range(
+        &mut self,
+        field_name: &CStr,
+        event: &Self::Event,
+    ) -> anyhow::Result<Option<(String, Range<usize>)>> {
+        let mut start = 1u32;
+        let mut length = u32::MAX;
+
+        let event_str = unsafe {
+            self.driver
+                .as_mut()
+                .unwrap()
+                .event_field_as_string_with_offsets(
+                    field_name.as_ptr(),
+                    &event.event,
+                    &mut start,
+                    &mut length,
+                )?
+        };
+
+        if event_str.is_null() {
+            Ok(None)
+        } else {
+            Ok(Some((
+                event_str.to_string_lossy().to_string(),
+                start as usize..(start.wrapping_add(length)) as usize,
+            )))
         }
     }
 
