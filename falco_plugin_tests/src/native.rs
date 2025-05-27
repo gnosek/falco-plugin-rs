@@ -2,6 +2,7 @@ use crate::{AsPtr, CapturingTestDriver, ScapStatus, SinspMetric, TestDriver};
 use falco_plugin_runner::{CapturingPluginRunner, ExtractedField, MetricValue, PluginRunner};
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter};
+use std::ops::Range;
 
 pub struct NativePlugin;
 
@@ -97,6 +98,19 @@ impl CapturingTestDriver for NativeCapturingTestDriver {
             None => Ok(None),
             Some(Err(e)) => Err(anyhow::anyhow!("failed to extract field: {}", e)),
             Some(Ok(s)) => Ok(Some(s.to_string())),
+        }
+    }
+
+    fn event_field_as_string_with_range(
+        &mut self,
+        field_name: &CStr,
+        event: &Self::Event,
+    ) -> anyhow::Result<Option<(String, Range<usize>)>> {
+        let s = std::str::from_utf8(field_name.to_bytes())?;
+        match self.0.extract_field_with_range(event, s) {
+            None => Ok(None),
+            Some(Err(e)) => Err(anyhow::anyhow!("failed to extract field: {}", e)),
+            Some(Ok((s, range))) => Ok(Some((s.to_string(), range))),
         }
     }
 

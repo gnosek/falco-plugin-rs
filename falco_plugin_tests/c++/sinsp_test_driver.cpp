@@ -93,6 +93,45 @@ std::unique_ptr<std::string> SinspTestDriver::event_field_as_string(const char* 
 	return std::make_unique<std::string>(result);
 }
 
+std::unique_ptr<std::string> SinspTestDriver::event_field_as_string_with_offsets(const char* field_name, const SinspEvent& event, uint32_t& start, uint32_t& length)
+{
+    std::scoped_lock m(s_sinsp_lock);
+    sinsp_evt* evt = reinterpret_cast<sinsp_evt*>(event.evt);
+
+	if (evt == nullptr) {
+		throw sinsp_exception("The event class is NULL");
+	}
+
+	std::unique_ptr<sinsp_filter_check> chk(m_filterchecks.new_filter_check_from_fldname(field_name, &m_sinsp, false));
+	if(chk == nullptr)
+	{
+		throw sinsp_exception("The field " + std::string(field_name) + " is not a valid field.");
+	}
+	// we created a filter check starting from the field name so if we arrive here we will find it for sure
+	chk->parse_field_name(field_name, true, false);
+
+	const char* result = chk->tostring(evt);
+	if (result == nullptr) {
+		throw sinsp_exception("The field " + std::string(field_name) + " is NULL");
+	}
+
+	std::string s = result;
+
+    // getting a string value from an extracted value is convoluted enough; just extract the field again,
+    // ignoring the value and only getting the offsets
+    std::vector<extract_value_t> values;
+    std::vector<extract_offset_t> offsets;
+    chk->extract_with_offsets(evt, values, offsets);
+
+    if(!offsets.empty())
+    {
+        start = offsets[0].start;
+        length = offsets[0].length;
+    }
+
+	return std::make_unique<std::string>(s);
+}
+
 std::unique_ptr<std::vector<SinspMetric>> SinspTestDriver::get_metrics()
 {
     std::scoped_lock m(s_sinsp_lock);
