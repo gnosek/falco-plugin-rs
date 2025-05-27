@@ -111,7 +111,7 @@ impl CaptureListenPlugin {
             return ss_plugin_rc_SS_PLUGIN_FAILURE;
         };
         let mut routines = this.routines.lock().unwrap();
-        routines.retain(|r| r.as_ref() as *const _ != routine as *const Routine);
+        routines.retain(|r| !std::ptr::eq(r.as_ref(), routine as *const Routine));
 
         ss_plugin_rc_SS_PLUGIN_SUCCESS
     }
