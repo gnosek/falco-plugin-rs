@@ -6,6 +6,7 @@ mod parse;
 mod source;
 
 pub use extract::ExtractedField;
+pub use extract::INVALID_RANGE;
 use std::cell::RefCell;
 
 use crate::event::Event;
@@ -24,6 +25,7 @@ use falco_plugin_api::{
 };
 use std::ffi::{c_char, CStr, CString};
 use std::fmt::{Display, Formatter};
+use std::ops::Range;
 use std::rc::Rc;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -466,6 +468,18 @@ impl Plugin {
     ) -> Option<Result<ExtractedField, ss_plugin_rc>> {
         if let Some(ref mut extract) = self.extract {
             extract.extract(event, field)
+        } else {
+            None
+        }
+    }
+
+    pub fn extract_field_with_range(
+        &mut self,
+        event: &Event,
+        field: &str,
+    ) -> Option<Result<(ExtractedField, Range<usize>), ss_plugin_rc>> {
+        if let Some(ref mut extract) = self.extract {
+            extract.extract_with_range(event, field)
         } else {
             None
         }
