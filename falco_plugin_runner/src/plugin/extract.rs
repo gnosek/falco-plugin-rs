@@ -7,13 +7,17 @@ use falco_event::fields::FromBytes;
 use falco_event::SystemTimeFormatter;
 use falco_plugin_api::{
     plugin_api__bindgen_ty_2, ss_plugin_extract_field, ss_plugin_extract_field__bindgen_ty_1,
-    ss_plugin_field_extract_input, ss_plugin_owner_t, ss_plugin_rc, ss_plugin_rc_SS_PLUGIN_FAILURE,
-    ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_t,
+    ss_plugin_extract_value_offsets, ss_plugin_field_extract_input, ss_plugin_owner_t,
+    ss_plugin_rc, ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_SUCCESS, ss_plugin_t,
 };
 use serde::Deserialize;
 use std::ffi::{CStr, CString};
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
+use std::ops::Range;
+
+#[allow(clippy::reversed_empty_ranges)]
+pub const INVALID_RANGE: Range<usize> = 1..0;
 
 #[derive(Deserialize, Debug, Copy, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -317,10 +321,11 @@ impl ExtractPlugin {
         unsafe { &*self.api }
     }
 
-    pub fn extract(
+    fn extract_impl(
         &self,
         event: &Event,
         field: &str,
+        value_offsets: *mut ss_plugin_extract_value_offsets,
     ) -> Option<Result<ExtractedField, ss_plugin_rc>> {
         if !self.filter.matches(event) {
             return None;
@@ -397,7 +402,7 @@ impl ExtractPlugin {
             fields: &mut extract_fields,
             table_reader: TABLE_READER,
             table_reader_ext: &TABLE_READER_EXT as *const _ as *mut _,
-            value_offsets: std::ptr::null_mut(),
+            value_offsets,
         };
 
         let extract = self.api().extract_fields?;
@@ -424,5 +429,36 @@ impl ExtractPlugin {
                 Err(_) => Some(Err(ss_plugin_rc_SS_PLUGIN_FAILURE)),
             }
         }
+    }
+
+    pub fn extract(
+        &self,
+        event: &Event,
+        field: &str,
+    ) -> Option<Result<ExtractedField, ss_plugin_rc>> {
+        self.extract_impl(event, field, std::ptr::null_mut())
+    }
+
+    pub fn extract_with_range(
+        &self,
+        event: &Event,
+        field: &str,
+    ) -> Option<Result<(ExtractedField, Range<usize>), ss_plugin_rc>> {
+        let mut value_offsets = ss_plugin_extract_value_offsets {
+            start: std::ptr::null_mut(),
+            length: std::ptr::null_mut(),
+        };
+
+        let val = self.extract_impl(event, field, &mut value_offsets)?;
+        let val = match val {
+            Ok(val) => val,
+            Err(err) => return Some(Err(err)),
+        };
+        let range = match unsafe { (value_offsets.start.as_ref(), value_offsets.length.as_ref()) } {
+            (Some(start), Some(length)) => *start as usize..start.wrapping_add(*length) as usize,
+            _ => INVALID_RANGE,
+        };
+
+        Some(Ok((val, range)))
     }
 }

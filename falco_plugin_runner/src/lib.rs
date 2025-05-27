@@ -11,8 +11,10 @@ pub use event::Event;
 
 use crate::tables::Tables;
 use plugin::Plugin;
+use plugin::INVALID_RANGE;
 use std::cell::RefCell;
 use std::ffi::{CStr, CString};
+use std::ops::Range;
 use std::rc::Rc;
 
 pub struct PluginRunner {
@@ -131,6 +133,36 @@ impl CapturingPluginRunner {
 
         for plugin in &mut self.plugins {
             if let Some(res) = plugin.extract_field(event, field) {
+                return Some(res);
+            }
+        }
+
+        None
+    }
+
+    pub fn extract_field_with_range(
+        &mut self,
+        event: &Event,
+        field: &str,
+    ) -> Option<Result<(ExtractedField, Range<usize>), falco_plugin_api::ss_plugin_rc>> {
+        if field == "evt.plugininfo" {
+            let range = INVALID_RANGE;
+            return if let Some(func) = event.to_string {
+                let event_input = event.to_event_input();
+                let cs = unsafe { func(event.source_plugin, &event_input) };
+                if cs.is_null() {
+                    Some(Ok((ExtractedField::None, range)))
+                } else {
+                    let cs = CString::from(unsafe { CStr::from_ptr(cs) });
+                    Some(Ok((ExtractedField::String(cs), range)))
+                }
+            } else {
+                Some(Ok((ExtractedField::None, range)))
+            };
+        }
+
+        for plugin in &mut self.plugins {
+            if let Some(res) = plugin.extract_field_with_range(event, field) {
                 return Some(res);
             }
         }
