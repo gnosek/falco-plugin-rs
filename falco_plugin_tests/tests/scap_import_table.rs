@@ -41,7 +41,7 @@ struct ThreadMetadata {
 }
 
 thread_local! {
-static TEST_DONE: AtomicBool = AtomicBool::new(false);
+static TEST_DONE: AtomicBool = const { AtomicBool::new(false) };
 }
 
 struct DummyPlugin {
