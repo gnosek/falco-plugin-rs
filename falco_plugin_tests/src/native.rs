@@ -1,4 +1,4 @@
-use crate::{CapturingTestDriver, ScapStatus, SinspMetric, TestDriver};
+use crate::{AsPtr, CapturingTestDriver, ScapStatus, SinspMetric, TestDriver};
 use falco_plugin_runner::{CapturingPluginRunner, ExtractedField, MetricValue, PluginRunner};
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter};
@@ -64,6 +64,12 @@ impl TestDriver for NativeTestDriver {
     fn start_capture(self, _name: &CStr, _config: &CStr) -> anyhow::Result<Self::Capturing> {
         let capturing = self.0.start_capture()?;
         Ok(NativeCapturingTestDriver(capturing))
+    }
+}
+
+impl AsPtr for falco_plugin_runner::Event {
+    fn as_ptr(&self) -> *const u8 {
+        self.buf.cast()
     }
 }
 
