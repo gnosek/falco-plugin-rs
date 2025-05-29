@@ -1,4 +1,4 @@
-use super::{CapturingTestDriver, SavefileTestDriver, ScapStatus, TestDriver};
+use super::{AsPtr, CapturingTestDriver, SavefileTestDriver, ScapStatus, TestDriver};
 use crate::common::{Api, CaptureNotStarted, CaptureStarted, SinspMetric};
 use cxx;
 use cxx::UniquePtr;
@@ -29,6 +29,8 @@ mod ffi {
 
         type SinspTestDriver;
         type sinsp_plugin;
+
+        fn scap_event(self: &SinspEvent) -> *const c_char;
 
         fn new_test_driver() -> UniquePtr<SinspTestDriver>;
 
@@ -71,6 +73,12 @@ mod ffi {
 
 pub struct SinspEvent {
     event: ffi::SinspEvent,
+}
+
+impl AsPtr for SinspEvent {
+    fn as_ptr(&self) -> *const u8 {
+        self.event.scap_event().cast()
+    }
 }
 
 pub struct SinspPlugin {

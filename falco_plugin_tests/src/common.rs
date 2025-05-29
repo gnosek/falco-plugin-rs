@@ -51,9 +51,13 @@ pub trait SavefileTestDriver: TestDriver {
     fn load_capture_file(self, path: &CStr) -> anyhow::Result<Self::Capturing>;
 }
 
+pub trait AsPtr {
+    fn as_ptr(&self) -> *const u8;
+}
+
 pub trait CapturingTestDriver {
     type NonCapturing: TestDriver<Capturing = Self>;
-    type Event;
+    type Event: AsPtr;
 
     fn next_event(&mut self) -> Result<Self::Event, ScapStatus>;
 

@@ -5,6 +5,12 @@
 
 static std::mutex s_sinsp_lock;
 
+const char* SinspEvent::scap_event() const noexcept
+{
+    auto sinsp_event = (const sinsp_evt*)evt;
+    return reinterpret_cast<const char*>(sinsp_event->get_scap_evt());
+}
+
 std::unique_ptr<SinspTestDriver> new_test_driver()
 {
     std::scoped_lock m(s_sinsp_lock);
