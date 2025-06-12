@@ -77,9 +77,19 @@ SinspTestDriver::event_field_as_string(const char *field_name,
     throw sinsp_exception("The event class is NULL");
   }
 
-  std::unique_ptr<sinsp_filter_check> chk(
-      m_filterchecks.new_filter_check_from_fldname(field_name, &m_sinsp,
-                                                   false));
+  sinsp_filter_check *chk;
+  auto chk_iter = m_filtercheck_cache.find(field_name);
+
+  if (chk_iter == m_filtercheck_cache.end()) {
+    std::unique_ptr<sinsp_filter_check> new_chk =
+        m_filterchecks.new_filter_check_from_fldname(field_name, &m_sinsp,
+                                                     false);
+    chk = new_chk.get();
+    m_filtercheck_cache.insert(std::make_pair(field_name, std::move(new_chk)));
+  } else {
+    chk = chk_iter->second.get();
+  }
+
   if (chk == nullptr) {
     throw sinsp_exception("The field " + std::string(field_name) +
                           " is not a valid field.");
@@ -108,9 +118,19 @@ SinspTestDriver::event_field_as_string_with_offsets(const char *field_name,
     throw sinsp_exception("The event class is NULL");
   }
 
-  std::unique_ptr<sinsp_filter_check> chk(
-      m_filterchecks.new_filter_check_from_fldname(field_name, &m_sinsp,
-                                                   false));
+  sinsp_filter_check *chk;
+  auto chk_iter = m_filtercheck_cache.find(field_name);
+
+  if (chk_iter == m_filtercheck_cache.end()) {
+    std::unique_ptr<sinsp_filter_check> new_chk =
+        m_filterchecks.new_filter_check_from_fldname(field_name, &m_sinsp,
+                                                     false);
+    chk = new_chk.get();
+    m_filtercheck_cache.insert(std::make_pair(field_name, std::move(new_chk)));
+  } else {
+    chk = chk_iter->second.get();
+  }
+
   if (chk == nullptr) {
     throw sinsp_exception("The field " + std::string(field_name) +
                           " is not a valid field.");
@@ -150,9 +170,18 @@ SinspTestDriver::extract_event_field(const char *field_name,
     throw sinsp_exception("The event class is NULL");
   }
 
-  std::unique_ptr<sinsp_filter_check> chk(
-      m_filterchecks.new_filter_check_from_fldname(field_name, &m_sinsp,
-                                                   false));
+  sinsp_filter_check *chk;
+  auto chk_iter = m_filtercheck_cache.find(field_name);
+
+  if (chk_iter == m_filtercheck_cache.end()) {
+    std::unique_ptr<sinsp_filter_check> new_chk =
+        m_filterchecks.new_filter_check_from_fldname(field_name, &m_sinsp,
+                                                     false);
+    chk = new_chk.get();
+    m_filtercheck_cache.insert(std::make_pair(field_name, std::move(new_chk)));
+  } else {
+    chk = chk_iter->second.get();
+  }
 
   if (chk == nullptr) {
     throw sinsp_exception("The field " + std::string(field_name) +

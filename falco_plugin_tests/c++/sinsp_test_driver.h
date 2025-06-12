@@ -6,6 +6,7 @@ struct SinspMetric;
 #include <libsinsp/plugin.h>
 #include <libsinsp/sinsp.h>
 #include <memory>
+#include <unordered_map>
 
 #include "falco_plugin_tests/src/ffi.rs.h"
 
@@ -37,6 +38,8 @@ private:
   libs::metrics::libs_metrics_collector m_metrics;
   sinsp_filter_check_list m_filterchecks;
   std::vector<extract_value_t> m_extracted_values;
+  std::unordered_map<std::string, std::unique_ptr<sinsp_filter_check>>
+      m_filtercheck_cache;
 };
 
 std::unique_ptr<SinspTestDriver> new_test_driver();
