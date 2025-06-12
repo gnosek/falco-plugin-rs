@@ -14,7 +14,7 @@ std::unique_ptr<SinspTestDriver> new_test_driver() {
   std::scoped_lock m(s_sinsp_lock);
 
   libsinsp_logger()->add_stdout_log();
-  libsinsp_logger()->set_severity(sinsp_logger::SEV_TRACE);
+  libsinsp_logger()->set_severity(sinsp_logger::SEV_CRITICAL);
   return std::make_unique<SinspTestDriver>();
 }
 
