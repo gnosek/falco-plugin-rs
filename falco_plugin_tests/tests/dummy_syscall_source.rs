@@ -110,7 +110,9 @@ static_plugin!(EXTRACT_PLUGIN_API = DummyExtractPlugin);
 #[cfg(test)]
 mod tests {
     use falco_plugin::base::Plugin;
-    use falco_plugin_tests::{init_plugin, instantiate_tests, CapturingTestDriver, TestDriver};
+    use falco_plugin_tests::{
+        init_plugin, instantiate_tests, CapturingTestDriver, PlatformData, TestDriver,
+    };
 
     fn test_dummy_init<D: TestDriver>() {
         init_plugin::<D>(&super::DUMMY_PLUGIN_API, c"testing").unwrap();
@@ -129,7 +131,9 @@ mod tests {
             .unwrap();
         driver.add_filterchecks(&plugin, c"syscall").unwrap();
 
-        let mut driver = driver.start_capture(super::DummyPlugin::NAME, c"").unwrap();
+        let mut driver = driver
+            .start_capture(super::DummyPlugin::NAME, c"", PlatformData::Disabled)
+            .unwrap();
 
         let event = driver.next_event().unwrap();
         assert_eq!(

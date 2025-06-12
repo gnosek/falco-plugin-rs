@@ -145,13 +145,15 @@ mod tests {
     use falco_plugin::base::Plugin;
     use falco_plugin::extract::INVALID_RANGE;
     use falco_plugin_tests::{
-        init_plugin, instantiate_tests, AsPtr, CapturingTestDriver, TestDriver,
+        init_plugin, instantiate_tests, AsPtr, CapturingTestDriver, PlatformData, TestDriver,
     };
 
     fn test_without_range<D: TestDriver>() {
         let (mut driver, plugin) = init_plugin::<D>(&super::DUMMY_PLUGIN_API, c"").unwrap();
         driver.add_filterchecks(&plugin, c"dummy").unwrap();
-        let mut driver = driver.start_capture(super::DummyPlugin::NAME, c"").unwrap();
+        let mut driver = driver
+            .start_capture(super::DummyPlugin::NAME, c"", PlatformData::Disabled)
+            .unwrap();
 
         let event = driver.next_event().unwrap();
         assert_eq!(
@@ -166,7 +168,9 @@ mod tests {
     fn test_with_range<D: TestDriver>() {
         let (mut driver, plugin) = init_plugin::<D>(&super::DUMMY_PLUGIN_API, c"").unwrap();
         driver.add_filterchecks(&plugin, c"dummy").unwrap();
-        let mut driver = driver.start_capture(super::DummyPlugin::NAME, c"").unwrap();
+        let mut driver = driver
+            .start_capture(super::DummyPlugin::NAME, c"", PlatformData::Disabled)
+            .unwrap();
 
         let event = driver.next_event().unwrap();
 

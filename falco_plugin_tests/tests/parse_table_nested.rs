@@ -335,7 +335,7 @@ static_plugin!(DUMMY_EXTRACT_API = DummyExtractPlugin);
 mod tests {
     use falco_plugin::base::Plugin;
     use falco_plugin_tests::{
-        init_plugin, instantiate_tests, CapturingTestDriver, ScapStatus, TestDriver,
+        init_plugin, instantiate_tests, CapturingTestDriver, PlatformData, ScapStatus, TestDriver,
     };
 
     fn test_dummy_next<D: TestDriver>() {
@@ -347,7 +347,9 @@ mod tests {
             .register_plugin(&super::DUMMY_PARSE_API, c"")
             .unwrap();
         driver.add_filterchecks(&extract_plugin, c"dummy").unwrap();
-        let mut driver = driver.start_capture(super::DummyPlugin::NAME, c"").unwrap();
+        let mut driver = driver
+            .start_capture(super::DummyPlugin::NAME, c"", PlatformData::Disabled)
+            .unwrap();
 
         let event = driver.next_event().unwrap();
         assert_eq!(

@@ -1,4 +1,4 @@
-use super::{AsPtr, CapturingTestDriver, SavefileTestDriver, ScapStatus, TestDriver};
+use super::{AsPtr, CapturingTestDriver, PlatformData, SavefileTestDriver, ScapStatus, TestDriver};
 use crate::common::{Api, CaptureNotStarted, CaptureStarted, SinspMetric};
 use cxx;
 use cxx::UniquePtr;
@@ -56,6 +56,7 @@ mod ffi {
             self: Pin<&mut SinspTestDriver>,
             name: *const c_char,
             config: *const c_char,
+            platform_data: bool,
         ) -> Result<()>;
 
         fn next(self: Pin<&mut SinspTestDriver>) -> SinspEvent;
@@ -166,12 +167,14 @@ impl TestDriver for SinspTestDriver<CaptureNotStarted> {
         mut self,
         name: &CStr,
         config: &CStr,
-    ) -> anyhow::Result<SinspTestDriver<CaptureStarted>> {
+        platform_data: PlatformData,
+    ) -> anyhow::Result<Self::Capturing> {
         unsafe {
-            self.driver
-                .as_mut()
-                .unwrap()
-                .start_capture(name.as_ptr(), config.as_ptr())?;
+            self.driver.as_mut().unwrap().start_capture(
+                name.as_ptr(),
+                config.as_ptr(),
+                platform_data == PlatformData::Enabled,
+            )?;
         }
 
         Ok(SinspTestDriver::<CaptureStarted> {

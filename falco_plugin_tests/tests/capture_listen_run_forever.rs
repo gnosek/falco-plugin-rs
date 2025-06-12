@@ -109,12 +109,14 @@ static_plugin!(DUMMY_PLUGIN_API = DummyPlugin);
 mod tests {
     use falco_plugin::base::Plugin;
     use falco_plugin_tests::{
-        init_plugin, instantiate_tests, CapturingTestDriver, ScapStatus, TestDriver,
+        init_plugin, instantiate_tests, CapturingTestDriver, PlatformData, ScapStatus, TestDriver,
     };
 
     fn test_listen<D: TestDriver>() {
         let (driver, _plugin) = init_plugin::<D>(&super::DUMMY_PLUGIN_API, c"").unwrap();
-        let mut driver = driver.start_capture(super::DummyPlugin::NAME, c"").unwrap();
+        let mut driver = driver
+            .start_capture(super::DummyPlugin::NAME, c"", PlatformData::Disabled)
+            .unwrap();
 
         loop {
             let event = driver.next_event();

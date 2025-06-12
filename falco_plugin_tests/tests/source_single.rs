@@ -85,7 +85,7 @@ static_plugin!(DUMMY_PLUGIN_API = DummyPlugin);
 mod tests {
     use falco_plugin::base::Plugin;
     use falco_plugin_tests::{
-        init_plugin, instantiate_tests, CapturingTestDriver, ScapStatus, TestDriver,
+        init_plugin, instantiate_tests, CapturingTestDriver, PlatformData, ScapStatus, TestDriver,
     };
 
     fn check_metrics<C: CapturingTestDriver>(driver: &mut C, n: usize) {
@@ -102,7 +102,9 @@ mod tests {
 
     fn test_dummy_next<D: TestDriver>() {
         let (driver, _plugin) = init_plugin::<D>(&super::DUMMY_PLUGIN_API, c"").unwrap();
-        let mut driver = driver.start_capture(super::DummyPlugin::NAME, c"").unwrap();
+        let mut driver = driver
+            .start_capture(super::DummyPlugin::NAME, c"", PlatformData::Disabled)
+            .unwrap();
 
         assert_eq!(
             driver.next_event_as_str().unwrap().unwrap(),

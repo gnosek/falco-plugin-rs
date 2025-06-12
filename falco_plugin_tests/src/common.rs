@@ -22,6 +22,12 @@ pub struct SinspMetric {
     pub value: u64, // TODO: this is... taking shortcuts
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlatformData {
+    Enabled,
+    Disabled,
+}
+
 pub trait TestDriver: Debug + Sized {
     type Capturing: CapturingTestDriver<NonCapturing = Self>;
     type Plugin: Debug;
@@ -44,7 +50,12 @@ pub trait TestDriver: Debug + Sized {
 
     fn add_filterchecks(&mut self, plugin: &Self::Plugin, source: &CStr) -> anyhow::Result<()>;
 
-    fn start_capture(self, name: &CStr, config: &CStr) -> anyhow::Result<Self::Capturing>;
+    fn start_capture(
+        self,
+        name: &CStr,
+        config: &CStr,
+        platform_data: PlatformData,
+    ) -> anyhow::Result<Self::Capturing>;
 }
 
 pub trait SavefileTestDriver: TestDriver {

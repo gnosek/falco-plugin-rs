@@ -57,11 +57,13 @@ static_plugin!(DUMMY_PLUGIN_API = DummyPlugin);
 #[cfg(test)]
 mod tests {
     use falco_plugin::base::Plugin;
-    use falco_plugin_tests::{init_plugin, instantiate_tests, TestDriver};
+    use falco_plugin_tests::{init_plugin, instantiate_tests, PlatformData, TestDriver};
 
     fn test_dummy_next<D: TestDriver>() {
         let (driver, _plugin) = init_plugin::<D>(&super::DUMMY_PLUGIN_API, c"").unwrap();
-        assert!(driver.start_capture(super::DummyPlugin::NAME, c"").is_err());
+        assert!(driver
+            .start_capture(super::DummyPlugin::NAME, c"", PlatformData::Disabled)
+            .is_err());
     }
 
     instantiate_tests!(test_dummy_next);
