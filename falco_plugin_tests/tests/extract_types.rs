@@ -308,11 +308,14 @@ macro_rules! extract_test_case {
     ($ident:ident, $expected_val_expr:expr, $expected_vec_expr:expr) => {
         mod $ident {
             use super::*;
+            use falco_plugin_tests::PlatformData;
 
             fn test_extract<D: TestDriver>() {
                 let (mut driver, plugin) = init_plugin::<D>(&crate::DUMMY_PLUGIN_API, c"").unwrap();
                 driver.add_filterchecks(&plugin, c"dummy").unwrap();
-                let mut driver = driver.start_capture(crate::DummyPlugin::NAME, c"").unwrap();
+                let mut driver = driver
+                    .start_capture(crate::DummyPlugin::NAME, c"", PlatformData::Disabled)
+                    .unwrap();
 
                 let event = driver.next_event().unwrap();
 
@@ -375,10 +378,13 @@ mod tests {
 
     mod abstime {
         use super::*;
+        use falco_plugin_tests::PlatformData;
         fn test_extract<D: TestDriver>() {
             let (mut driver, plugin) = init_plugin::<D>(&crate::DUMMY_PLUGIN_API, c"").unwrap();
             driver.add_filterchecks(&plugin, c"dummy").unwrap();
-            let mut driver = driver.start_capture(crate::DummyPlugin::NAME, c"").unwrap();
+            let mut driver = driver
+                .start_capture(crate::DummyPlugin::NAME, c"", PlatformData::Disabled)
+                .unwrap();
 
             let event = driver.next_event().unwrap();
 

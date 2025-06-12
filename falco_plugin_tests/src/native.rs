@@ -1,4 +1,4 @@
-use crate::{AsPtr, CapturingTestDriver, ScapStatus, SinspMetric, TestDriver};
+use crate::{AsPtr, CapturingTestDriver, PlatformData, ScapStatus, SinspMetric, TestDriver};
 use falco_plugin_runner::{CapturingPluginRunner, ExtractedField, MetricValue, PluginRunner};
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter};
@@ -62,7 +62,16 @@ impl TestDriver for NativeTestDriver {
         Ok(())
     }
 
-    fn start_capture(self, _name: &CStr, _config: &CStr) -> anyhow::Result<Self::Capturing> {
+    fn start_capture(
+        self,
+        _name: &CStr,
+        _config: &CStr,
+        platform_data: PlatformData,
+    ) -> anyhow::Result<Self::Capturing> {
+        anyhow::ensure!(
+            platform_data == PlatformData::Disabled,
+            "Platform data is not supported"
+        );
         let capturing = self.0.start_capture()?;
         Ok(NativeCapturingTestDriver(capturing))
     }

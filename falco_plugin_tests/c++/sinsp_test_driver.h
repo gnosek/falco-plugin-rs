@@ -18,7 +18,7 @@ public:
   void add_filterchecks(const std::shared_ptr<sinsp_plugin> &plugin,
                         const char *source);
   void load_capture_file(const char *path);
-  void start_capture(const char *name, const char *config);
+  void start_capture(const char *name, const char *config, bool platform_data);
   SinspEvent next();
   std::unique_ptr<std::string> event_field_as_string(const char *field_name,
                                                      const SinspEvent &event);
