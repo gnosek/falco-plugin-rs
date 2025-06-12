@@ -450,9 +450,9 @@ macro_rules! plugin {
 /// version supported by this crate.
 #[macro_export]
 macro_rules! static_plugin {
-    ($(#[$attr:tt])? $name:ident = $ty:ty) => {
+    ($(#[$attr:tt])? $vis:vis $name:ident = $ty:ty) => {
         static_plugin!(
-            $name @ unsafe {
+            $vis $name @ unsafe {
                 falco_plugin::api::PLUGIN_API_VERSION_MAJOR as usize;
                 falco_plugin::api::PLUGIN_API_VERSION_MINOR as usize;
                 0
@@ -460,9 +460,9 @@ macro_rules! static_plugin {
             = $(#[$attr])? $ty
         );
     };
-    ($name:ident @ unsafe { $maj:expr; $min:expr; $patch:expr } = #[no_capabilities] $ty:ty) => {
+    ($vis:vis $name:ident @ unsafe { $maj:expr; $min:expr; $patch:expr } = #[no_capabilities] $ty:ty) => {
         #[unsafe(no_mangle)]
-        static $name: falco_plugin::api::plugin_api = const {
+        $vis static $name: falco_plugin::api::plugin_api = const {
             $crate::base_plugin_ffi_wrappers!($maj; $min; $patch => #[deny(dead_code)] $ty);
             __plugin_base_api()
         };
@@ -475,8 +475,8 @@ macro_rules! static_plugin {
         unsafe impl $crate::internals::parse::wrappers::ParsePluginExported for $ty {}
         unsafe impl $crate::internals::source::wrappers::SourcePluginExported for $ty {}
     };
-    ($name:ident @ unsafe { $maj:expr; $min:expr; $patch:expr } = $ty:ty) => {
-        static_plugin!($name @ unsafe { $maj; $min; $patch } = #[no_capabilities] $ty);
+    ($vis:vis $name:ident @ unsafe { $maj:expr; $min:expr; $patch:expr } = $ty:ty) => {
+        static_plugin!($vis $name @ unsafe { $maj; $min; $patch } = #[no_capabilities] $ty);
 
         $crate::ensure_plugin_capabilities!($ty);
     }
