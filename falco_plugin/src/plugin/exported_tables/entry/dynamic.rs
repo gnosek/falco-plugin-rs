@@ -7,11 +7,10 @@ use crate::plugin::exported_tables::metadata::HasMetadata;
 use crate::plugin::exported_tables::ref_shared::RefShared;
 use crate::plugin::tables::data::FieldTypeId;
 use falco_plugin_api::ss_plugin_state_data;
-use std::collections::BTreeMap;
 use std::ffi::CStr;
 
 /// A table value type that only has dynamic fields
-pub type DynamicEntry = BTreeMap<FieldId, DynamicFieldValue>;
+pub type DynamicEntry = Vec<DynamicFieldValue>;
 
 impl HasMetadata for DynamicEntry {
     type Metadata = RefShared<DynamicFieldsOnly>;
@@ -31,15 +30,37 @@ impl Entry for DynamicEntry {
         type_id: FieldTypeId,
         out: &mut ss_plugin_state_data,
     ) -> Result<(), anyhow::Error> {
-        let field = self
-            .get(&key)
-            .ok_or_else(|| anyhow::anyhow!("Dynamic field {:?} not found", key))?;
+        match key {
+            FieldId::Static(_) => Err(anyhow::anyhow!(
+                "DynamicEntry does not support static fields"
+            )),
+            FieldId::Dynamic(id) => {
+                let field = self
+                    .as_slice()
+                    .get(id)
+                    .ok_or_else(|| anyhow::anyhow!("Dynamic field {:?} not found", key))?;
 
-        field.to_data(out, type_id)
+                field.to_data(out, type_id)
+            }
+        }
     }
 
     fn set(&mut self, key: FieldId, value: DynamicFieldValue) -> Result<(), anyhow::Error> {
-        self.insert(key, value);
-        Ok(())
+        match key {
+            FieldId::Static(_) => Err(anyhow::anyhow!(
+                "DynamicEntry does not support static fields"
+            )),
+            FieldId::Dynamic(id) => {
+                if id == self.len() {
+                    self.push(value);
+                } else if id < self.len() {
+                    self[id] = value;
+                } else {
+                    self.resize_with(id, || DynamicFieldValue::None);
+                    self.push(value);
+                }
+                Ok(())
+            }
+        }
     }
 }
