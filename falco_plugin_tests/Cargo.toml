@@ -15,6 +15,26 @@ harness = false
 name = "binary_event_all"
 harness = false
 
+[[bench]]
+name = "plugin_source_batch"
+harness = false
+
+[[bench]]
+name = "plugin_source_parse_noop"
+harness = false
+
+[[bench]]
+name = "plugin_custom_tables"
+harness = false
+
+[[bench]]
+name = "plugin_extract_static"
+harness = false
+
+[[bench]]
+name = "plugin_threadinfo"
+harness = false
+
 [dependencies]
 anyhow = "1.0.88"
 cxx = { version = "1.0.124", features = ["c++17"] }

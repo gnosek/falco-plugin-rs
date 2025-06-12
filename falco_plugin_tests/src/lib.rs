@@ -10,6 +10,8 @@ use std::ffi::CStr;
 pub mod native;
 
 pub mod common;
+pub mod plugin_collection;
+
 pub use common::*;
 
 pub fn init_plugin<D: TestDriver>(

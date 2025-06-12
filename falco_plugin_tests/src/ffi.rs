@@ -149,6 +149,8 @@ impl TestDriver for SinspTestDriver<CaptureNotStarted> {
     type Capturing = SinspTestDriver<CaptureStarted>;
     type Plugin = SinspPlugin;
 
+    const NAME: &'static str = "sinsp";
+
     fn new() -> anyhow::Result<Self> {
         let driver = ffi::new_test_driver();
         anyhow::ensure!(!driver.is_null(), "null driver");

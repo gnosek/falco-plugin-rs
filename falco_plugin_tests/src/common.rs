@@ -44,6 +44,8 @@ pub trait TestDriver: Debug + Sized {
     type Capturing: CapturingTestDriver<NonCapturing = Self>;
     type Plugin: Debug;
 
+    const NAME: &'static str;
+
     fn new() -> anyhow::Result<Self>;
 
     fn register_plugin(

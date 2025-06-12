@@ -32,6 +32,8 @@ impl TestDriver for NativeTestDriver {
     type Capturing = NativeCapturingTestDriver;
     type Plugin = NativePlugin;
 
+    const NAME: &'static str = "native";
+
     fn new() -> anyhow::Result<Self> {
         Ok(Self(PluginRunner::new()))
     }
