@@ -8,8 +8,10 @@ use std::ffi::{CStr, CString};
 ///
 /// This corresponds to `ss_plugin_state_data` in the plugin API.
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum DynamicFieldValue {
+    #[default]
+    None,
     U8(u8),
     I8(i8),
     U16(u16),
