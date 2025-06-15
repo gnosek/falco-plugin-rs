@@ -377,6 +377,18 @@ impl EventInfo {
             }
         )
     }
+
+    fn variant_binary_size(&self) -> proc_macro2::TokenStream {
+        let event_code = &self.event_code;
+        let event_type = Ident::new(
+            &event_code.to_string().replace("PPME_", ""),
+            event_code.span(),
+        );
+
+        quote!(
+            AnyEvent::#event_type(inner) => inner.binary_size(),
+        )
+    }
 }
 
 struct Events {
@@ -427,6 +439,10 @@ impl Events {
     fn variants_to_bytes(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
         self.events.iter().map(|e| e.variant_to_bytes())
     }
+
+    fn variants_binary_size(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
+        self.events.iter().map(|e| e.variant_binary_size())
+    }
 }
 
 fn event_info_variant(events: &Events) -> proc_macro2::TokenStream {
@@ -435,6 +451,7 @@ fn event_info_variant(events: &Events) -> proc_macro2::TokenStream {
     let variants = events.enum_variants();
     let variant_fmts = events.variant_fmts();
     let variants_to_bytes = events.variants_to_bytes();
+    let variants_binary_size = events.variants_binary_size();
     let lifetime = quote!(<'a>);
 
     quote!(
@@ -449,6 +466,13 @@ fn event_info_variant(events: &Events) -> proc_macro2::TokenStream {
         }
 
         impl #lifetime crate::events::PayloadToBytes for AnyEvent #lifetime {
+            #[inline]
+            fn binary_size(&self) -> usize {
+                match self {
+                    #(#variants_binary_size)*
+                }
+            }
+
             fn write<W: std::io::Write>(&self, metadata: &crate::events::EventMetadata, writer: W) -> std::io::Result<()> {
                 match self {
                     #(#variants_to_bytes)*

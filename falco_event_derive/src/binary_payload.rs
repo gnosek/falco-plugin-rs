@@ -16,6 +16,11 @@ pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
                 quote!(<Self as EventPayload>::LengthType::try_from(self.#name.binary_size()).unwrap())
             });
 
+            let field_sizes_usize = fields.named.iter().map(|field| {
+                let name = &field.ident;
+                quote!(self.#name.binary_size())
+            });
+
             let field_writes = fields.named.iter().map(|field| {
                 let name = &field.ident;
                 quote!(self.#name.write(&mut writer)?;)
@@ -26,6 +31,17 @@ pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
 
             return TokenStream::from(quote!(
             impl #impl_generics crate::events::PayloadToBytes for #name #ty_generics #where_clause {
+                #[inline]
+                fn binary_size(&self) -> usize {
+                    use crate::events::EventPayload;
+                    use crate::fields::ToBytes;
+
+                    let mut size = 26;
+                    size += ::std::mem::size_of::<<Self as EventPayload>::LengthType>() * #num_fields;
+                    #(size += #field_sizes_usize;)*
+                    size
+                }
+
                 fn write<W: std::io::Write>(&self, metadata: &crate::events::EventMetadata, mut writer: W) -> std::io::Result<()> {
                     use crate::events::EventPayload;
                     use crate::fields::ToBytes;

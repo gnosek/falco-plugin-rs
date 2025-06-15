@@ -1,10 +1,16 @@
 use std::io::Write;
 
 pub trait EventToBytes {
+    fn binary_size(&self) -> usize;
+
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()>;
 }
 
 impl EventToBytes for &[u8] {
+    fn binary_size(&self) -> usize {
+        self.len()
+    }
+
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
         writer.write_all(self)
     }

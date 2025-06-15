@@ -16,6 +16,10 @@ impl<T: Debug> Debug for Event<T> {
 }
 
 impl<T: PayloadToBytes> EventToBytes for Event<T> {
+    fn binary_size(&self) -> usize {
+        26 + self.params.binary_size()
+    }
+
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.params.write(&self.metadata, writer)
     }
