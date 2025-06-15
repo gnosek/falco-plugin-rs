@@ -27,7 +27,8 @@ impl EventBatch<'_> {
     /// the [`source::SourcePluginInstance::plugin_event`](`crate::source::SourcePluginInstance::plugin_event`)
     /// helper method.
     pub fn add(&mut self, event: impl EventToBytes) -> std::io::Result<()> {
-        let mut event_buf = bumpalo::collections::Vec::new_in(self.alloc);
+        let mut event_buf =
+            bumpalo::collections::Vec::with_capacity_in(event.binary_size(), self.alloc);
         event.write(&mut event_buf)?;
         self.pointers.push(event_buf.as_ptr());
         Ok(())

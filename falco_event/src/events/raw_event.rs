@@ -206,6 +206,10 @@ impl<'e> RawEvent<'e> {
 }
 
 impl EventToBytes for RawEvent<'_> {
+    fn binary_size(&self) -> usize {
+        self.len as usize
+    }
+
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
         self.metadata
             .write_header(self.len, self.event_type, self.nparams, &mut writer)?;

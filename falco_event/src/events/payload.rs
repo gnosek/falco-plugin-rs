@@ -45,5 +45,7 @@ pub enum PayloadFromBytesError {
 }
 
 pub trait PayloadToBytes {
+    fn binary_size(&self) -> usize;
+
     fn write<W: Write>(&self, metadata: &EventMetadata, writer: W) -> std::io::Result<()>;
 }
