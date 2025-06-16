@@ -84,9 +84,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.16.0"
+version = "3.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79296716171880943b8470b5f8d03aa55eb2e645a4874bdbb28adb49162e012c"
+checksum = "793db76d6187cd04dff33004d8e6c9cc4e05cd330500379d2394209271b4aeee"
 
 [[package]]
 name = "c_str_macro"
@@ -484,6 +484,7 @@ name = "falco_plugin_runner"
 version = "0.4.0"
 dependencies = [
  "anyhow",
+ "bumpalo",
  "chrono",
  "falco_event",
  "falco_plugin",

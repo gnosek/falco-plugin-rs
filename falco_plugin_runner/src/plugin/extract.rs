@@ -294,6 +294,7 @@ pub struct ExtractPlugin {
     api: *const plugin_api__bindgen_ty_2,
     fields: Vec<ExtractFieldDescriptor>,
     filter: EventSourceFilter,
+    storage: bumpalo::Bump,
 }
 
 impl ExtractPlugin {
@@ -317,6 +318,7 @@ impl ExtractPlugin {
             api,
             fields,
             filter,
+            storage: bumpalo::Bump::new(),
         })
     }
 
@@ -376,10 +378,10 @@ impl ExtractPlugin {
         };
 
         let event_input = event.to_event_input();
-        let field_cstr = match CString::new(field) {
-            Ok(cstr) => cstr,
-            Err(_) => return Some(Err(ss_plugin_rc_SS_PLUGIN_FAILURE)),
-        };
+        let mut field_cstr =
+            bumpalo::collections::Vec::<u8>::with_capacity_in(field.len() + 1, &self.storage);
+        field_cstr.extend_from_slice(field.as_bytes());
+        field_cstr.push(0);
 
         let mut extract_fields = ss_plugin_extract_field {
             res: ss_plugin_extract_field__bindgen_ty_1 {
@@ -387,7 +389,7 @@ impl ExtractPlugin {
             },
             res_len: 0,
             field_id: idx as u32,
-            field: field_cstr.as_ptr(),
+            field: field_cstr.as_ptr().cast(),
             arg_key: maybe_arg
                 .as_ref()
                 .map(|s| s.as_ptr())
