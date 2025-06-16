@@ -1,11 +1,18 @@
-use super::{AsPtr, CapturingTestDriver, PlatformData, SavefileTestDriver, ScapStatus, TestDriver};
+use super::{
+    AsPtr, CapturingTestDriver, PlatformData, RawExtractedValue, SavefileTestDriver, ScapStatus,
+    TestDriver,
+};
 use crate::common::{Api, CaptureNotStarted, CaptureStarted, SinspMetric};
 use cxx;
 use cxx::UniquePtr;
+use falco_plugin::event::fields::types::PT_IPNET;
+use falco_plugin_runner::ExtractedField;
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ops::Range;
+use std::ptr::read_unaligned;
 
 #[allow(clippy::missing_safety_doc)]
 #[allow(clippy::module_inception)]
@@ -14,6 +21,23 @@ mod ffi {
     struct SinspEvent {
         rc: i32,
         evt: *mut c_char,
+    }
+
+    #[derive(Debug)]
+    enum ExtractFieldType {
+        String = 9,
+        Uint64 = 8,
+        Bool = 25,
+        RelTime = 20,
+        AbsTime = 21,
+        IpAddr = 40,
+        IpNet = 41,
+    }
+
+    struct SinspExtractedField<'a> {
+        field_type: ExtractFieldType,
+        is_list: bool,
+        values: &'a CxxVector<extract_value_t>,
     }
 
     struct SinspMetric {
@@ -30,6 +54,7 @@ mod ffi {
 
         type SinspTestDriver;
         type sinsp_plugin;
+        type extract_value_t = crate::common::RawExtractedValue;
 
         fn scap_event(self: &SinspEvent) -> *const c_char;
 
@@ -75,10 +100,18 @@ mod ffi {
             length: &mut u32,
         ) -> Result<UniquePtr<CxxString>>;
 
+        unsafe fn extract_event_field(
+            self: Pin<&mut SinspTestDriver>,
+            field_name: *const c_char,
+            event: &SinspEvent,
+        ) -> Result<SinspExtractedField>;
+
         fn get_metrics(
             self: Pin<&mut SinspTestDriver>,
         ) -> Result<UniquePtr<CxxVector<SinspMetric>>>;
     }
+
+    impl CxxVector<extract_value_t> {}
 }
 
 pub struct SinspEvent {
@@ -276,6 +309,90 @@ impl CapturingTestDriver for SinspTestDriver<CaptureStarted> {
                 .unwrap()
                 .event_field_as_string(field_name.as_ptr(), &event.event)
                 .is_err()
+        }
+    }
+
+    fn extract_field(
+        &mut self,
+        field_name: &CStr,
+        event: &Self::Event,
+    ) -> anyhow::Result<Option<ExtractedField>> {
+        let extracted = unsafe {
+            self.driver
+                .as_mut()
+                .unwrap()
+                .extract_event_field(field_name.as_ptr(), &event.event)?
+        };
+
+        fn extract_one(
+            field_type: ffi::ExtractFieldType,
+            value: &RawExtractedValue,
+        ) -> anyhow::Result<ExtractedField> {
+            if value.ptr.is_null() {
+                return Ok(ExtractedField::None);
+            }
+
+            fn extract_ipaddr(value: &RawExtractedValue) -> anyhow::Result<IpAddr> {
+                match value.len {
+                    4 => {
+                        let bytes: [u8; 4] = unsafe { read_unaligned(value.ptr.cast()) };
+                        let v = u32::from_be_bytes(bytes);
+                        Ok(IpAddr::V4(Ipv4Addr::from(v)))
+                    }
+                    16 => {
+                        let v: [u8; 16] = unsafe { read_unaligned(value.ptr.cast()) };
+                        Ok(IpAddr::V6(Ipv6Addr::from(v)))
+                    }
+                    _ => anyhow::bail!("Invalid length for IP address: {}", value.len),
+                }
+            }
+
+            match field_type {
+                ffi::ExtractFieldType::Uint64 => {
+                    let v = unsafe { std::ptr::read_unaligned(value.ptr.cast()) };
+                    Ok(ExtractedField::U64(v))
+                }
+                ffi::ExtractFieldType::Bool => {
+                    let v: u32 = unsafe { read_unaligned(value.ptr.cast()) };
+                    Ok(ExtractedField::Bool(v != 0))
+                }
+                ffi::ExtractFieldType::RelTime => {
+                    let v: u64 = unsafe { read_unaligned(value.ptr.cast()) };
+                    Ok(ExtractedField::RelTime(std::time::Duration::from_nanos(v)))
+                }
+                ffi::ExtractFieldType::AbsTime => {
+                    let v: u64 = unsafe { read_unaligned(value.ptr.cast()) };
+                    Ok(ExtractedField::AbsTime(
+                        std::time::UNIX_EPOCH + std::time::Duration::from_nanos(v),
+                    ))
+                }
+                ffi::ExtractFieldType::String => {
+                    let s = unsafe { CStr::from_ptr(value.ptr.cast()) };
+                    Ok(ExtractedField::String(s.to_owned()))
+                }
+                ffi::ExtractFieldType::IpAddr => {
+                    let ip = extract_ipaddr(value)?;
+                    Ok(ExtractedField::IpAddr(ip))
+                }
+                ffi::ExtractFieldType::IpNet => {
+                    let ip = extract_ipaddr(value)?;
+                    Ok(ExtractedField::IpNet(PT_IPNET(ip)))
+                }
+                other => anyhow::bail!("Invalid field type: {:?}", other),
+            }
+        }
+
+        if extracted.values.is_empty() {
+            Ok(None)
+        } else if extracted.is_list {
+            let mut out = Vec::new();
+            for value in extracted.values.iter() {
+                out.push(extract_one(extracted.field_type, value)?);
+            }
+            Ok(Some(ExtractedField::Vec(out)))
+        } else {
+            let value = extracted.values.get(0).unwrap();
+            extract_one(extracted.field_type, value).map(Some)
         }
     }
 

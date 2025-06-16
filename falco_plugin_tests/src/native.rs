@@ -133,6 +133,19 @@ impl CapturingTestDriver for NativeCapturingTestDriver {
         }
     }
 
+    fn extract_field(
+        &mut self,
+        field_name: &CStr,
+        event: &Self::Event,
+    ) -> anyhow::Result<Option<ExtractedField>> {
+        let s = std::str::from_utf8(field_name.to_bytes())?;
+        match self.0.extract_field(event, s) {
+            None => Ok(None),
+            Some(Err(e)) => Err(anyhow::anyhow!("failed to extract field: {}", e)),
+            Some(Ok(s)) => Ok(Some(s)),
+        }
+    }
+
     fn get_metrics(&mut self) -> anyhow::Result<Vec<SinspMetric>> {
         let metrics = self.0.get_metrics();
         Ok(metrics
