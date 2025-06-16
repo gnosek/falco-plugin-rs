@@ -1,5 +1,6 @@
 use anyhow::Context;
 use cxx::{type_id, ExternType};
+use falco_plugin_runner::ExtractedField;
 pub use falco_plugin_runner::ScapStatus;
 use std::ffi::CStr;
 use std::fmt::Debug;
@@ -15,6 +16,17 @@ pub struct Api(pub falco_plugin::api::plugin_api);
 unsafe impl ExternType for Api {
     type Id = type_id!("falco_plugin_api");
     type Kind = cxx::kind::Opaque;
+}
+
+#[repr(C)]
+pub struct RawExtractedValue {
+    pub ptr: *const u8,
+    pub len: u32,
+}
+
+unsafe impl ExternType for RawExtractedValue {
+    type Id = type_id!("extract_value_t");
+    type Kind = cxx::kind::Trivial;
 }
 
 pub struct SinspMetric {
@@ -85,6 +97,12 @@ pub trait CapturingTestDriver {
     ) -> anyhow::Result<Option<(String, Range<usize>)>>;
 
     fn event_field_is_none(&mut self, field_name: &CStr, event: &Self::Event) -> bool;
+
+    fn extract_field(
+        &mut self,
+        field_name: &CStr,
+        event: &Self::Event,
+    ) -> anyhow::Result<Option<ExtractedField>>;
 
     fn get_metrics(&mut self) -> anyhow::Result<Vec<SinspMetric>>;
 

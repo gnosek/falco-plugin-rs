@@ -253,11 +253,11 @@ macro_rules! assert_field_variant_eq {
         let expected = $expected;
         let expected = expected.as_slice();
         let actual = $driver
-            .event_field_as_string(c_str_macro::c_str!($field_name), &$event)
+            .extract_field(c_str_macro::c_str!($field_name), &$event)
             .unwrap()
             .unwrap();
         assert!(
-            expected.contains(&actual.as_str()),
+            expected.contains(&actual),
             "expected one of {:?} from {}, got {:?}",
             $expected,
             $field_name,
@@ -336,72 +336,134 @@ macro_rules! extract_test_case {
 #[cfg(test)]
 mod tests {
     use falco_plugin::base::Plugin;
-    use falco_plugin_tests::{init_plugin, instantiate_tests, CapturingTestDriver, TestDriver};
+    #[allow(unused_imports)]
+    use falco_plugin::event::fields::types::{PT_ABSTIME, PT_IPNET};
+    use falco_plugin_runner::ExtractedField;
+    #[allow(unused_imports)] // make rustrover happy, these are very much used
+    use falco_plugin_tests::{init_plugin, instantiate_tests};
+    use falco_plugin_tests::{CapturingTestDriver, TestDriver};
+    use std::ffi::CString;
+    #[allow(unused_imports)]
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
     use std::time::{Duration, UNIX_EPOCH};
 
-    fn epoch_offset_to_rfc3389(offset: Duration) -> String {
-        let st = UNIX_EPOCH + offset;
-        let dt = chrono::DateTime::<chrono::Local>::from(st);
+    extract_test_case!(
+        u64,
+        [ExtractedField::U64(5)],
+        [ExtractedField::Vec(vec![
+            ExtractedField::U64(5),
+            ExtractedField::U64(6),
+            ExtractedField::U64(7)
+        ])]
+    );
 
-        dt.to_rfc3339_opts(chrono::SecondsFormat::AutoSi, false)
-    }
-
-    extract_test_case!(u64, ["5"], ["(5,6,7)"]);
     extract_test_case!(
         string,
-        ["Hello, World!"],
-        ["(Hello, World!,Hello, World!,Hello, World!)"]
-    );
-    extract_test_case!(
-        reltime,
-        ["10000000", "10ms"],
-        ["(10000000,20000000,30000000)", "(10ms,20ms,30ms)"]
+        [ExtractedField::String(
+            CString::new("Hello, World!").unwrap()
+        )],
+        [ExtractedField::Vec(vec![
+            ExtractedField::String(CString::new("Hello, World!").unwrap()),
+            ExtractedField::String(CString::new("Hello, World!").unwrap()),
+            ExtractedField::String(CString::new("Hello, World!").unwrap())
+        ])]
     );
 
-    extract_test_case!(bool, ["true"], ["(true,false,true)"]);
+    extract_test_case!(
+        reltime,
+        [
+            ExtractedField::RelTime(Duration::from_millis(10)),
+            ExtractedField::RelTime(Duration::from_millis(20)),
+            ExtractedField::RelTime(Duration::from_millis(30))
+        ],
+        [ExtractedField::Vec(vec![
+            ExtractedField::RelTime(Duration::from_millis(10)),
+            ExtractedField::RelTime(Duration::from_millis(20)),
+            ExtractedField::RelTime(Duration::from_millis(30))
+        ])]
+    );
+
+    extract_test_case!(
+        bool,
+        [ExtractedField::Bool(true)],
+        [ExtractedField::Vec(vec![
+            ExtractedField::Bool(true),
+            ExtractedField::Bool(false),
+            ExtractedField::Bool(true)
+        ])]
+    );
 
     extract_test_case!(
         ipaddr_v4,
-        ["127.0.0.1"],
-        ["(127.0.0.1,255.255.255.255,0.0.0.0)"]
+        [ExtractedField::IpAddr(IpAddr::V4(Ipv4Addr::LOCALHOST))],
+        [ExtractedField::Vec(vec![
+            ExtractedField::IpAddr(IpAddr::V4(Ipv4Addr::LOCALHOST)),
+            ExtractedField::IpAddr(IpAddr::V4(Ipv4Addr::BROADCAST)),
+            ExtractedField::IpAddr(IpAddr::V4(Ipv4Addr::UNSPECIFIED))
+        ])]
     );
 
-    extract_test_case!(ipaddr_v6, ["::1"], ["(::1,::)"]);
+    extract_test_case!(
+        ipaddr_v6,
+        [ExtractedField::IpAddr(IpAddr::V6(Ipv6Addr::LOCALHOST))],
+        [ExtractedField::Vec(vec![
+            ExtractedField::IpAddr(IpAddr::V6(Ipv6Addr::LOCALHOST)),
+            ExtractedField::IpAddr(IpAddr::V6(Ipv6Addr::UNSPECIFIED))
+        ])]
+    );
 
-    extract_test_case!(ipaddr, ["127.0.0.1"], ["(127.0.0.1,::)"]);
+    extract_test_case!(
+        ipaddr,
+        [ExtractedField::IpAddr(IpAddr::V4(Ipv4Addr::LOCALHOST))],
+        [ExtractedField::Vec(vec![
+            ExtractedField::IpAddr(IpAddr::V4(Ipv4Addr::LOCALHOST)),
+            ExtractedField::IpAddr(IpAddr::V6(Ipv6Addr::UNSPECIFIED))
+        ])]
+    );
 
-    extract_test_case!(ipnet_v4, ["<IPNET>"], ["(<IPNET>,<IPNET>,<IPNET>)"]);
+    extract_test_case!(
+        ipnet_v4,
+        [ExtractedField::IpNet(PT_IPNET(IpAddr::V4(
+            Ipv4Addr::LOCALHOST
+        )))],
+        [ExtractedField::Vec(vec![
+            ExtractedField::IpNet(PT_IPNET(IpAddr::V4(Ipv4Addr::LOCALHOST))),
+            ExtractedField::IpNet(PT_IPNET(IpAddr::V4(Ipv4Addr::BROADCAST))),
+            ExtractedField::IpNet(PT_IPNET(IpAddr::V4(Ipv4Addr::UNSPECIFIED)))
+        ])]
+    );
 
-    extract_test_case!(ipnet_v6, ["<IPNET>"], ["(<IPNET>,<IPNET>)"]);
+    extract_test_case!(
+        ipnet_v6,
+        [ExtractedField::IpNet(PT_IPNET(IpAddr::V6(
+            Ipv6Addr::LOCALHOST
+        )))],
+        [ExtractedField::Vec(vec![
+            ExtractedField::IpNet(PT_IPNET(IpAddr::V6(Ipv6Addr::LOCALHOST))),
+            ExtractedField::IpNet(PT_IPNET(IpAddr::V6(Ipv6Addr::UNSPECIFIED)))
+        ])]
+    );
 
-    extract_test_case!(ipnet, ["<IPNET>"], ["(<IPNET>,<IPNET>)"]);
+    extract_test_case!(
+        ipnet,
+        [ExtractedField::IpNet(PT_IPNET(IpAddr::V4(
+            Ipv4Addr::LOCALHOST
+        )))],
+        [ExtractedField::Vec(vec![
+            ExtractedField::IpNet(PT_IPNET(IpAddr::V4(Ipv4Addr::LOCALHOST))),
+            ExtractedField::IpNet(PT_IPNET(IpAddr::V6(Ipv6Addr::UNSPECIFIED)))
+        ])]
+    );
 
-    mod abstime {
-        use super::*;
-        use falco_plugin_tests::PlatformData;
-        fn test_extract<D: TestDriver>() {
-            let (mut driver, plugin) = init_plugin::<D>(&crate::DUMMY_PLUGIN_API, c"").unwrap();
-            driver.add_filterchecks(&plugin, c"dummy").unwrap();
-            let mut driver = driver
-                .start_capture(crate::DummyPlugin::NAME, c"", PlatformData::Disabled)
-                .unwrap();
-
-            let event = driver.next_event().unwrap();
-
-            let ts_10ms = epoch_offset_to_rfc3389(Duration::from_millis(10));
-            let ts_20ms = epoch_offset_to_rfc3389(Duration::from_millis(20));
-            let ts_30ms = epoch_offset_to_rfc3389(Duration::from_millis(30));
-            let timestamps = format!("({ts_10ms},{ts_20ms},{ts_30ms})");
-
-            assert_field_eq!(
-                driver,
-                event,
-                abstime,
-                ["10000000", ts_10ms.as_str()],
-                ["(10000000,20000000,30000000)", timestamps.as_str()]
-            );
-        }
-
-        instantiate_tests!(test_extract);
-    }
+    extract_test_case!(
+        abstime,
+        [ExtractedField::AbsTime(
+            UNIX_EPOCH + Duration::from_millis(10)
+        ),],
+        [ExtractedField::Vec(vec![
+            ExtractedField::AbsTime(UNIX_EPOCH + Duration::from_millis(10)),
+            ExtractedField::AbsTime(UNIX_EPOCH + Duration::from_millis(20)),
+            ExtractedField::AbsTime(UNIX_EPOCH + Duration::from_millis(30))
+        ])]
+    );
 }

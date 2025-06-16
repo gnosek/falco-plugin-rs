@@ -140,6 +140,37 @@ SinspTestDriver::event_field_as_string_with_offsets(const char *field_name,
   return std::make_unique<std::string>(s);
 }
 
+SinspExtractedField
+SinspTestDriver::extract_event_field(const char *field_name,
+                                     const SinspEvent &event) {
+  std::scoped_lock m(s_sinsp_lock);
+  sinsp_evt *evt = reinterpret_cast<sinsp_evt *>(event.evt);
+
+  if (evt == nullptr) {
+    throw sinsp_exception("The event class is NULL");
+  }
+
+  std::unique_ptr<sinsp_filter_check> chk(
+      m_filterchecks.new_filter_check_from_fldname(field_name, &m_sinsp,
+                                                   false));
+
+  if (chk == nullptr) {
+    throw sinsp_exception("The field " + std::string(field_name) +
+                          " is not a valid field.");
+  }
+  // we created a filter check starting from the field name so if we arrive here
+  // we will find it for sure
+  chk->parse_field_name(field_name, true, false);
+
+  chk->extract(evt, m_extracted_values);
+
+  const auto &field_info = chk->get_transformed_field_info();
+  return SinspExtractedField{.field_type = (ExtractFieldType)field_info->m_type,
+                             .is_list =
+                                 (field_info->m_flags & EPF_IS_LIST) != 0,
+                             .values = m_extracted_values};
+}
+
 std::unique_ptr<std::vector<SinspMetric>> SinspTestDriver::get_metrics() {
   std::scoped_lock m(s_sinsp_lock);
   m_metrics.snapshot();

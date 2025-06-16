@@ -26,12 +26,17 @@ public:
   event_field_as_string_with_offsets(const char *field_name,
                                      const SinspEvent &event, uint32_t &start,
                                      uint32_t &length);
+
+  SinspExtractedField extract_event_field(const char *field_name,
+                                          const SinspEvent &event);
+
   std::unique_ptr<std::vector<SinspMetric>> get_metrics();
 
 private:
   sinsp m_sinsp;
   libs::metrics::libs_metrics_collector m_metrics;
   sinsp_filter_check_list m_filterchecks;
+  std::vector<extract_value_t> m_extracted_values;
 };
 
 std::unique_ptr<SinspTestDriver> new_test_driver();
