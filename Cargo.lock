@@ -453,6 +453,7 @@ dependencies = [
  "chrono",
  "derive-deftly",
  "falco_event_derive",
+ "falco_schema_derive",
  "nix",
  "thiserror",
  "typed-path",
@@ -545,6 +546,15 @@ dependencies = [
  "serde",
  "serde_json",
  "typed-path",
+]
+
+[[package]]
+name = "falco_schema_derive"
+version = "0.4.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

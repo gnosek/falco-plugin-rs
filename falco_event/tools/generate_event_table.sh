@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.." || exit 1
 EVENT_TABLE="api/event_table.c"
 
 (cat << EOF
-use falco_event_derive::event_info;
+use falco_schema_derive::event_info;
 
 event_info! {
 EOF

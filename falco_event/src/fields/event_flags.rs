@@ -1,4 +1,4 @@
-use falco_event_derive::event_flags;
+use falco_schema_derive::event_flags;
 
 event_flags! {
 type file_flags: PT_FLAGS32;

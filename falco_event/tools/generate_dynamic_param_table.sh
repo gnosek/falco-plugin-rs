@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.." || exit 1
 DYNAMIC_PARAM_TABLE="api/dynamic_params_table.c"
 
 (cat << EOF
-use falco_event_derive::dynamic_params;
+use falco_schema_derive::dynamic_params;
 
 dynamic_params! {
 EOF

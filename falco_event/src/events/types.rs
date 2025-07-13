@@ -1,4 +1,4 @@
-use falco_event_derive::event_info;
+use falco_schema_derive::event_info;
 
 event_info! {
         [PPME_GENERIC_E] = {"syscall",
