@@ -5,13 +5,13 @@ use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{braced, bracketed, parse_macro_input, Token};
 
-pub(crate) enum LifetimeType {
+pub enum LifetimeType {
     None,
     Ref,
     Generic,
 }
 
-pub(crate) fn lifetime_type(name: &str) -> LifetimeType {
+pub fn lifetime_type(name: &str) -> LifetimeType {
     match name {
         "PT_CHARBUF" | "PT_BYTEBUF" | "PT_FSPATH" => LifetimeType::Ref,
         "PT_FDLIST"

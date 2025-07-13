@@ -1,4 +1,4 @@
-use falco_event_derive::dynamic_params;
+use falco_schema_derive::dynamic_params;
 
 dynamic_params! {
 const struct ppm_param_info sockopt_dynamic_param[PPM_SOCKOPT_IDX_MAX] = {

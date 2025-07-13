@@ -9,6 +9,7 @@ use std::fmt::{Debug, Formatter};
 /// ways:
 /// - none of the fields are `Option`s
 /// - serde serialization/deserialization is not supported
+/// - does not depend on the whole `falco_event_schema` crate
 ///
 /// It handles encoding and decoding the payload automatically, so you can use any type that can be
 /// converted from/to a byte buffer (including a raw `&[u8]`) as the payload.

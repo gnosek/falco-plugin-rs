@@ -1,5 +1,5 @@
 [workspace]
-members = ["falco_plugin_api", "falco_plugin", "falco_event_derive", "falco_event", "falco_plugin_derive", "falco_plugin_tests", "falco_plugin_runner", "falco_event_serde"]
+members = ["falco_plugin_api", "falco_plugin", "falco_event_derive", "falco_event", "falco_plugin_derive", "falco_plugin_tests", "falco_plugin_runner", "falco_event_serde", "falco_schema_derive"]
 resolver = "2"
 
 [profile.bench]
