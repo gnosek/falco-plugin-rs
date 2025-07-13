@@ -12,6 +12,7 @@ pub struct CStrArrayIter<'a>(&'a [u8]);
 impl<'a> Iterator for CStrArrayIter<'a> {
     type Item = &'a CStr;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if self.0.is_empty() {
             None
@@ -22,6 +23,7 @@ impl<'a> Iterator for CStrArrayIter<'a> {
 }
 
 impl<'a> CStrArray<'a> {
+    #[inline]
     pub fn iter(&self) -> CStrArrayIter<'a> {
         CStrArrayIter(self.0)
     }

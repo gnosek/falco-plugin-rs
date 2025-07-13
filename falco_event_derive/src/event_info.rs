@@ -112,6 +112,7 @@ impl EventArg {
                 Ident::new(&format!("{}_dirfd", &self.name.value()), self.name.span());
 
             Some(quote!(
+                #[inline]
                 pub fn #method_name(&self) -> std::option::Option<crate::fields::types::PT_FD> {
                     self.#dirfd_arg
                 }

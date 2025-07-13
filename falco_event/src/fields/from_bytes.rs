@@ -62,6 +62,7 @@ pub trait FromBytes<'a>: Sized {
     ///
     /// The default implementation returns an error when the buffer does not exist, but the blanket
     /// impl for `Option<T>` effectively returns `Ok(None)`
+    #[inline]
     fn from_maybe_bytes(buf: Option<&mut &'a [u8]>) -> Result<Self, FromBytesError> {
         match buf {
             Some(buf) => Self::from_bytes(buf),
@@ -74,10 +75,12 @@ impl<'a, T: FromBytes<'a> + 'a> FromBytes<'a> for Option<T>
 where
     T: Sized,
 {
+    #[inline]
     fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, FromBytesError> {
         T::from_bytes(buf).map(Some)
     }
 
+    #[inline]
     fn from_maybe_bytes(buf: Option<&mut &'a [u8]>) -> Result<Self, FromBytesError> {
         match buf {
             Some([]) => Ok(None),

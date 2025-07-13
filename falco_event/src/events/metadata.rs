@@ -10,6 +10,7 @@ pub struct EventMetadata {
 }
 
 impl EventMetadata {
+    #[inline]
     pub fn timestamp(&self) -> Option<SystemTime> {
         if self.ts == u64::MAX {
             None
@@ -23,6 +24,7 @@ impl EventMetadata {
     /// To form a valid event, after calling this method, the caller must write out the payload
     /// at exactly `len - 26` bytes, containing `nparam` lengths (as the proper type)
     /// and the parameter values themselves.
+    #[inline]
     pub fn write_header<W: Write>(
         &self,
         len: u32,
@@ -44,6 +46,7 @@ impl EventMetadata {
     ///
     /// To form a valid event, after calling this method, the caller must write out the payload
     /// for each parameter, `lengths[i]` bytes in length.
+    #[inline]
     pub fn write_header_with_lengths<W: Write, L: Into<u32> + Copy, const N: usize>(
         &self,
         event_type: u16,
