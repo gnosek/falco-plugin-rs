@@ -15,6 +15,7 @@ pub trait EventPayload {
     const SOURCE: Option<&'static str>;
 }
 
+#[inline]
 pub const fn event_direction(event_type_id: u16) -> EventDirection {
     match event_type_id % 2 {
         0 => EventDirection::Entry,

@@ -16,22 +16,26 @@ pub trait LengthField: TryFrom<usize, Error = TryFromIntError> {
 }
 
 impl LengthField for u16 {
+    #[inline]
     fn read(buf: &mut &[u8]) -> Option<usize> {
         let len = buf.split_off(..size_of::<u16>())?;
         Some(u16::from_ne_bytes(len.try_into().unwrap()) as usize)
     }
 
+    #[inline]
     fn to_usize(&self) -> usize {
         *self as usize
     }
 }
 
 impl LengthField for u32 {
+    #[inline]
     fn read(buf: &mut &[u8]) -> Option<usize> {
         let len = buf.split_off(..size_of::<u32>())?;
         Some(u32::from_ne_bytes(len.try_into().unwrap()) as usize)
     }
 
+    #[inline]
     fn to_usize(&self) -> usize {
         *self as usize
     }
@@ -46,6 +50,7 @@ pub struct ParamIter<'a, T: LengthField> {
 impl<'a, T: LengthField> Iterator for ParamIter<'a, T> {
     type Item = Result<&'a [u8], FromBytesError>;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let len = T::read(&mut self.lengths)?;
         match self.params.split_off(..len) {
@@ -86,6 +91,7 @@ pub struct RawEvent<'a> {
 }
 
 impl<'e> RawEvent<'e> {
+    #[inline]
     fn from_impl(mut buf: &[u8]) -> Option<RawEvent<'_>> {
         let ts_buf = buf.split_off(..8)?;
         let ts = u64::from_ne_bytes(ts_buf.try_into().unwrap());
@@ -114,6 +120,7 @@ impl<'e> RawEvent<'e> {
     /// Parse a byte slice into a RawEvent
     ///
     /// This decodes the header while leaving the payload as a raw byte buffer.
+    #[inline]
     pub fn from(buf: &[u8]) -> std::io::Result<RawEvent<'_>> {
         Self::from_impl(buf).ok_or(std::io::ErrorKind::InvalidData.into())
     }
@@ -144,6 +151,7 @@ impl<'e> RawEvent<'e> {
     /// # Ok(())
     /// # }
     /// ```
+    #[inline]
     pub fn trim(&mut self) -> Option<&'e [u8]> {
         let payload_len = self.len as usize - 26;
         self.payload.split_off(payload_len..)
@@ -153,6 +161,7 @@ impl<'e> RawEvent<'e> {
     ///
     /// This function takes a byte slice and returns an iterator that yields `RawEvent` instances
     /// until the whole buffer is consumed.
+    #[inline]
     pub fn scan(mut buf: &'e [u8]) -> impl Iterator<Item = Result<RawEvent<'e>, std::io::Error>> {
         std::iter::from_fn(move || {
             if buf.is_empty() {
@@ -179,6 +188,7 @@ impl<'e> RawEvent<'e> {
     ///  - include the length field
     ///  - include `nparams` lengths
     ///  - have enough data bytes for all the fields (sum of lengths)
+    #[inline]
     pub unsafe fn from_ptr<'a>(buf: *const u8) -> std::io::Result<RawEvent<'a>> {
         let len_buf = unsafe { std::slice::from_raw_parts(buf.offset(16), 4) };
         let len = u32::from_ne_bytes(len_buf.try_into().unwrap());
@@ -187,6 +197,7 @@ impl<'e> RawEvent<'e> {
         Self::from(buf)
     }
 
+    #[inline]
     pub fn load<'a, T: FromRawEvent<'e>>(&'a self) -> Result<Event<T>, PayloadFromBytesError> {
         #[allow(clippy::question_mark)]
         let params = match T::parse(self) {
@@ -202,6 +213,7 @@ impl<'e> RawEvent<'e> {
     /// Get an iterator over the event parameters
     ///
     /// `T` must correspond to the type of the length field (u16 or u32, depending on the event type)
+    #[inline]
     pub fn params<T: LengthField>(&self) -> Result<ParamIter<'e, T>, PayloadFromBytesError> {
         let length_size = size_of::<T>();
         let ll = self.nparams as usize * length_size;
@@ -224,6 +236,7 @@ impl<'e> RawEvent<'e> {
 }
 
 impl<'a, 'b> From<&'a RawEvent<'b>> for RawEvent<'b> {
+    #[inline]
     fn from(event: &'a RawEvent<'b>) -> Self {
         Self {
             metadata: event.metadata.clone(),
@@ -236,10 +249,12 @@ impl<'a, 'b> From<&'a RawEvent<'b>> for RawEvent<'b> {
 }
 
 impl EventToBytes for RawEvent<'_> {
+    #[inline]
     fn binary_size(&self) -> usize {
         self.len as usize
     }
 
+    #[inline]
     fn write<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
         self.metadata
             .write_header(self.len, self.event_type, self.nparams, &mut writer)?;

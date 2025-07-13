@@ -17,10 +17,12 @@ impl<T: Debug> Debug for Event<T> {
 }
 
 impl<T: PayloadToBytes> EventToBytes for Event<T> {
+    #[inline]
     fn binary_size(&self) -> usize {
         26 + self.params.binary_size()
     }
 
+    #[inline]
     fn write<W: Write>(&self, writer: W) -> std::io::Result<()> {
         self.params.write(&self.metadata, writer)
     }
@@ -29,6 +31,7 @@ impl<T: PayloadToBytes> EventToBytes for Event<T> {
 impl<'a, 'b, T: FromRawEvent<'a>> TryFrom<&'b RawEvent<'a>> for Event<T> {
     type Error = PayloadFromBytesError;
 
+    #[inline]
     fn try_from(raw: &'b RawEvent<'a>) -> Result<Self, Self::Error> {
         raw.load::<T>()
     }

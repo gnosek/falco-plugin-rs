@@ -53,6 +53,7 @@ fn derive_to_bytes(
                 size
             }
 
+            #[inline]
             fn write<W: std::io::Write>(&self, metadata: &#crate_path::events::EventMetadata, mut writer: W) -> std::io::Result<()> {
                 use #crate_path::events::EventPayload;
                 use #crate_path::fields::ToBytes;
@@ -88,6 +89,7 @@ fn derive_from_bytes(
 
     quote!(
         impl <#impl_ref_generics> #crate_path::events::FromRawEvent<'raw_event> for #name #ty_generics #ref_where_clause {
+            #[inline]
             fn parse(raw: &#crate_path::events::RawEvent<'raw_event>) -> Result<Self, #crate_path::events::PayloadFromBytesError> {
             use #crate_path::events::PayloadFromBytesError;
                 use #crate_path::events::RawEvent;

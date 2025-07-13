@@ -14,6 +14,7 @@ pub struct CStrPairArrayIter<'a>(CStrArrayIter<'a>);
 impl<'a> Iterator for CStrPairArrayIter<'a> {
     type Item = (&'a CStr, &'a CStr);
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let k = self.0.next()?;
         let v = self.0.next()?;
@@ -22,6 +23,7 @@ impl<'a> Iterator for CStrPairArrayIter<'a> {
 }
 
 impl<'a> CStrPairArray<'a> {
+    #[inline]
     pub fn iter(&self) -> CStrPairArrayIter<'a> {
         CStrPairArrayIter(self.0.iter())
     }

@@ -151,16 +151,19 @@ fn render_enum(
         }
 
         impl #name {
+            #[inline]
             pub fn new(val: #repr_type) -> Self {
                 Self::from(val)
             }
 
+            #[inline]
             pub fn as_repr(self) -> #repr_type {
                 #repr_type::from(self)
             }
         }
 
         impl From<#repr_type> for #name {
+            #[inline]
             fn from(val: #repr_type) -> Self {
                 match val as u32 {
                     #(#raw_to_enum,)*
@@ -170,6 +173,7 @@ fn render_enum(
         }
 
         impl From<#name> for #repr_type {
+            #[inline]
             fn from(val: #name) -> #repr_type {
                 match val {
                     #(#enum_to_raw,)*
@@ -179,15 +183,18 @@ fn render_enum(
         }
 
         impl crate::fields::ToBytes for #name {
+            #[inline]
             fn binary_size(&self) -> usize {
                 std::mem::size_of::<#repr_type>()
             }
 
+            #[inline]
             fn write<W: std::io::Write>(&self, writer: W) -> std::io::Result<()> {
                 let repr: #repr_type = (*self).into();
                 repr.write(writer)
             }
 
+            #[inline]
             fn default_repr() -> impl crate::fields::ToBytes {
                 0 as #repr_type
             }
@@ -248,14 +255,17 @@ fn render_bitflags(
         }
 
         impl crate::fields::ToBytes for #name {
+            #[inline]
             fn binary_size(&self) -> usize {
                 std::mem::size_of::<#repr_type>()
             }
 
+            #[inline]
             fn write<W: std::io::Write>(&self, writer: W) -> std::io::Result<()> {
                 (self.bits() as #repr_type).write(writer)
             }
 
+            #[inline]
             fn default_repr() -> impl crate::fields::ToBytes {
                 0 as #repr_type
             }

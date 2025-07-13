@@ -241,6 +241,7 @@ newtype!(
 
 impl SigSet {
     /// Iterate over all signals in this set
+    #[inline]
     pub fn iter(&self) -> impl Iterator<Item = SigType> + use<> {
         let mask = self.0;
         (0..32u8)

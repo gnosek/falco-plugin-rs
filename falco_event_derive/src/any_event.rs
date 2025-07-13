@@ -141,6 +141,7 @@ fn derive_any_event(
         }
 
         impl <#impl_ref_generics> #crate_path::events::FromRawEvent<'raw_event> for #name #ty_generics #ref_where_clause {
+            #[inline]
             fn parse(raw: &#crate_path::events::RawEvent<'raw_event>) -> Result<Self, #crate_path::events::PayloadFromBytesError> {
                 let any: Self = match raw.event_type {
                     #(#try_from)*

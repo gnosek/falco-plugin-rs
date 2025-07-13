@@ -10,6 +10,8 @@ use std::time::{Duration, UNIX_EPOCH};
 pub struct SystemTime(pub u64);
 
 impl From<std::time::SystemTime> for SystemTime {
+    /// Convert from [`std::time::SystemTime`]
+    #[inline]
     fn from(system_time: std::time::SystemTime) -> Self {
         Self(system_time.duration_since(UNIX_EPOCH).unwrap().as_nanos() as u64)
     }
@@ -17,6 +19,7 @@ impl From<std::time::SystemTime> for SystemTime {
 
 impl SystemTime {
     /// Convert to [`std::time::SystemTime`]
+    #[inline]
     pub fn to_system_time(&self) -> std::time::SystemTime {
         let duration = Duration::from_nanos(self.0);
         UNIX_EPOCH + duration
