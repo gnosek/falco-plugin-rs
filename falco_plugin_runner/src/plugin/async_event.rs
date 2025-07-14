@@ -1,5 +1,4 @@
 use falco_event::events::RawEvent;
-use falco_event_schema::events::PPME_ASYNCEVENT_E;
 use falco_plugin_api::{
     plugin_api__bindgen_ty_4, ss_plugin_event, ss_plugin_owner_t, ss_plugin_rc,
     ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_NOT_SUPPORTED,
@@ -96,6 +95,17 @@ fn write_err_msg(buf: &mut [u8], msg: &str) {
     buf[len] = 0;
 }
 
+#[derive(Default, falco_event::EventPayload)]
+#[event_payload(source = None, code = 402, length_type = u32)]
+pub struct AsyncEvent<'a> {
+    /// ID of the plugin that generated this event
+    pub plugin_id: u32,
+    /// Name of the plugin that generated this event
+    pub name: &'a CStr,
+    /// Payload, raw byte data
+    pub data: &'a [u8],
+}
+
 unsafe extern "C-unwind" fn async_handler(
     owner: *mut ss_plugin_owner_t,
     event: *const ss_plugin_event,
@@ -116,7 +126,7 @@ unsafe extern "C-unwind" fn async_handler(
         }
     };
 
-    let async_event = match raw_event.load::<PPME_ASYNCEVENT_E>() {
+    let async_event = match raw_event.load::<AsyncEvent>() {
         Ok(event) => event,
         Err(e) => {
             write_err_msg(err, &format!("Failed to parse async event: {e}"));
@@ -124,13 +134,7 @@ unsafe extern "C-unwind" fn async_handler(
         }
     };
 
-    let async_event_name = match async_event.params.name {
-        Some(name) => name,
-        None => {
-            write_err_msg(err, "Event name missing");
-            return ss_plugin_rc_SS_PLUGIN_FAILURE;
-        }
-    };
+    let async_event_name = async_event.params.name;
 
     let async_event_name = match async_event_name.to_str() {
         Ok(name) => name,

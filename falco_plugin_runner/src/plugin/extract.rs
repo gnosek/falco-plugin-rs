@@ -4,7 +4,7 @@ use crate::plugin::get_last_owner_error;
 use crate::tables::{TABLE_READER, TABLE_READER_EXT};
 use chrono::Local;
 use falco_event::fields::FromBytes;
-use falco_event_schema::fields::types::PT_IPNET;
+use falco_event::types::IpNet;
 use falco_plugin_api::{
     plugin_api__bindgen_ty_2, ss_plugin_extract_field, ss_plugin_extract_field__bindgen_ty_1,
     ss_plugin_extract_value_offsets, ss_plugin_field_extract_input, ss_plugin_owner_t,
@@ -69,7 +69,7 @@ pub enum ExtractedField {
     AbsTime(std::time::SystemTime),
     String(CString),
     IpAddr(IpAddr),
-    IpNet(PT_IPNET),
+    IpNet(IpNet),
     Vec(Vec<ExtractedField>),
 }
 
@@ -175,7 +175,7 @@ fn extract_one(
                 std::slice::from_raw_parts((*bytebuf).ptr.cast::<u8>(), (*bytebuf).len as usize)
             };
             let ip = IpAddr::from_bytes(&mut bytebuf)?;
-            Ok(ExtractedField::IpNet(PT_IPNET(ip)))
+            Ok(ExtractedField::IpNet(IpNet(ip)))
         }
     }
 }
@@ -278,7 +278,7 @@ fn extract_many(
                             )
                         };
                         IpAddr::from_bytes(&mut bytebuf)
-                            .map(PT_IPNET)
+                            .map(IpNet)
                             .map(ExtractedField::IpNet)
                             .ok()
                     })
