@@ -536,7 +536,6 @@ dependencies = [
  "bumpalo",
  "chrono",
  "falco_event",
- "falco_event_schema",
  "falco_plugin_api",
  "serde",
  "serde_json",
