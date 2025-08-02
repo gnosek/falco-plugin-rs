@@ -49,9 +49,9 @@ pub type PT_UINT64 = u64;
 pub type PT_CHARBUF = CStr;
 /// Arbitrary byte buffer (`[u8]`)
 pub type PT_BYTEBUF = [u8];
-/// Array of C-style strings (`Vec<&CStr>`)
+/// Array of C-style strings (similar to `Vec<&CStr>`)
 pub type PT_CHARBUFARRAY<'a> = CStrArray<'a>;
-/// Array of pairs of C-style strings (`Vec<(&CStr, &CStr)>`)
+/// Array of pairs of C-style strings (similar to `Vec<(&CStr, &CStr)>`)
 pub type PT_CHARBUF_PAIR_ARRAY<'a> = CStrPairArray<'a>;
 
 // PT_DOUBLE = 33, /* this is a double precision floating point number. */ // this remains unimplemented
