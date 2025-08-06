@@ -24,6 +24,6 @@ do_print == 1 {
 /const struct ppm_event_info g_event_info/ { do_print = 1; }
 ' < $EVENT_TABLE
 
-echo '}') > src/events/types.rs
+echo '}') > src/events.rs
 
-rustfmt src/events/types.rs
+rustfmt src/events.rs

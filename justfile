@@ -26,7 +26,7 @@ regen_api:
 
 update_api version: (pull_api version) regen_api
 
-[working-directory('falco_event')]
+[working-directory('falco_event_schema')]
 pull_events version:
     wget https://raw.githubusercontent.com/falcosecurity/libs/{{ version }}/driver/ppm_fillers.h -O api/ppm_fillers.h
     wget https://raw.githubusercontent.com/falcosecurity/libs/{{ version }}/driver/ppm_events_public.h -O - | sed 's@\<long\>@int64_t@' > api/ppm_events_public.h
@@ -35,7 +35,7 @@ pull_events version:
     wget https://raw.githubusercontent.com/falcosecurity/libs/{{ version }}/driver/dynamic_params_table.c -O api/dynamic_params_table.c
     > api/feature_gates.h
 
-[working-directory('falco_event')]
+[working-directory('falco_event_schema')]
 regen_events:
     bindgen api/ppm_events_public.h -- -I. > src/ffi.rs
     ./tools/generate_event_table.sh

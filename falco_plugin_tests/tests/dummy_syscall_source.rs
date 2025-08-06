@@ -1,8 +1,8 @@
+use falco_event_schema::events::PPME_GENERIC_E;
+use falco_event_schema::fields::types::PT_SYSCALLID;
 use falco_plugin::anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::PPME_GENERIC_E;
 use falco_plugin::event::events::{Event, EventMetadata, RawEvent};
-use falco_plugin::event::fields::types::PT_SYSCALLID;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::source::{EventBatch, EventInput, SourcePlugin, SourcePluginInstance};
 use falco_plugin::tables::TablesInput;

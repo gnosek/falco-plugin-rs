@@ -1,5 +1,5 @@
 use crate::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_LOCAL};
-use crate::fields::{FromBytes, FromBytesError, ToBytes};
+use falco_event::fields::{FromBytes, FromBytesError, ToBytes};
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use std::net::{SocketAddrV4, SocketAddrV6};

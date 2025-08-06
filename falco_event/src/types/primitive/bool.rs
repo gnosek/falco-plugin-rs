@@ -1,5 +1,4 @@
 use crate::fields::{FromBytes, FromBytesError, ToBytes};
-use crate::types::primitive::bool;
 use std::io::Write;
 
 impl FromBytes<'_> for bool {

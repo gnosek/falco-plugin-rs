@@ -1,5 +1,5 @@
-use falco_event::events::types::PPME_SOCKET_CONNECT_X;
-use falco_event::fields::types::{PT_ERRNO, PT_FD, PT_SOCKTUPLE};
+use falco_event_schema::events::PPME_SOCKET_CONNECT_X;
+use falco_event_schema::fields::types::{PT_ERRNO, PT_FD, PT_SOCKTUPLE};
 
 #[test]
 fn test_deserialize_socktuple_v4() {

@@ -1,5 +1,5 @@
-use falco_event::events::types::PPME_SOCKET_CONNECT_E;
-use falco_event::fields::types::{PT_FD, PT_SOCKADDR};
+use falco_event_schema::events::PPME_SOCKET_CONNECT_E;
+use falco_event_schema::fields::types::{PT_FD, PT_SOCKADDR};
 
 #[test]
 fn test_deserialize_sockaddr_v4() {

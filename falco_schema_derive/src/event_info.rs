@@ -225,7 +225,7 @@ impl EventInfo {
 
             let display_wrapper =
                 display_wrapper_for(&field.field_type, quote!(self.#ident.as_ref()));
-            let display_val = quote!(crate::types::format::OptionFormatter(#display_wrapper));
+            let display_val = quote!(falco_event::types::format::OptionFormatter(#display_wrapper));
 
             let format_val = formatter_for(
                 &field.field_type,
@@ -269,7 +269,7 @@ impl EventInfo {
             #[allow(non_camel_case_types)]
             #[derive(Clone, Copy)]
             #[derive(falco_event_derive::EventPayload)]
-            #[falco_event_crate(crate)]
+            #[falco_event_crate(falco_event)]
             #[event_payload(length_type = #length_type, code = #raw_ident, source = #source)]
             #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive(derive_deftly::Deftly))]
             #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive_deftly_adhoc(export))]
@@ -286,9 +286,9 @@ impl EventInfo {
                 fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                     use std::fmt::Write;
 
-                    match crate::events::event_direction(#raw_ident) {
-                        crate::events::EventDirection::Entry => f.write_str("> ")?,
-                        crate::events::EventDirection::Exit => f.write_str("< ")?,
+                    match falco_event::events::event_direction(#raw_ident) {
+                        falco_event::events::EventDirection::Entry => f.write_str("> ")?,
+                        falco_event::events::EventDirection::Exit => f.write_str("< ")?,
                     }
                     f.write_str(#name)?;
                     #(#field_fmts)*
@@ -383,7 +383,7 @@ fn event_info_variant(events: &Events) -> proc_macro2::TokenStream {
 
         #[allow(non_camel_case_types)]
         #[derive(falco_event_derive::AnyEvent)]
-        #[falco_event_crate(crate)]
+        #[falco_event_crate(falco_event)]
         #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive(derive_deftly::Deftly))]
         #[cfg_attr(all(not(docsrs), feature = "derive_deftly"), derive_deftly_adhoc(export))]
         pub enum AnyEvent #lifetime {

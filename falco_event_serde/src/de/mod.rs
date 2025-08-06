@@ -6,8 +6,8 @@
 //!
 //! # Example
 //! ```
-//! use falco_event::events::types::PPME_GENERIC_E;
-//! use falco_event::fields::types::PT_SYSCALLID;
+//! use falco_event_schema::events::PPME_GENERIC_E;
+//! use falco_event_schema::fields::types::PT_SYSCALLID;
 //!
 //! // Use a JSON document as an example
 //! let json = r#"{

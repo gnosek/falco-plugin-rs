@@ -14,7 +14,7 @@
 //! }
 //! ```
 //!
-//! The event names correspond to variants of [`falco_event::events::types::AnyEvent`] (i.e.,
+//! The event names correspond to variants of [`falco_event_schema::events::AnyEvent`] (i.e.,
 //! with the `PPME_` prefix removed).
 //!
 //! ## Serialization rules for different parameter types
@@ -62,7 +62,7 @@ pub mod de;
 pub mod ser;
 
 #[doc(hidden)]
-pub use falco_event::fields;
+pub use falco_event_schema::fields;
 
 #[doc(hidden)]
-pub use falco_event::ffi;
+pub use falco_event_schema::ffi;

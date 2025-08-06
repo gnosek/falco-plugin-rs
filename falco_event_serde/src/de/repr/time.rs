@@ -1,6 +1,6 @@
 use super::{StaticRepr, TaggedRepr};
 use crate::de::repr::Repr::Static;
-use falco_event::fields::types;
+use falco_event_schema::fields::types;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::de::Error;

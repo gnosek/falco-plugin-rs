@@ -1,7 +1,7 @@
+use falco_event_schema::events::AnyEvent;
 use falco_plugin::anyhow;
 use falco_plugin::anyhow::{Context, Error};
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::AnyEvent;
 use falco_plugin::event::events::Event;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};

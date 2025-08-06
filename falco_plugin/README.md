@@ -268,8 +268,8 @@ type Event<'a> = falco_event::events::Event<PluginEvent<&'a [u8]>>;
 
 For plugins dealing with a single Falco syscall event type, you can use that particular event type directly, e.g.:
 
-```
-use falco_event::events::types::PPME_SYSCALL_OPENAT2_X;
+```ignore
+use falco_event_schema::events::PPME_SYSCALL_OPENAT2_X;
 
 // in a plugin trait implementation:
 type Event<'a> = falco_event::events::Event<PPME_SYSCALL_OPENAT2_X<'a>>;
@@ -281,13 +281,13 @@ See the relevant section in [`falco_event` documentation](`falco_event#raw-event
 Plugins that want to work with the raw byte representation of event payloads will probably want
 to use [`falco_event::events::RawEvent`]:
 
-```ignore
+```
 use falco_event::events::RawEvent;
 
 type Event<'a> = RawEvent<'a>;
 ```
 
-Occasionally, you may want to use the [`falco_event::events::types::AnyEvent`] type as the payload. It parses
+Occasionally, you may want to use the `AnyEvent` type from the `falco_event_schema` crate as the payload. It parses
 all defined events into a large enum, so it provides a strongly typed representation for all possible events.
 However, there's very little you can actually do with that type without matching individual variants
 (apart from getting a string representation). It's usually better to use a more specific enum, simply to avoid

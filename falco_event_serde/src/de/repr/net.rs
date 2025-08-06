@@ -1,7 +1,7 @@
 use crate::de::repr::{Repr, StaticRepr, TaggedRepr};
 use bstr::ByteSlice;
-use falco_event::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_UNIX};
-use falco_event::fields::types;
+use falco_event_schema::ffi::{PPM_AF_INET, PPM_AF_INET6, PPM_AF_UNIX};
+use falco_event_schema::fields::types;
 use serde::{Deserialize, Deserializer};
 use std::marker::PhantomData;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};

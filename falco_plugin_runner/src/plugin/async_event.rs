@@ -1,5 +1,5 @@
-use falco_event::events::types::PPME_ASYNCEVENT_E;
 use falco_event::events::RawEvent;
+use falco_event_schema::events::PPME_ASYNCEVENT_E;
 use falco_plugin_api::{
     plugin_api__bindgen_ty_4, ss_plugin_event, ss_plugin_owner_t, ss_plugin_rc,
     ss_plugin_rc_SS_PLUGIN_FAILURE, ss_plugin_rc_SS_PLUGIN_NOT_SUPPORTED,

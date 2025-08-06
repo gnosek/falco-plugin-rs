@@ -83,8 +83,6 @@
 /// * [`events::PayloadToBytes`], for serialization
 pub use falco_event_derive::AnyEvent;
 
-#[cfg(feature = "derive_deftly")]
-pub use derive_deftly;
 /// # Derive event-related traits for a struct
 ///
 /// Use this macro to define new event types. For example, the PPME_PLUGINEVENT_E
@@ -137,17 +135,8 @@ pub use falco_event_derive::EventPayload;
 #[allow(missing_docs)]
 pub mod events;
 
-/// All the types available in event fields
+/// Types and traits for Falco event fields
 pub mod fields;
 
 /// Data types used in Falco events
 pub mod types;
-
-#[allow(dead_code)]
-#[allow(non_snake_case)]
-#[allow(non_camel_case_types)]
-#[allow(non_upper_case_globals)]
-#[allow(missing_docs)]
-#[allow(unsafe_op_in_unsafe_fn)]
-#[doc(hidden)]
-pub mod ffi;

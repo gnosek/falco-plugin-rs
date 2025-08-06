@@ -4,7 +4,7 @@ use derive_deftly::derive_deftly_adhoc;
 use falco_event::events::{EventMetadata, EventPayload};
 use serde::Deserialize;
 
-falco_event::derive_deftly_for_events! {
+falco_event_schema::derive_deftly_for_events! {
     #[derive(Deserialize)]
     #[derive(Debug)]
     struct $tname <$tgens> {
@@ -17,7 +17,7 @@ falco_event::derive_deftly_for_events! {
                 $(self.$fname.repr,)
             ];
 
-            let event_type_id = <falco_event::events::types::$ttype as EventPayload>::ID;
+            let event_type_id = <falco_event_schema::events::$ttype as EventPayload>::ID;
             let large_payload = match size_of::<${tmeta(length_type) as ty}>() {
                 2 => false,
                 4 => true,
@@ -36,7 +36,7 @@ falco_event::derive_deftly_for_events! {
 }
 
 derive_deftly_adhoc! {
-    falco_event::AnyEvent:
+    falco_event_schema::AnyEvent:
 
     #[derive(Deserialize)]
     #[derive(Debug)]

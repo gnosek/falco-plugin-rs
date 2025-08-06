@@ -1,9 +1,9 @@
 use anyhow::Error;
+use falco_event_schema::events::{PPME_GENERIC_E, PPME_SYSCALL_EXECVE_8_E};
+use falco_event_schema::fields::types::PT_SYSCALLID;
 use falco_plugin::async_event::{AsyncEventPlugin, AsyncHandler, BackgroundTask};
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::{PPME_GENERIC_E, PPME_SYSCALL_EXECVE_8_E};
 use falco_plugin::event::events::{Event, EventMetadata, RawEvent};
-use falco_plugin::event::fields::types::PT_SYSCALLID;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::source::{EventBatch, SourcePlugin, SourcePluginInstance};

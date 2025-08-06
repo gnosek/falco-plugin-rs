@@ -1,5 +1,5 @@
-use falco_event::events::types::{PPME_SOCKET_SHUTDOWN_E, PPME_SYSCALL_OPEN_E};
-use falco_event::fields::types::{
+use falco_event_schema::events::{PPME_SOCKET_SHUTDOWN_E, PPME_SYSCALL_OPEN_E};
+use falco_event_schema::fields::types::{
     PT_ENUMFLAGS8_shutdown_how, PT_FD, PT_FLAGS32_file_flags, PT_FSPATH,
 };
 

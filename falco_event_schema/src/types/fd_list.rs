@@ -1,5 +1,5 @@
 use crate::fields::event_flags::PT_FLAGS16_file_flags;
-use crate::fields::{FromBytes, FromBytesError, ToBytes};
+use falco_event::fields::{FromBytes, FromBytesError, ToBytes};
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 

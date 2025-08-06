@@ -1,5 +1,5 @@
-use falco_event::events::types::PPME_SYSCALL_POLL_E;
-use falco_event::fields::types::PT_FLAGS16_file_flags;
+use falco_event_schema::events::PPME_SYSCALL_POLL_E;
+use falco_event_schema::fields::types::PT_FLAGS16_file_flags;
 
 #[test]
 fn test_deserialize_fd_list() {
