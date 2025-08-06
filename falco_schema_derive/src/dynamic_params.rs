@@ -88,7 +88,7 @@ impl DynamicParamVariant {
 
         quote!(crate::ffi:: #disc => {
             Ok(Self:: #disc(
-                <#ty as crate::fields::FromBytes>::from_bytes(buf)?
+                <#ty as falco_event::fields::FromBytes>::from_bytes(buf)?
             ))
         })
     }
@@ -104,7 +104,7 @@ impl DynamicParamVariant {
 
         quote!(Self:: #disc(val) => {
             writer.write_all([crate::ffi::#disc as u8].as_slice())?;
-            crate::fields::ToBytes::write(val, writer)
+            falco_event::fields::ToBytes::write(val, writer)
         })
     }
 
@@ -184,10 +184,10 @@ impl DynamicParam {
                 #(#variant_definitions,)*
             }
 
-            impl #lifetime crate::fields::ToBytes for #name #lifetime {
+            impl #lifetime falco_event::fields::ToBytes for #name #lifetime {
                 #[inline]
                 fn binary_size(&self) -> usize {
-                    use crate::fields::ToBytes;
+                    use falco_event::fields::ToBytes;
                     match self {
                         #(#variant_binary_size,)*
                     }
@@ -201,16 +201,16 @@ impl DynamicParam {
                 }
 
                 #[inline]
-                fn default_repr() -> impl crate::fields::ToBytes { crate::fields::NoDefault }
+                fn default_repr() -> impl falco_event::fields::ToBytes { falco_event::fields::NoDefault }
             }
 
-            impl<'a> crate::fields::FromBytes<'a> for #name #lifetime {
+            impl<'a> falco_event::fields::FromBytes<'a> for #name #lifetime {
                 #[inline]
-                fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, crate::fields::FromBytesError> {
-                    let variant = buf.split_off_first().ok_or_else(|| crate::fields::FromBytesError::InvalidLength)?;
+                fn from_bytes(buf: &mut &'a [u8]) -> Result<Self, falco_event::fields::FromBytesError> {
+                    let variant = buf.split_off_first().ok_or_else(|| falco_event::fields::FromBytesError::InvalidLength)?;
                     match *variant as u32 {
                         #(#variant_reads,)*
-                        _ => Err(crate::fields::FromBytesError::InvalidDynDiscriminant),
+                        _ => Err(falco_event::fields::FromBytesError::InvalidDynDiscriminant),
                     }
                 }
             }

@@ -1,5 +1,5 @@
 use crate::ser::field::SerializedField;
-use falco_event::fields::types;
+use falco_event_schema::fields::types;
 use serde::{Serialize, Serializer};
 
 pub struct StrOrBytes<'a>(pub &'a [u8]);

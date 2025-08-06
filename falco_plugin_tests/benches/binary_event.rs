@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use falco_plugin::event::events::types::AnyEvent;
+use falco_event_schema::events::AnyEvent;
 use falco_plugin::event::events::{Event, EventToBytes, RawEvent};
 use std::hint::black_box;
 

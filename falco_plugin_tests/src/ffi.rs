@@ -5,7 +5,7 @@ use super::{
 use crate::common::{Api, CaptureNotStarted, CaptureStarted, SinspMetric};
 use cxx;
 use cxx::UniquePtr;
-use falco_plugin::event::fields::types::PT_IPNET;
+use falco_event_schema::fields::types::PT_IPNET;
 use falco_plugin_runner::ExtractedField;
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter};

@@ -1,5 +1,4 @@
 mod bytebuf;
-mod fd_list;
 mod net;
 mod path;
 mod primitive;
@@ -12,7 +11,6 @@ mod time;
 /// to Falco style.
 pub mod format;
 
-pub use fd_list::*;
 pub use net::*;
 pub use path::*;
 pub use primitive::*;

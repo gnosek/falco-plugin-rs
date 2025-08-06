@@ -5,8 +5,8 @@ use serde::ser::SerializeStruct;
 
 pub struct SerializedPayload<T>(T);
 
-falco_event::derive_deftly_for_events! {
-    impl<$tgens> Serialize for SerializedPayload<&falco_event::events::types::$ttype> {
+falco_event_schema::derive_deftly_for_events! {
+    impl<$tgens> Serialize for SerializedPayload<&falco_event_schema::events::$ttype> {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: serde::Serializer,
@@ -31,24 +31,24 @@ falco_event::derive_deftly_for_events! {
 }
 
 derive_deftly_adhoc! {
-    falco_event::AnyEvent:
+    falco_event_schema::AnyEvent:
 
     #[derive(Serialize)]
     pub enum AnyEvent<$tgens 'ser> {
-        $(${vdefbody $vname $(${fdefine $fname} SerializedPayload<&'ser falco_event::events::types::$ftype>)})
+        $(${vdefbody $vname $(${fdefine $fname} SerializedPayload<&'ser falco_event_schema::events::$ftype>)})
     }
 
-    impl<'a, 'ser> From<&'ser falco_event::events::types::AnyEvent<'a>> for AnyEvent<'a, 'ser> {
-        fn from(event: &'ser falco_event::events::types::AnyEvent<'a>) -> Self {
+    impl<'a, 'ser> From<&'ser falco_event_schema::events::AnyEvent<'a>> for AnyEvent<'a, 'ser> {
+        fn from(event: &'ser falco_event_schema::events::AnyEvent<'a>) -> Self {
             match event {
-                $(falco_event::events::types::AnyEvent::$vname(f_0) => AnyEvent::$vname(SerializedPayload(f_0)),)
+                $(falco_event_schema::events::AnyEvent::$vname(f_0) => AnyEvent::$vname(SerializedPayload(f_0)),)
             }
         }
     }
 
     ${for fields {
-        impl<'a, 'ser> From<&'ser falco_event::events::types::$ftype> for AnyEvent<'a, 'ser> {
-            fn from(event: &'ser falco_event::events::types::$ftype) -> Self {
+        impl<'a, 'ser> From<&'ser falco_event_schema::events::$ftype> for AnyEvent<'a, 'ser> {
+            fn from(event: &'ser falco_event_schema::events::$ftype) -> Self {
                 AnyEvent::$vname(SerializedPayload(event))
             }
         }

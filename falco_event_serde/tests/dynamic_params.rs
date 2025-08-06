@@ -1,5 +1,5 @@
-use falco_event::events::types::PPME_SYSCALL_BPF_X;
-use falco_event::fields::types::{PT_DYN_bpf_dynamic_param, PT_FD};
+use falco_event_schema::events::PPME_SYSCALL_BPF_X;
+use falco_event_schema::fields::types::{PT_DYN_bpf_dynamic_param, PT_FD};
 
 #[test]
 fn test_deserialize_dynamic() {

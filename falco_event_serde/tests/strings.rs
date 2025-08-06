@@ -1,5 +1,5 @@
-use falco_event::events::types::{PPME_SYSCALL_READ_X, PPME_TRACER_E};
-use falco_event::fields::types::{PT_ERRNO, PT_FD};
+use falco_event_schema::events::{PPME_SYSCALL_READ_X, PPME_TRACER_E};
+use falco_event_schema::fields::types::{PT_ERRNO, PT_FD};
 
 #[test]
 fn test_deserialize_strings() {

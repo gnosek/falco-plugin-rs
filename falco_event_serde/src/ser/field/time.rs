@@ -1,5 +1,5 @@
 use crate::ser::field::SerializedField;
-use falco_event::fields::types;
+use falco_event_schema::fields::types;
 use serde::{Serialize, Serializer};
 
 impl Serialize for SerializedField<&types::PT_ABSTIME> {

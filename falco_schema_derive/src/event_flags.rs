@@ -182,7 +182,7 @@ fn render_enum(
             }
         }
 
-        impl crate::fields::ToBytes for #name {
+        impl falco_event::fields::ToBytes for #name {
             #[inline]
             fn binary_size(&self) -> usize {
                 std::mem::size_of::<#repr_type>()
@@ -195,14 +195,14 @@ fn render_enum(
             }
 
             #[inline]
-            fn default_repr() -> impl crate::fields::ToBytes {
+            fn default_repr() -> impl falco_event::fields::ToBytes {
                 0 as #repr_type
             }
         }
 
-        impl crate::fields::FromBytes<'_> for #name {
+        impl falco_event::fields::FromBytes<'_> for #name {
             #[inline]
-            fn from_bytes(buf: &mut &[u8]) -> Result<Self, crate::fields::FromBytesError>
+            fn from_bytes(buf: &mut &[u8]) -> Result<Self, falco_event::fields::FromBytesError>
             where
                 Self: Sized,
             {
@@ -254,7 +254,7 @@ fn render_bitflags(
             }
         }
 
-        impl crate::fields::ToBytes for #name {
+        impl falco_event::fields::ToBytes for #name {
             #[inline]
             fn binary_size(&self) -> usize {
                 std::mem::size_of::<#repr_type>()
@@ -266,14 +266,14 @@ fn render_bitflags(
             }
 
             #[inline]
-            fn default_repr() -> impl crate::fields::ToBytes {
+            fn default_repr() -> impl falco_event::fields::ToBytes {
                 0 as #repr_type
             }
         }
 
-        impl crate::fields::FromBytes<'_> for #name {
+        impl falco_event::fields::FromBytes<'_> for #name {
             #[inline]
-            fn from_bytes(buf: &mut &[u8]) -> Result<Self, crate::fields::FromBytesError>
+            fn from_bytes(buf: &mut &[u8]) -> Result<Self, falco_event::fields::FromBytesError>
             where
                 Self: Sized,
             {

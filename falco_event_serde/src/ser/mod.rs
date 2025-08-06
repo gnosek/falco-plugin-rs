@@ -13,7 +13,7 @@ use serde::Serialize;
 /// # Example
 /// ```ignore
 /// // Take an arbitrary Falco event
-/// let event: falco_event::events::Event<falco_event::events::types::AnyEvent> = todo!();
+/// let event: falco_event_schema::events::Event<falco_event_schema::events::types::AnyEvent> = todo!();
 ///
 /// // Wrap a reference to it for serialization
 /// let serializable_event = falco_event_serde::ser::Event::from(&event);

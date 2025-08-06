@@ -1,6 +1,6 @@
-use crate::events::types::{AnyEvent, PPME_SYSCALL_OPEN_X};
-use crate::events::{Event, EventMetadata, EventToBytes, RawEvent};
-use crate::fields::types::{PT_FLAGS32_file_flags, PT_FD, PT_FSPATH};
+use crate::events::{AnyEvent, PPME_SYSCALL_OPEN_X};
+use crate::fields::types::{PT_FD, PT_FLAGS32_file_flags, PT_FSPATH};
+use falco_event::events::{Event, EventMetadata, EventToBytes, RawEvent};
 
 #[test]
 fn test_event_to_bytes() {

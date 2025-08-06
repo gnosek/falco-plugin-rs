@@ -1,6 +1,6 @@
 use crate::de::repr::Repr::Static;
 use crate::de::repr::{StaticRepr, TaggedRepr};
-use falco_event::fields::types;
+use falco_event_schema::fields::types;
 use serde::{Deserialize, Deserializer};
 use std::marker::PhantomData;
 

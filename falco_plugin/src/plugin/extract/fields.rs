@@ -1,5 +1,5 @@
-use falco_event::fields::types::{PT_ABSTIME, PT_IPNET};
 use falco_event::fields::ToBytes;
+use falco_event::types::{IpNet, SystemTime};
 use falco_plugin_api::{
     ss_plugin_byte_buffer, ss_plugin_extract_field, ss_plugin_field_type_FTYPE_ABSTIME,
     ss_plugin_field_type_FTYPE_BOOL, ss_plugin_field_type_FTYPE_IPADDR,
@@ -249,8 +249,8 @@ macro_rules! extract {
 
 extract!(u64: direct => ExtractFieldTypeId::U64);
 extract!(Duration: direct => ExtractFieldTypeId::RelTime);
-extract!(PT_ABSTIME: direct => ExtractFieldTypeId::AbsTime);
+extract!(SystemTime: direct => ExtractFieldTypeId::AbsTime);
 extract!(bool: direct => ExtractFieldTypeId::Bool);
 extract!(CString: by_ref => ExtractFieldTypeId::String);
 extract!(IpAddr: by_bytebuf => ExtractFieldTypeId::IpAddr);
-extract!(PT_IPNET: by_bytebuf => ExtractFieldTypeId::IpNet);
+extract!(IpNet: by_bytebuf => ExtractFieldTypeId::IpNet);

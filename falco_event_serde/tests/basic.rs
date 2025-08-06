@@ -1,5 +1,5 @@
-use falco_event::events::types::PPME_GENERIC_E;
-use falco_event::fields::types::PT_SYSCALLID;
+use falco_event_schema::events::PPME_GENERIC_E;
+use falco_event_schema::fields::types::PT_SYSCALLID;
 
 #[test]
 fn test_basic_deserialize() {

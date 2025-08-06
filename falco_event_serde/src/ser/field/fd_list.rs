@@ -1,5 +1,5 @@
 use crate::ser::field::SerializedField;
-use falco_event::fields::types;
+use falco_event_schema::fields::types;
 use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 

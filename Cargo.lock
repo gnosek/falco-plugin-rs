@@ -449,11 +449,8 @@ name = "falco_event"
 version = "0.4.0"
 dependencies = [
  "anyhow",
- "bitflags",
  "chrono",
- "derive-deftly",
  "falco_event_derive",
- "falco_schema_derive",
  "nix",
  "thiserror",
  "typed-path",
@@ -470,12 +467,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "falco_event_schema"
+version = "0.4.0"
+dependencies = [
+ "bitflags",
+ "chrono",
+ "derive-deftly",
+ "falco_event",
+ "falco_event_derive",
+ "falco_schema_derive",
+ "nix",
+ "typed-path",
+]
+
+[[package]]
 name = "falco_event_serde"
 version = "0.4.0"
 dependencies = [
  "bstr",
  "derive-deftly",
  "falco_event",
+ "falco_event_schema",
  "serde",
  "serde_json",
 ]
@@ -524,6 +536,7 @@ dependencies = [
  "bumpalo",
  "chrono",
  "falco_event",
+ "falco_event_schema",
  "falco_plugin_api",
  "serde",
  "serde_json",
@@ -538,6 +551,7 @@ dependencies = [
  "criterion",
  "cxx",
  "cxx-build",
+ "falco_event_schema",
  "falco_plugin",
  "falco_plugin_runner",
  "log",

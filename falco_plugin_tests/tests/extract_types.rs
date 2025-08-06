@@ -1,9 +1,8 @@
+use falco_event_schema::events::PPME_PLUGINEVENT_E;
+use falco_event_schema::fields::types::{PT_ABSTIME, PT_IPNET};
 use falco_plugin::anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
 use falco_plugin::event::events::Event;
-use falco_plugin::event::fields::types::PT_ABSTIME;
-use falco_plugin::event::fields::types::PT_IPNET;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::static_plugin;
 use falco_plugin::tables::TablesInput;
@@ -287,9 +286,9 @@ macro_rules! extract_test_case {
 
 #[cfg(test)]
 mod tests {
-    use falco_plugin::base::Plugin;
     #[allow(unused_imports)]
-    use falco_plugin::event::fields::types::{PT_ABSTIME, PT_IPNET};
+    use falco_event_schema::fields::types::{PT_ABSTIME, PT_IPNET};
+    use falco_plugin::base::Plugin;
     use falco_plugin_runner::ExtractedField;
     #[allow(unused_imports)] // make rustrover happy, these are very much used
     use falco_plugin_tests::{init_plugin, instantiate_tests};

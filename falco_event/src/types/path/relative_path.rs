@@ -45,8 +45,8 @@ impl Debug for RelativePath<'_> {
 mod tests {
     use std::str::FromStr;
 
+    use super::RelativePath;
     use crate::fields::{FromBytes, ToBytes};
-    use crate::types::path::relative_path::RelativePath;
 
     use typed_path::UnixPathBuf;
 

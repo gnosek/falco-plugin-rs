@@ -1,9 +1,9 @@
+use falco_event_schema::events::PPME_SYSCALL_READ_E;
+use falco_event_schema::fields::types::PT_FD;
 use falco_plugin::anyhow;
 use falco_plugin::anyhow::{Context, Error};
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::PPME_SYSCALL_READ_E;
 use falco_plugin::event::events::{Event, RawEvent};
-use falco_plugin::event::fields::types::PT_FD;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::static_plugin;
