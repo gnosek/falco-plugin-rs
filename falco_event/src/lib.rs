@@ -132,7 +132,7 @@ pub use falco_event_derive::AnyEvent;
 /// * [`events::PayloadToBytes`] to provide serialization
 pub use falco_event_derive::EventPayload;
 
-#[allow(missing_docs)]
+/// Types and traits for Falco events
 pub mod events;
 
 /// Types and traits for Falco event fields

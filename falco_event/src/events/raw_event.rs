@@ -5,7 +5,9 @@ use std::io::Write;
 use std::marker::PhantomData;
 use std::num::TryFromIntError;
 
+/// A trait for types that can be converted from a raw event
 pub trait FromRawEvent<'a>: Sized {
+    /// Parse a raw event into the type implementing this trait
     fn parse(raw_event: &RawEvent<'a>) -> Result<Self, PayloadFromBytesError>;
 }
 
@@ -81,12 +83,29 @@ impl<'a, T: LengthField> ParamIter<'a, T> {
     }
 }
 
+/// A raw event, containing the metadata and payload
+///
+/// This struct is used to represent an event as it is read from a raw byte stream, with
+/// minimal parsing of the header. The payload is left as a raw byte buffer, which can be
+/// parsed later using the `FromRawEvent` trait.
 #[derive(Debug)]
 pub struct RawEvent<'a> {
+    /// Metadata for the event, including timestamp and thread ID
     pub metadata: EventMetadata,
+
+    /// Length of the event in bytes, including the header
     pub len: u32,
+
+    /// Type of the event, represented as a 16-bit unsigned integer
     pub event_type: u16,
+
+    /// Number of parameters in the event, represented as a 32-bit unsigned integer
     pub nparams: u32,
+
+    /// The payload of the event, containing the raw bytes after the header
+    ///
+    /// The payload contains `nparams` lengths of either `u16` or `u32` (depending on the event type)
+    /// and the actual parameter values. The length of the payload is `len - 26` bytes.
     pub payload: &'a [u8],
 }
 
@@ -197,6 +216,10 @@ impl<'e> RawEvent<'e> {
         Self::from(buf)
     }
 
+    /// Load the event parameters into a strongly typed `Event<T>`
+    ///
+    /// This method uses the `FromRawEvent` trait to parse the raw event payload into a specific type `T`.
+    /// The returned `Event<T>` contains the metadata (copied from the raw event) and the parsed parameters.
     #[inline]
     pub fn load<'a, T: FromRawEvent<'e>>(&'a self) -> Result<Event<T>, PayloadFromBytesError> {
         #[allow(clippy::question_mark)]
