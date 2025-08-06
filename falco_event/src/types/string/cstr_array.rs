@@ -4,9 +4,14 @@ use std::ffi::CStr;
 use std::fmt::{Debug, Formatter, Write as _};
 use std::io::Write;
 
+/// A serialized representation of a C-style string array
+///
+/// This type represents an array of C-style strings, where each string is null-terminated.
+/// To get an iterator over the strings, use the `iter` method.
 #[derive(Copy, Clone)]
 pub struct CStrArray<'a>(&'a [u8]);
 
+/// This is an iterator for CStrArray that allows iterating over the contained C-style strings.
 pub struct CStrArrayIter<'a>(&'a [u8]);
 
 impl<'a> Iterator for CStrArrayIter<'a> {
@@ -23,6 +28,7 @@ impl<'a> Iterator for CStrArrayIter<'a> {
 }
 
 impl<'a> CStrArray<'a> {
+    /// Return an iterator over the C-style strings in this array
     #[inline]
     pub fn iter(&self) -> CStrArrayIter<'a> {
         CStrArrayIter(self.0)
@@ -75,7 +81,7 @@ impl Debug for CStrArray<'_> {
 #[cfg(test)]
 mod tests {
     use crate::fields::{FromBytes, ToBytes};
-    use crate::types::CStrArray;
+    use crate::types::string::cstr_array::CStrArray;
 
     #[test]
     fn test_str_array() {

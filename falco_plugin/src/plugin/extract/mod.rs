@@ -217,7 +217,7 @@ where
     /// - [`std::time::SystemTime`]
     /// - [`std::time::Duration`]
     /// - [`std::net::IpAddr`]
-    /// - [`falco_event::fields::types::PT_IPNET`]
+    /// - [`falco_event::types::IpNet`]
     ///
     /// and `A` is the argument to the field extraction:
     ///
