@@ -23,3 +23,6 @@ mod to_bytes;
 /// of containing an arbitrary event matching the schema.
 #[allow(clippy::crate_in_macro_def)]
 pub mod types;
+
+#[cfg(test)]
+mod tests;
