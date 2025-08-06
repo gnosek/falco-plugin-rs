@@ -1,5 +1,5 @@
 use crate::fields::{FromBytes, FromBytesError, ToBytes};
-use crate::types::CStrFormatter;
+use crate::types::format::CStrFormatter;
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter, Write as _};
 use std::io::Write;

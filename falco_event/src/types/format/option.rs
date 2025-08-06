@@ -1,7 +1,8 @@
 use std::fmt::{Debug, Display, Formatter, LowerHex, Octal};
 
-// This is only used by the derive macro
-#[doc(hidden)]
+/// A formatter for `Option<T>` types.
+///
+/// It formats `Some(value)` as the value itself, and `None` as "NULL".
 pub struct OptionFormatter<T>(pub Option<T>);
 
 impl<T: Display> Display for OptionFormatter<T> {
