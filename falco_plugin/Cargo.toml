@@ -45,7 +45,7 @@ thiserror = "2.0.12"
 falco_event = { path = "../falco_event", version = "0.4.0" }
 falco_plugin_api = { path = "../falco_plugin_api", version = "0.4.0" }
 falco_plugin_derive = { path = "../falco_plugin_derive", version = "0.4.0" }
-serde = "1.0.197"
+serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
 schemars = "1.0.1"
 anyhow = "1.0.81"
