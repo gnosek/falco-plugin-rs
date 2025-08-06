@@ -6,9 +6,14 @@ use std::ffi::CStr;
 use std::fmt::{Debug, Formatter, Write as _};
 use std::io::Write;
 
+/// A serialized representation of a C-style string array that contains pairs of strings.
+///
+/// This is identical to a CStrArray, but it is guaranteed that the number of strings is even.
+/// To get an iterator over the pairs of strings, use the `iter` method.
 #[derive(Copy, Clone)]
 pub struct CStrPairArray<'a>(CStrArray<'a>);
 
+/// This is an iterator for CStrPairArray that allows iterating over pairs of C-style strings.
 pub struct CStrPairArrayIter<'a>(CStrArrayIter<'a>);
 
 impl<'a> Iterator for CStrPairArrayIter<'a> {
@@ -23,6 +28,7 @@ impl<'a> Iterator for CStrPairArrayIter<'a> {
 }
 
 impl<'a> CStrPairArray<'a> {
+    /// Return an iterator over the pairs of C-style strings in this array
     #[inline]
     pub fn iter(&self) -> CStrPairArrayIter<'a> {
         CStrPairArrayIter(self.0.iter())

@@ -139,7 +139,9 @@ pub mod events;
 
 /// All the types available in event fields
 pub mod fields;
-mod types;
+
+/// Data types used in Falco events
+pub mod types;
 
 #[allow(dead_code)]
 #[allow(non_snake_case)]
