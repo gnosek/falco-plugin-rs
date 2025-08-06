@@ -1,5 +1,5 @@
 use crate::fields::{FromBytes, FromBytesError, ToBytes};
-use crate::types::string::cstr::CStrFormatter;
+use crate::types::format::CStrFormatter;
 use crate::types::string::cstr_array::CStrArrayIter;
 use crate::types::CStrArray;
 use std::ffi::CStr;

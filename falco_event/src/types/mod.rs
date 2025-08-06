@@ -12,7 +12,6 @@ mod time;
 /// to Falco style.
 pub mod format;
 
-pub use bytebuf::ByteBufFormatter;
 pub use fd_list::*;
 pub use net::*;
 pub use path::*;

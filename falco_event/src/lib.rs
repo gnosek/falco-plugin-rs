@@ -141,16 +141,6 @@ pub mod events;
 pub mod fields;
 mod types;
 
-/// Formatting wrappers
-///
-/// This module provides wrappers for various types that format the inner type according
-/// to Falco style.
-pub mod format {
-    pub use crate::types::format::OptionFormatter;
-    pub use crate::types::ByteBufFormatter;
-    pub use crate::types::CStrFormatter;
-}
-
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 #[allow(non_camel_case_types)]

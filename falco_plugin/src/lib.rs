@@ -30,7 +30,7 @@ pub mod base {
 /// the event types defined by this crate (the minimal subset of the full Falco schema)
 pub mod event {
     pub use crate::plugin::event::*;
-    pub use falco_event::{events, fields, format};
+    pub use falco_event::{events, fields};
 }
 
 /// # Field extraction plugin support
