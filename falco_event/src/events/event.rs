@@ -4,9 +4,17 @@ use crate::events::{FromRawEvent, PayloadFromBytesError, RawEvent};
 use std::fmt::{Debug, Formatter};
 use std::io::Write;
 
+/// A Falco event.
+///
+/// This struct represents a Falco event with metadata and parameters. The [`EventMetadata`] contains
+/// fields common to all events (the timestamp and thread ID), while the `params` field contains
+/// the event-specific data.
 #[derive(Clone)]
 pub struct Event<T> {
+    /// The metadata for the event, which includes common fields like timestamp and thread ID.
     pub metadata: EventMetadata,
+
+    /// The parameters for the event, which are specific to the type of event.
     pub params: T,
 }
 

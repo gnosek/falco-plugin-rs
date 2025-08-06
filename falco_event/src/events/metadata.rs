@@ -3,13 +3,20 @@ use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+/// Metadata for an event, containing the timestamp and thread ID.
 #[derive(Clone)]
 pub struct EventMetadata {
+    /// Timestamp of the event in nanoseconds since the UNIX epoch.
     pub ts: u64,
+
+    /// Thread ID of the event.
     pub tid: i64,
 }
 
 impl EventMetadata {
+    /// Return the timestamp of the event as an `Option<SystemTime>`.
+    ///
+    /// If the timestamp is `u64::MAX`, it indicates that no timestamp was set, and `None` is returned.
     #[inline]
     pub fn timestamp(&self) -> Option<SystemTime> {
         if self.ts == u64::MAX {
