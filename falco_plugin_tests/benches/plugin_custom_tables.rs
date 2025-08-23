@@ -4,8 +4,8 @@ use criterion::{
     criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
 use falco_plugin::event::events::Event;
+use falco_plugin::event::PluginEvent;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::source::EventInput;
@@ -87,7 +87,7 @@ impl CustomTableApi {
 }
 
 impl ExtractPlugin for CustomTableApi {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<&'a [u8]>>;
     type ExtractContext = ();
 
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
@@ -97,7 +97,7 @@ impl ExtractPlugin for CustomTableApi {
 }
 
 impl ParsePlugin for CustomTableApi {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<&'a [u8]>>;
 
     fn parse_event(
         &mut self,
@@ -157,7 +157,7 @@ impl CustomTableDirect {
 }
 
 impl ExtractPlugin for CustomTableDirect {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<&'a [u8]>>;
     type ExtractContext = ();
 
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] =
@@ -165,7 +165,7 @@ impl ExtractPlugin for CustomTableDirect {
 }
 
 impl ParsePlugin for CustomTableDirect {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<&'a [u8]>>;
 
     fn parse_event(
         &mut self,

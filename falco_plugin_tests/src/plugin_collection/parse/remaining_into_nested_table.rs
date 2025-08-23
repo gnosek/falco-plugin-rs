@@ -1,10 +1,11 @@
+use crate::plugin_collection::events::countdown::Countdown;
 use crate::plugin_collection::tables::remaining_export::RemainingEntryTable;
 use anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
 use falco_plugin::event::events::Event;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
+use falco_plugin::source::PluginEvent;
 use falco_plugin::static_plugin;
 use falco_plugin::tables::TablesInput;
 use std::ffi::CStr;
@@ -31,7 +32,7 @@ impl Plugin for ParseIntoNestedTable {
 }
 
 impl ParsePlugin for ParseIntoNestedTable {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<Countdown<'a>>>;
 
     fn parse_event(
         &mut self,
@@ -40,14 +41,7 @@ impl ParsePlugin for ParseIntoNestedTable {
     ) -> anyhow::Result<()> {
         let event_num = event.event_number() as u64;
         let event = event.event()?;
-        let payload = event
-            .params
-            .event_data
-            .ok_or_else(|| anyhow::anyhow!("no payload in event"))?;
-
-        let first_char = &payload[0..1];
-        let first_char = std::str::from_utf8(first_char)?;
-        let remaining: u64 = first_char.parse()?;
+        let remaining: u64 = event.params.event_data.remaining() as u64;
 
         let mut entry = self.remaining_table.create_entry()?;
         *entry.remaining = remaining;

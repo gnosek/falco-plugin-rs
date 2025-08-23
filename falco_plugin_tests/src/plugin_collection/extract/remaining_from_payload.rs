@@ -1,7 +1,9 @@
-use anyhow::{Context, Error};
+use crate::plugin_collection::events::countdown::Countdown;
+use anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
 use falco_plugin::event::events::Event;
+use falco_plugin::event::fields::{FromBytes, ToBytes};
+use falco_plugin::event::PluginEvent;
 use falco_plugin::extract::{
     field, ExtractByteRange, ExtractFieldInfo, ExtractPlugin, ExtractRequest,
 };
@@ -9,7 +11,6 @@ use falco_plugin::static_plugin;
 use falco_plugin::strings::WriteIntoCString;
 use falco_plugin::tables::TablesInput;
 use std::ffi::{CStr, CString};
-use std::io::Write;
 
 struct ExtractRemainingFromPayload;
 
@@ -28,28 +29,19 @@ impl Plugin for ExtractRemainingFromPayload {
 impl ExtractRemainingFromPayload {
     fn extract_payload(&mut self, req: ExtractRequest<Self>) -> Result<CString, Error> {
         let event = req.event.event()?;
-        let payload = event
-            .params
-            .event_data
-            .ok_or_else(|| anyhow::anyhow!("no payload in event"))?;
-
         let mut out = CString::default();
-        out.write_into(|w| w.write_all(payload))?;
+        out.write_into(|w| event.params.event_data.write(w))?;
         Ok(out)
     }
 
     fn extract_payload_with_range(&mut self, req: ExtractRequest<Self>) -> Result<CString, Error> {
         let event = req.event.event()?;
-        let payload = event
-            .params
-            .event_data
-            .ok_or_else(|| anyhow::anyhow!("no payload in event"))?;
-
         let mut out = CString::default();
-        out.write_into(|w| w.write_all(payload))?;
+        out.write_into(|w| event.params.event_data.write(w))?;
 
         if *req.offset == ExtractByteRange::Requested {
-            *req.offset = ExtractByteRange::in_plugin_data(0..payload.len());
+            *req.offset =
+                ExtractByteRange::in_plugin_data(0..event.params.event_data.binary_size());
         }
 
         Ok(out)
@@ -61,26 +53,14 @@ impl ExtractRemainingFromPayload {
         reps: u64,
     ) -> Result<Vec<CString>, Error> {
         let event = req.event.event()?;
-        let payload = event
-            .params
-            .event_data
-            .ok_or_else(|| anyhow::anyhow!("no payload in event"))?;
-
         let mut out = CString::default();
-        out.write_into(|w| w.write_all(payload))?;
+        out.write_into(|w| event.params.event_data.write(w))?;
         Ok(vec![out; reps as usize])
     }
 
     fn extract_events_remaining(&mut self, req: ExtractRequest<Self>) -> Result<u64, Error> {
         let event = req.event.event()?;
-        let payload = event
-            .params
-            .event_data
-            .ok_or_else(|| anyhow::anyhow!("no payload in event"))?;
-
-        let first_char = &payload[0..1];
-        let first_char = std::str::from_utf8(first_char)?;
-        let remaining = first_char.parse()?;
+        let remaining = event.params.event_data.remaining() as u64;
         Ok(remaining)
     }
 
@@ -90,14 +70,7 @@ impl ExtractRemainingFromPayload {
         reps: u64,
     ) -> Result<Vec<u64>, Error> {
         let event = req.event.event()?;
-        let payload = event
-            .params
-            .event_data
-            .ok_or_else(|| anyhow::anyhow!("no payload in event"))?;
-
-        let first_char = &payload[0..1];
-        let first_char = std::str::from_utf8(first_char)?;
-        let remaining: u64 = first_char.parse()?;
+        let remaining: u64 = event.params.event_data.remaining() as u64;
         Ok(vec![remaining; reps as usize])
     }
 
@@ -106,25 +79,19 @@ impl ExtractRemainingFromPayload {
         req: ExtractRequest<Self>,
         arg: Option<&CStr>,
     ) -> Result<u64, Error> {
-        let event = req.event.event()?;
-
-        let buf = match arg {
-            Some(s) => s.to_bytes(),
-            None => event
-                .params
-                .event_data
-                .ok_or_else(|| anyhow::anyhow!("no payload in event"))?,
-        };
-
-        let first_char = &buf[0..1];
-        let first_char = std::str::from_utf8(first_char).context(format!("buf={buf:?}"))?;
-        let remaining = first_char.parse()?;
-        Ok(remaining)
+        match arg {
+            Some(s) => {
+                let mut buf = s.to_bytes();
+                let countdown = Countdown::from_bytes(&mut buf)?;
+                Ok(countdown.remaining() as u64)
+            }
+            None => Ok(req.event.event()?.params.event_data.remaining() as u64),
+        }
     }
 }
 
 impl ExtractPlugin for ExtractRemainingFromPayload {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<Countdown<'a>>>;
     type ExtractContext = ();
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
         field("dummy.payload", &Self::extract_payload),

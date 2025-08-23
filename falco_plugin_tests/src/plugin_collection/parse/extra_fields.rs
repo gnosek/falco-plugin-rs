@@ -1,11 +1,12 @@
+use crate::plugin_collection::events::countdown::Countdown;
 use crate::plugin_collection::tables::remaining_import_extra_fields::accessors::as_string::set_as_string;
 use crate::plugin_collection::tables::remaining_import_extra_fields::accessors::is_even::set_is_even;
 use crate::plugin_collection::tables::remaining_import_extra_fields::accessors::remaining::get_remaining;
 use crate::plugin_collection::tables::remaining_import_extra_fields::RemainingCounterImportTableWithExtraFields;
 use anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
 use falco_plugin::event::events::Event;
+use falco_plugin::event::PluginEvent;
 use falco_plugin::extract::EventInput;
 use falco_plugin::parse::{ParseInput, ParsePlugin};
 use falco_plugin::static_plugin;
@@ -34,7 +35,7 @@ impl Plugin for ParseExtraFields {
 }
 
 impl ParsePlugin for ParseExtraFields {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<Countdown<'a>>>;
 
     fn parse_event(
         &mut self,

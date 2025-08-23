@@ -1,9 +1,10 @@
+use crate::plugin_collection::events::countdown::Countdown;
 use crate::plugin_collection::tables::remaining_import::accessors::*;
 use crate::plugin_collection::tables::remaining_import::RemainingCounterImportTable;
 use anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
 use falco_plugin::event::events::Event;
+use falco_plugin::event::PluginEvent;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::static_plugin;
 use falco_plugin::tables::TablesInput;
@@ -42,7 +43,7 @@ impl ExtractRemainingFromTable {
 }
 
 impl ExtractPlugin for ExtractRemainingFromTable {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<Countdown<'a>>>;
     type ExtractContext = ();
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] =
         &[field("countdown.remaining", &Self::extract_remaining)];

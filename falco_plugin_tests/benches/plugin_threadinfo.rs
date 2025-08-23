@@ -4,8 +4,8 @@ use criterion::{
     criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
 use falco_plugin::event::events::Event;
+use falco_plugin::event::PluginEvent;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::parse::{EventInput, ParseInput, ParsePlugin};
 use falco_plugin::static_plugin;
@@ -62,7 +62,7 @@ impl ExtractThreadInfo {
 }
 
 impl ExtractPlugin for ExtractThreadInfo {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<&'a [u8]>>;
     type ExtractContext = ();
 
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] = &[
@@ -94,7 +94,7 @@ impl Plugin for ParseThreadInfoSetCustomField {
 }
 
 impl ParsePlugin for ParseThreadInfoSetCustomField {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<&'a [u8]>>;
 
     fn parse_event(
         &mut self,
