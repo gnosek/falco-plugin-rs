@@ -1,15 +1,16 @@
+use crate::plugin_collection::events::countdown::Countdown;
 use crate::CapturingTestDriver;
 use anyhow::Error;
 use falco_plugin::base::{Json, Metric, MetricLabel, MetricType, MetricValue, Plugin};
-use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
 use falco_plugin::event::events::Event;
+use falco_plugin::event::fields::ToBytes;
+use falco_plugin::event::PluginEvent;
 use falco_plugin::extract::EventInput;
 use falco_plugin::source::{EventBatch, SourcePlugin, SourcePluginInstance};
 use falco_plugin::strings::CStringWriter;
 use falco_plugin::tables::TablesInput;
 use falco_plugin::{static_plugin, FailureReason};
 use std::ffi::{CStr, CString};
-use std::io::Write;
 
 #[derive(Debug, serde::Deserialize, falco_plugin::schemars::JsonSchema)]
 #[schemars(crate = "falco_plugin::schemars")]
@@ -91,7 +92,7 @@ impl SourcePlugin for CountdownPlugin {
     type Instance = CountdownPluginInstance;
     const EVENT_SOURCE: &'static CStr = c"countdown";
     const PLUGIN_ID: u32 = 1111;
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<Countdown<'a>>>;
 
     fn open(&mut self, _params: Option<&str>) -> Result<Self::Instance, Error> {
         Ok(CountdownPluginInstance {
@@ -103,15 +104,7 @@ impl SourcePlugin for CountdownPlugin {
     fn event_to_string(&mut self, event: &EventInput<Self::Event<'_>>) -> Result<CString, Error> {
         let event = event.event()?;
         let mut writer = CStringWriter::default();
-        write!(
-            writer,
-            "{}",
-            event
-                .params
-                .event_data
-                .map(|e| String::from_utf8_lossy(e))
-                .unwrap_or_default()
-        )?;
+        event.params.event_data.write(&mut writer)?;
         Ok(writer.into_cstring())
     }
 }

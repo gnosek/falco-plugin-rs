@@ -1,10 +1,11 @@
+use crate::plugin_collection::events::countdown::Countdown;
 use crate::plugin_collection::tables::remaining_import_extra_fields::accessors::countdown::get_countdown_by_key;
 use crate::plugin_collection::tables::remaining_import_extra_fields::nested_accessors::is_final::get_is_final;
 use crate::plugin_collection::tables::remaining_import_extra_fields::RemainingCounterImportTableWithExtraFields;
 use anyhow::Error;
 use falco_plugin::base::Plugin;
-use falco_plugin::event::events::types::PPME_PLUGINEVENT_E;
 use falco_plugin::event::events::Event;
+use falco_plugin::event::PluginEvent;
 use falco_plugin::extract::{field, ExtractFieldInfo, ExtractPlugin, ExtractRequest};
 use falco_plugin::static_plugin;
 use falco_plugin::tables::TablesInput;
@@ -49,7 +50,7 @@ impl ExtractNested {
 }
 
 impl ExtractPlugin for ExtractNested {
-    type Event<'a> = Event<PPME_PLUGINEVENT_E<'a>>;
+    type Event<'a> = Event<PluginEvent<Countdown<'a>>>;
     type ExtractContext = ();
     const EXTRACT_FIELDS: &'static [ExtractFieldInfo<Self>] =
         &[field("countdown.is_final", &Self::extract_is_final)];
