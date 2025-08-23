@@ -3,7 +3,7 @@ use attribute_derive::FromAttr;
 use proc_macro2::Ident;
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Generics};
+use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Generics, WhereClause};
 
 #[derive(FromAttr)]
 #[from_attr(ident = event_payload)]
@@ -11,6 +11,8 @@ struct EventPayloadAttrs {
     length_type: syn::Type,
     code: syn::Expr,
     source: syn::Expr,
+    from_bytes_bound: Option<syn::WhereClause>,
+    to_bytes_bound: Option<syn::WhereClause>,
 }
 
 fn derive_to_bytes(
@@ -25,6 +27,19 @@ fn derive_to_bytes(
     let event_code = &attrs.code;
     let members: Vec<_> = s.fields.members().collect();
     let num_fields = s.fields.members().count();
+
+    let combined_where_clause: WhereClause;
+    let where_clause = match (where_clause, &attrs.to_bytes_bound) {
+        (None, None) => None,
+        (Some(c), None) => Some(c),
+        (None, Some(c)) => Some(c),
+        (Some(c1), Some(c2)) => {
+            let mut combined = c1.clone();
+            combined.predicates.extend(c2.predicates.clone());
+            combined_where_clause = combined;
+            Some(&combined_where_clause)
+        }
+    };
 
     quote!(
         impl #impl_generics #crate_path::events::PayloadToBytes for #name #ty_generics #where_clause {
@@ -65,7 +80,11 @@ fn derive_from_bytes(
     let length_type = &attrs.length_type;
     let event_code = &attrs.code;
     let members = s.fields.members();
-    let (impl_ref_generics, ref_where_clause) = add_raw_event_lifetimes(name, g, where_clause);
+    let (impl_ref_generics, mut ref_where_clause) = add_raw_event_lifetimes(name, g, where_clause);
+
+    if let Some(c) = &attrs.from_bytes_bound {
+        ref_where_clause.predicates.extend(c.predicates.clone());
+    }
 
     quote!(
         impl <#impl_ref_generics> #crate_path::events::FromRawEvent<'raw_event> for #name #ty_generics #ref_where_clause {
