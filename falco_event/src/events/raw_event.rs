@@ -43,6 +43,12 @@ impl LengthField for u32 {
     }
 }
 
+/// A struct to represent an iterator over event parameters
+///
+/// It supports iteration over raw parameter payloads (via the [`Iterator`] trait),
+/// as well as typed access to each field, using the [`ParamIter::next_field`] method.
+///
+/// It's obtained from [`RawEvent::params`].
 pub struct ParamIter<'a, T: LengthField> {
     lengths: &'a [u8],
     params: &'a [u8],
@@ -66,6 +72,7 @@ impl<'a, T: LengthField> Iterator for ParamIter<'a, T> {
 }
 
 impl<'a, T: LengthField> ParamIter<'a, T> {
+    /// Return the next field, decoded into type `U`.
     #[inline]
     pub fn next_field<U>(&mut self) -> Result<U, FromBytesError>
     where
