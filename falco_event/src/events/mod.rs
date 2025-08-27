@@ -7,6 +7,7 @@ pub use payload::EventPayload;
 pub use payload::PayloadFromBytesError;
 pub use payload::PayloadToBytes;
 pub use raw_event::FromRawEvent;
+pub use raw_event::ParamIter;
 pub use raw_event::RawEvent;
 pub use to_bytes::EventToBytes;
 
