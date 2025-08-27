@@ -8,7 +8,6 @@
 /// wherever another event type is. For example,
 ///
 /// ```
-/// use std::borrow::Cow;
 /// use std::ffi::CStr;
 /// use anyhow::{anyhow, Context};
 /// use falco_event::events::PayloadFromBytesError;
@@ -38,8 +37,23 @@
 /// If the `falco_event` crate is available under a different path, provide its name
 /// in the `falco_event_crate` attribute:
 ///
-/// ```ignore
-/// #[derive(falco_event::AnyEvent)]
+/// ```
+/// # use falco_event as falco_event_alt;
+/// # #[derive(Default, Debug, falco_event::EventPayload)]
+/// # #[event_payload(source = Some("syscall"), code = 322, length_type = u32)]
+/// # pub struct MyPluginEvent<'a> {
+/// #     pub plugin_id: u32,
+/// #     pub data: &'a [u8],
+/// # }
+/// #
+/// # #[derive(Default, Debug, falco_event::EventPayload)]
+/// # #[event_payload(source = Some("syscall"), code = 322, length_type = u32)]
+/// # pub struct MyAsyncEvent<'a> {
+/// #     pub plugin_id: u32,
+/// #     pub name: &'a [u8],
+/// #     pub data: &'a [u8],
+/// # }
+/// #[derive(falco_event_alt::AnyEvent)]
 /// #[falco_event_crate(falco_event_alt)]
 /// pub enum AnyPluginEvent<'a> {
 ///     AsyncEvent(MyAsyncEvent<'a>),
@@ -77,8 +91,6 @@ pub use derive_deftly;
 /// event could be defined as:
 ///
 /// ```
-/// # use std::borrow::Cow;
-///
 /// #[derive(Default, falco_event::EventPayload)]
 /// #[event_payload(source = Some("syscall"), code = 322, length_type = u32)]
 /// pub struct MyPluginEvent<'a> {
@@ -90,11 +102,10 @@ pub use derive_deftly;
 /// If the `falco_event` crate is available under a different path, provide its name
 /// in the `falco_event_crate` attribute:
 ///
-/// ```ignore
-/// # use std::borrow::Cow;
-///
-/// #[derive(Default, falco_event::EventPayload)]
-/// #[event_payload(source = "syscall", code = 322, length_type = u32)]
+/// ```
+/// # use falco_event as falco_event_alt;
+/// #[derive(Default, falco_event_alt::EventPayload)]
+/// #[event_payload(source = Some("syscall"), code = 322, length_type = u32)]
 /// #[falco_event_crate(falco_event_alt)]
 /// pub struct MyPluginEvent<'a> {
 ///     pub plugin_id: u32,
