@@ -14,6 +14,7 @@ pub enum SchemaError {
 
 pub type SchemaResult<T> = Result<T, SchemaError>;
 
+#[derive(Debug)]
 pub enum ConfigSchemaType {
     None,
     Json(&'static CStr),
